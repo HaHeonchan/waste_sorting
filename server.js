@@ -1,6 +1,7 @@
 const app = require('./src/app');
-const PORT = process.env.PORT || 3000;
+
+const PORT = 3000; // 기본적으로 localhost:3000에서 실행
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다`);
 });

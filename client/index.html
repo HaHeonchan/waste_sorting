@@ -1,11 +1,141 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <title>테스트 페이지</title>
-  </head>
-  <body>
-    <h1>서버 연결 확인 완료!</h1>
-    <p>Node.js 서버가 정상적으로 HTML 파일을 제공하고 있습니다.</p>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <title>쓰레기 민원 게시판</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
+    .report { border: 1px solid #ddd; margin-bottom: 12px; padding: 12px; border-radius: 8px;}
+    .date { color: #888; font-size: 0.9em;}
+    .del-btn { color: red; cursor: pointer; }
+    .edit-btn { color: #0a67d6; cursor: pointer; margin-left: 8px; }
+    #form-div, #edit-div {
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 18px 0;
+    }
+    #edit-div { display: none; }
+  </style>
+</head>
+<body>
+  <h1>민원 제보 게시판</h1>
+  <button onclick="showForm()">+ 민원 제보</button>
+
+  <!-- 민원 작성 폼 -->
+  <div id="form-div" style="display:none;">
+    <h2>민원 작성</h2>
+    <form id="reportForm" enctype="multipart/form-data">
+      <input type="file" name="image" accept="image/*" /><br>
+      <textarea name="content" placeholder="민원 내용" required></textarea><br>
+      <button type="submit">제보</button>
+      <button type="button" onclick="hideForm()">취소</button>
+    </form>
+  </div>
+  
+  <!-- 민원 수정 폼 (동적으로 생성/표시) -->
+  <div id="edit-div"></div>
+
+  <h2>내 민원 목록</h2>
+  <div id="reports"></div>
+
+  <script>
+    // 전역 reports 변수로 관리
+    let reports = [];
+
+    // 폼 show/hide
+    function showForm() {
+      document.getElementById('form-div').style.display = '';
+      hideEditForm(); // 수정 폼은 항상 같이 숨김
+    }
+    function hideForm() {
+      document.getElementById('form-div').style.display = 'none';
+    }
+
+    // 수정 폼 show/hide
+    function editForm(reportId) {
+        const report = reports.find(r => r.report_id == reportId);      // 1. report 찾기
+        const editDiv = document.getElementById('edit-div');            // 2. editDiv 선언
+        console.log('찾은 report:', report);                            // 3. 콘솔 출력
+        console.log('수정폼 HTML(before):', editDiv.innerHTML);
+
+        hideForm(); // 작성 폼 숨김(위치 상관없음)
+
+        if (!report) return; // report 없으면 리턴
+
+        // 4. 수정 폼 내용 입력
+        editDiv.innerHTML = `
+          <h2>민원 수정</h2>
+          <form id="editForm" enctype="multipart/form-data">
+            <input type="file" name="image" accept="image/*" /><br>
+            <textarea name="content" required style="width:100%; min-height:60px">${report.content}</textarea><br>
+            <button type="submit">저장</button>
+            <button type="button" onclick="hideEditForm()">취소</button>
+          </form>
+        `;
+        editDiv.style.display = 'block';  // ← 반드시 'block'으로!
+
+        console.log('수정폼 HTML(after):', editDiv.innerHTML);
+
+        // 5. 수정 폼 이벤트 연결
+        document.getElementById('editForm').onsubmit = async function(e) {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          await fetch(`/api/reports/${reportId}`, {
+            method: 'PUT',
+            body: formData
+          });
+          hideEditForm();
+          fetchReports();
+        };
+    }
+    function hideEditForm() {
+      const editDiv = document.getElementById('edit-div');
+      editDiv.style.display = 'none';
+      editDiv.innerHTML = '';
+    }
+
+    // 민원 목록 불러오기 + 이미지/status/수정/삭제 버튼 표시
+    async function fetchReports() {
+      const res = await fetch('/api/reports');
+      const list = await res.json();
+      reports = list;
+      const reportsDiv = document.getElementById('reports');
+      reportsDiv.innerHTML = '';
+      list.forEach(r => {
+        reportsDiv.innerHTML += `
+          <div class="report">
+            <div><b>${r.content}</b></div>
+            ${r.image_url ? `<img src="${r.image_url}" width="100" style="margin:8px 0"/><br>` : ''}
+            <div class="date">${new Date(r.created_at).toLocaleString()}</div>
+            <div><b>상태:</b> ${r.status || '미정'}</div>
+            <button class="del-btn" onclick="del(${r.report_id})">삭제</button>
+            <button class="edit-btn" onclick="editForm(${r.report_id})">수정</button>
+          </div>`;
+      });
+    }
+    fetchReports();
+
+    // 민원 등록 (작성 폼 제출)
+    document.getElementById('reportForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+
+      await fetch('/api/reports', {
+        method: 'POST',
+        body: formData,
+      });
+      hideForm(); // 폼 닫기
+      form.reset(); // 폼 초기화
+      fetchReports(); // 목록 새로고침
+    }
+
+    // 민원 삭제
+    async function del(id) {
+      await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+      fetchReports();
+    }
+  </script>
+</body>
 </html>
