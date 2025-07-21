@@ -3,6 +3,9 @@ const OpenAI = require('openai');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const { WASTE_ANALYSIS_PROMPT } = require('./prompts');
+const { optimizeImage, optimizeForTextAnalysis, getImageInfo, isImageTooLarge } = require('./image-optimizer');
+const { generateImageHash, getFromCache, saveToCache } = require('./cache');
 
 // OpenAI 클라이언트 초기화
 if (!process.env.OPENAI_API_KEY) {
@@ -105,11 +108,55 @@ async function analyzeImageWithGPT(imagePath) {
 
         console.log('🔍 이미지 분석 시작:', imagePath);
         
+        // 이미지 정보 확인
+        const imageInfo = await getImageInfo(imagePath);
+        console.log('📊 원본 이미지 정보:', imageInfo);
+        
+        // 픽셀 크기 확인
+        const maxDimension = Math.max(imageInfo.width, imageInfo.height);
+        console.log(`📏 최대 픽셀 크기: ${maxDimension}px (${imageInfo.width}x${imageInfo.height})`);
+        console.log(`🎯 최적화 기준: 400px 초과 시 최적화 적용`);
+        
+        // 이미지 최적화 (필요한 경우)
+        let optimizedImagePath = imagePath;
+        let optimizationApplied = false;
+        
+        if (await isImageTooLarge(imagePath)) {
+            console.log('📦 이미지 최적화 중... (400x400 픽셀 초과)');
+            optimizedImagePath = await optimizeForTextAnalysis(imagePath);
+            console.log('✅ 이미지 최적화 완료:', optimizedImagePath);
+            optimizationApplied = true;
+            
+            // 최적화된 이미지 정보 확인
+            const optimizedInfo = await getImageInfo(optimizedImagePath);
+            console.log('📊 최적화된 이미지 정보:', optimizedInfo);
+        } else {
+            console.log('✅ 이미지 픽셀이 400x400 이하여서 최적화 생략');
+        }
+        
         // 이미지 파일을 base64로 인코딩
-        const imageBuffer = fs.readFileSync(imagePath);
+        const imageBuffer = fs.readFileSync(optimizedImagePath);
         const base64Image = imageBuffer.toString('base64');
         
         console.log('📊 이미지 크기:', imageBuffer.length, 'bytes');
+        
+        // 정확한 토큰 계산 (Vision API 기준)
+        const imageTokens = Math.ceil(imageBuffer.length / 4 * 1.37); // Base64 토큰
+        const promptTokens = WASTE_ANALYSIS_PROMPT.length / 4; // 프롬프트 토큰
+        const totalInputTokens = imageTokens + promptTokens;
+        
+        console.log('💰 토큰 사용량 분석:');
+        console.log('   - 이미지 토큰:', imageTokens);
+        console.log('   - 프롬프트 토큰:', Math.ceil(promptTokens));
+        console.log('   - 총 입력 토큰:', Math.ceil(totalInputTokens));
+        console.log('   - 최적화 적용:', optimizationApplied ? '✅ 예' : '❌ 아니오');
+        
+        // 캐시 확인
+        const imageHash = generateImageHash(imageBuffer);
+        const cachedResult = getFromCache(imageHash);
+        if (cachedResult) {
+            return cachedResult;
+        }
         
         // 파일 확장자 확인
         const fileExtension = path.extname(imagePath).toLowerCase();
@@ -133,17 +180,7 @@ async function analyzeImageWithGPT(imagePath) {
                     content: [
                         {
                             type: "text",
-                            text: `이 이미지에 있는 쓰레기를 분석하여 다음 JSON 형식으로 응답해주세요:
-
-{
-  "wasteType": "일반쓰레기|재활용품|음식물쓰레기|유해폐기물",
-  "subType": "세부 분류 (예: 플라스틱병, 종이, 유리병, 캔, 전자제품 등)",
-  "recyclingMark": "재활용 마크 종류 (PET, PP, PE, PS, PVC, 종이, 유리, 알루미늄, 철 등) - 재활용품이 아닌 경우 '해당없음'",
-  "description": "분류 이유와 처리 방법에 대한 간단한 설명",
-  "disposalMethod": "올바른 처리 방법 (예: 일반쓰레기봉투, 재활용품수거함, 음식물쓰레기통, 유해폐기물수거함)"
-}
-
-반드시 유효한 JSON 형식으로만 응답해주세요.`
+                            text: WASTE_ANALYSIS_PROMPT
                         },
                         {
                             type: "image_url",
@@ -154,10 +191,11 @@ async function analyzeImageWithGPT(imagePath) {
                     ]
                 }
             ],
-            max_tokens: 500
+            max_tokens: 200
         });
 
         console.log('✅ GPT API 응답 성공');
+        console.log('📊 실제 토큰 사용량:', response.usage);
 
         // JSON 응답 파싱
         let analysisData;
@@ -179,11 +217,23 @@ async function analyzeImageWithGPT(imagePath) {
             };
         }
 
-        return {
+        const result = {
             analysis: analysisData,
             model: response.model,
-            usage: response.usage
+            usage: response.usage,
+            optimization: {
+                applied: optimizationApplied,
+                originalSize: imageInfo?.size,
+                optimizedSize: optimizationApplied ? (await getImageInfo(optimizedImagePath))?.size : imageInfo?.size,
+                originalPixels: `${imageInfo?.width}x${imageInfo?.height}`,
+                optimizedPixels: optimizationApplied ? `${(await getImageInfo(optimizedImagePath))?.width}x${(await getImageInfo(optimizedImagePath))?.height}` : `${imageInfo?.width}x${imageInfo?.height}`
+            }
         };
+        
+        // 결과를 캐시에 저장
+        saveToCache(imageHash, result);
+        
+        return result;
         
     } catch (error) {
         console.error('❌ GPT API 오류:', error);

@@ -44,6 +44,8 @@ async function analyzeImage() {
         
         // 결과 표시
         const analysis = data.analysis.analysis;
+        const optimization = data.analysis.optimization;
+        
         resultDiv.innerHTML = `
             <div class="result-container">
                 <h3>📊 분석 결과</h3>
@@ -74,8 +76,14 @@ async function analyzeImage() {
                     </div>
                     <div class="result-item">
                         <span class="label">📊 토큰 사용량:</span>
-                        <span class="value">${data.analysis.usage.total_tokens}</span>
+                        <span class="value">${data.analysis.usage.total_tokens} (입력: ${data.analysis.usage.prompt_tokens}, 출력: ${data.analysis.usage.completion_tokens})</span>
                     </div>
+                    ${optimization ? `
+                    <div class="result-item">
+                        <span class="label">⚡ 최적화:</span>
+                        <span class="value">${optimization.applied ? '✅ 적용됨 (400px 초과)' : '❌ 불필요 (400px 이하)'} ${optimization.applied ? `(${optimization.originalPixels} → ${optimization.optimizedPixels}, ${Math.round(optimization.originalSize/1024)}KB → ${Math.round(optimization.optimizedSize/1024)}KB)` : `(${optimization.originalPixels})`}</span>
+                    </div>
+                    ` : ''}
                 </div>
             </div>
         `;
