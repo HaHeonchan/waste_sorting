@@ -1,0 +1,22 @@
+[
+  {
+    "report_id": 1,
+    "user_id": 1,
+    "title": "14141",
+    "content": "미누언엄리나",
+    "reward": "c",
+    "image_url": "/uploads/1753109593811_307681598.png",
+    "likes": 6,
+    "created_at": "2025-07-21T14:53:13.814Z"
+  },
+  {
+    "report_id": 2,
+    "user_id": 1,
+    "title": "ㄻㅈㄻ",
+    "content": "ㅁㄷㄻㄷ",
+    "reward": "e",
+    "image_url": "/uploads/1753110115392_198127270.png",
+    "likes": 0,
+    "created_at": "2025-07-21T15:01:55.397Z"
+  }
+]
