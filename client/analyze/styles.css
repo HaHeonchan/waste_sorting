@@ -1,0 +1,202 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    font-weight: 700;
+}
+
+.upload-section {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    border: 2px dashed #ddd;
+    border-radius: 15px;
+    background: #f8f9fa;
+}
+
+.upload-section h3 {
+    color: #555;
+    margin-bottom: 10px;
+    font-size: 1.3em;
+}
+
+.upload-section p {
+    color: #777;
+    margin-bottom: 20px;
+    font-size: 0.9em;
+}
+
+#imageInput {
+    display: none;
+}
+
+.upload-btn {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+.preview {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 15px;
+}
+
+.preview h3 {
+    color: #555;
+    margin-bottom: 15px;
+}
+
+#previewImage {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.loading {
+    text-align: center;
+    padding: 30px;
+    color: #667eea;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.result-container {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-top: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.result-container h3 {
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    text-align: center;
+}
+
+.analysis-result {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.analysis-result {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.result-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid rgba(255, 255, 255, 0.3);
+}
+
+.result-item .label {
+    display: inline-block;
+    width: 120px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-right: 10px;
+}
+
+.result-item .value {
+    font-weight: 500;
+    color: #fff;
+}
+
+/* 쓰레기 종류별 색상 */
+.value.recyclable {
+    color: #4CAF50;
+    font-weight: 700;
+}
+
+.value.food-waste {
+    color: #FF9800;
+    font-weight: 700;
+}
+
+.value.hazardous {
+    color: #F44336;
+    font-weight: 700;
+}
+
+.value.general-waste {
+    color: #9E9E9E;
+    font-weight: 700;
+}
+
+.error {
+    background: #ff6b6b;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin-top: 20px;
+    font-weight: 600;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    h1 {
+        font-size: 2em;
+    }
+    
+    .upload-section {
+        padding: 20px;
+    }
+    
+    .upload-btn {
+        padding: 12px 25px;
+        font-size: 1em;
+    }
+} 
