@@ -41,10 +41,14 @@ async function analyzeImage() {
         }
 
         const data = await response.json();
+        console.log('서버 응답 데이터:', data); // 디버깅용
         
         // 결과 표시
         const analysis = data.analysis.analysis;
-        const optimization = data.analysis.optimization;
+        const optimization = data.optimization;
+        const textAnalysis = data.textAnalysis;
+        const apiUsage = data.apiUsage;
+        const isTextBasedAnalysis = data.analysis.textAnalysisSource;
 
         resultDiv.innerHTML = `
             <div class="result-container">
@@ -70,14 +74,52 @@ async function analyzeImage() {
                         <span class="label">🗑️ 처리 방법:</span>
                         <span class="value">${analysis.disposalMethod}</span>
                     </div>
+                    ${analysis.confidence ? `
+                    <div class="result-item">
+                        <span class="label">🎯 분석 신뢰도:</span>
+                        <span class="value">${Math.round(analysis.confidence * 100)}%</span>
+                    </div>
+                    ` : ''}
                     <div class="result-item">
                         <span class="label">🤖 모델:</span>
-                        <span class="value">${data.analysis.model}</span>
+                        <span class="value">${data.analysis.model} ${isTextBasedAnalysis ? '(텍스트 기반 분석)' : '(이미지 기반 분석)'}</span>
                     </div>
+                    ${apiUsage ? `
                     <div class="result-item">
-                        <span class="label">📊 토큰 사용량:</span>
-                        <span class="value">${data.analysis.usage.total_tokens} (입력: ${data.analysis.usage.prompt_tokens}, 출력: ${data.analysis.usage.completion_tokens})</span>
+                        <span class="label">📊 API 사용량:</span>
+                        <span class="value">
+                            <div class="api-usage-item">
+                                <strong>🤖 OpenAI:</strong> ${apiUsage.openAI?.total_tokens || 0} 토큰 
+                                (입력: ${apiUsage.openAI?.prompt_tokens || 0}, 출력: ${apiUsage.openAI?.completion_tokens || 0})
+                            </div>
+                            ${apiUsage.googleVision ? `
+                            <div class="api-usage-item">
+                                <strong>🔍 Google Vision:</strong> ${apiUsage.googleVision.estimatedTokens || 0} 토큰 추정 
+                                (이미지: ${Math.round(apiUsage.googleVision.imageSize/1024)}KB, 텍스트 영역: ${apiUsage.googleVision.textRegions}개)
+                            </div>
+                            ` : ''}
+                            <div class="api-usage-item total">
+                                <strong>📈 총 사용량:</strong> ${apiUsage.total.estimatedTokens} 토큰 추정
+                            </div>
+                        </span>
                     </div>
+                    ` : ''}
+                    ${analysis.textAnalysisSummary ? `
+                    <div class="result-item">
+                        <span class="label">📝 텍스트 분석 요약:</span>
+                        <span class="value">${analysis.textAnalysisSummary}</span>
+                    </div>
+                    ` : ''}
+                    ${analysis.components && analysis.components.length > 0 ? `
+                    <div class="result-item">
+                        <span class="label">🧩 복합 제품 구성:</span>
+                        <span class="value">
+                            ${analysis.components.map(component => 
+                                `<div class="component-item">${component.part}: <strong>${component.wasteType}</strong> (${component.disposalMethod})</div>`
+                            ).join('')}
+                        </span>
+                    </div>
+                    ` : ''}
                     ${optimization ? `
                     <div class="result-item">
                         <span class="label">⚡ 최적화:</span>
@@ -85,6 +127,46 @@ async function analyzeImage() {
                     </div>
                     ` : ''}
                 </div>
+                
+                ${textAnalysis ? `
+                <div class="logo-detection-section">
+                    <h3>🔍 텍스트 분석 결과</h3>
+                    <div class="logo-result">
+                        <div class="result-item">
+                            <span class="label">♻️ 분리수거 마크:</span>
+                            <span class="value ${textAnalysis.hasRecyclingMarks ? 'recyclable' : 'general-waste'}">${textAnalysis.hasRecyclingMarks ? '✅ 발견됨' : '❌ 발견되지 않음'}</span>
+                        </div>
+                        ${textAnalysis.confidence > 0 ? `
+                        <div class="result-item">
+                            <span class="label">🎯 탐지 신뢰도:</span>
+                            <span class="value">${Math.round(textAnalysis.confidence * 100)}%</span>
+                        </div>
+                        ` : ''}
+                        ${textAnalysis.summary ? `
+                        <div class="result-item">
+                            <span class="label">📝 탐지 요약:</span>
+                            <span class="value">${textAnalysis.summary}</span>
+                        </div>
+                        ` : ''}
+                        ${textAnalysis.recyclingKeywords && textAnalysis.recyclingKeywords.length > 0 ? `
+                        <div class="result-item">
+                            <span class="label">🔤 분리수거 키워드:</span>
+                            <span class="value">${textAnalysis.recyclingKeywords.join(', ')}</span>
+                        </div>
+                        ` : ''}
+                        ${textAnalysis.complexAnalysis && textAnalysis.complexAnalysis.length > 0 ? `
+                        <div class="result-item">
+                            <span class="label">📋 복합 분석 결과:</span>
+                            <span class="value">
+                                ${textAnalysis.complexAnalysis.map(item => 
+                                    `<div class="complex-item">${item.part}: <strong>${item.wasteType}</strong></div>`
+                                ).join('')}
+                            </span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                ` : ''}
             </div>
         `;
 

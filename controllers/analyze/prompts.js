@@ -1,51 +1,65 @@
 // 이미지 분석을 위한 프롬프트 정의
 
-const WASTE_ANALYSIS_PROMPT = `이 이미지에 있는 쓰레기를 분석하여 다음 JSON 형식으로 응답해주세요:
-
-**분류 우선순위:**
-1. **재활용 마크 확인**: 제품에 표시된 재활용 마크(PET, PP, PE, PS, PVC, HDPE, LDPE, 종이, 유리, 알루미늄, 철, 비닐류류, 플라스틱 등)를 우선적으로 확인하여 분류
-2. **마크가 없는 경우**: 물체의 재질과 형태를 보고 분류
+const WASTE_ANALYSIS_PROMPT = `이미지의 쓰레기를 분석하여 JSON으로 응답:
 
 {
-  "wasteType": "일반쓰레기|재활용품|음식물쓰레기|유해폐기물|분석불가",
-  "subType": "세부 분류 (예: 플라스틱병, 종이, 유리병, 캔, 전자제품, 비닐류, 플라스틱류, 기타 등)",
-  "recyclingMark": "재활용 마크 종류 (PET, PP, PE, PS, PVC, 종이, 유리, 알루미늄, 철 등) - 재활용품이 아닌 경우 '해당없음'",
-  "description": "친구가 말하는듯한 말투로 사진에 대한 한줄평을 추가해주세요. 재활용 마크를 확인했다면 그 내용도 포함해주세요.",
-  "disposalMethod": "올바른 처리 방법 (예: 일반쓰레기봉투, 재활용품수거함, 음식물쓰레기통, 유해폐기물수거함)"
+  "wasteType": "플라스틱|종이|유리|캔류|비닐류|일반쓰레기|기타|복합",
+  "subType": "PET|HDPE|LDPE|PP|PS|OTHER|철|알미늄|유리|일반팩|멸균팩|복합",
+  "recyclingMark": "재활용 마크 또는 '해당없음'",
+  "description": "친근한 설명",
+  "disposalMethod": "처리 방법",
+  "components": [
+    {
+      "part": "부분명",
+      "wasteType": "분류",
+      "disposalMethod": "처리방법"
+    }
+  ]
 }
 
-**재활용 마크 예시:**
-- PET: 투명한 플라스틱병 (음료수, 물병)
-- PP: 불투명한 플라스틱 용기 (요구르트, 샴푸)
-- PE: 비닐봉투, 포장재
-- PS: 스티로폼, 일회용 컵
-- PVC: 파이프, 전선 피복
-- 종이: 종이팩, 골판지
-- 유리: 유리병, 유리컵
-- 알루미늄: 알루미늄캔
-- 철: 철캔, 통조림캔
-- 비닐: 비닐봉투, 비닐팩
-- 플라스틱: 플라스틱병, 플라스틱통
-- HDPE: 하드플라스틱
-- LDPE: 소플라스틱
+복합 제품의 경우 components 배열에 각 부분별 분류를 포함하세요.
 
-반드시 유효한 JSON 형식으로만 응답해주세요.`;
+예시:
+- "뚜껑+라벨: 플라스틱, 용기: 일반쓰레기" → wasteType: "복합", components: [{"part": "뚜껑+라벨", "wasteType": "플라스틱", "disposalMethod": "플라스틱 재활용함"}, {"part": "용기", "wasteType": "일반쓰레기", "disposalMethod": "일반쓰레기봉투"}]
+- 단일 제품 → components 배열 비우기`;
 
 // 다른 프롬프트들도 추가 가능
-const SIMPLE_CLASSIFICATION_PROMPT = `이 이미지에 있는 쓰레기를 다음 카테고리 중 하나로 분류해주세요: 일반쓰레기, 재활용품, 음식물쓰레기, 유해폐기물. 분류 이유도 간단히 설명해주세요.`;
+const SIMPLE_CLASSIFICATION_PROMPT = `쓰레기를 분류: 일반쓰레기, 재활용품, 음식물쓰레기, 유해폐기물. 이유도 설명.`;
 
-const DETAILED_ANALYSIS_PROMPT = `이 이미지에 있는 쓰레기를 상세히 분석해주세요:
+const DETAILED_ANALYSIS_PROMPT = `쓰레기 상세 분석: 종류, 세부분류, 재활용여부, 처리방법, 환경영향. JSON으로 응답.`;
 
-1. 쓰레기 종류 (일반쓰레기/재활용품/음식물쓰레기/유해폐기물)
-2. 세부 분류 (플라스틱 종류, 종이 종류 등)
-3. 재활용 가능 여부
-4. 올바른 처리 방법
-5. 환경 영향
+// 텍스트 분석 결과를 기반으로 한 분류 프롬프트 (최적화)
+const TEXT_BASED_ANALYSIS_PROMPT = `텍스트 분석 결과를 바탕으로 쓰레기 분류:
 
-JSON 형식으로 응답해주세요.`;
+{textAnalysisResults}
+
+JSON 형식으로 응답:
+{
+  "wasteType": "플라스틱|종이|유리|캔류|비닐류|일반쓰레기|기타|복합",
+  "subType": "PET|HDPE|LDPE|PP|PS|OTHER|철|알미늄|유리|일반팩|멸균팩|복합 (해당하지 않을경우 wasteType과 동일)",
+  "recyclingMark": "재활용 마크 또는 '해당없음'",
+  "description": "친근한 설명 (복합 분석시 부분별 처리 명시)",
+  "disposalMethod": "처리 방법 (복합시 부분별 제시)",
+  "confidence": 0.95,
+  "textAnalysisSummary": "주요 정보 요약",
+  "components": [
+    {
+      "part": "부분명",
+      "wasteType": "분류",
+      "disposalMethod": "처리방법"
+    }
+  ]
+}
+
+복합 제품의 경우 components 배열에 각 부분별 분류를 포함하세요.
+
+예시:
+- "뚜껑+라벨: 플라스틱, 용기: 일반쓰레기" → wasteType: "복합", components: [{"part": "뚜껑+라벨", "wasteType": "플라스틱", "disposalMethod": "플라스틱 재활용함"}, {"part": "용기", "wasteType": "일반쓰레기", "disposalMethod": "일반쓰레기봉투"}]
+- 단일 제품 → components 배열 비우기`;
 
 module.exports = {
     WASTE_ANALYSIS_PROMPT,
     SIMPLE_CLASSIFICATION_PROMPT,
-    DETAILED_ANALYSIS_PROMPT
+    DETAILED_ANALYSIS_PROMPT,
+    TEXT_BASED_ANALYSIS_PROMPT
 }; 

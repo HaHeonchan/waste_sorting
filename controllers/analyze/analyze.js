@@ -3,9 +3,10 @@ const OpenAI = require('openai');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const { WASTE_ANALYSIS_PROMPT } = require('./prompts');
-const { optimizeImage, optimizeForTextAnalysis, getImageInfo, isImageTooLarge } = require('./image-optimizer');
+const { TEXT_BASED_ANALYSIS_PROMPT } = require('./prompts');
+const { analyzeImageWithLogoDetection } = require('./logo-detector');
 const { generateImageHash, getFromCache, saveToCache } = require('./cache');
+const { optimizeForTextAnalysis, getImageInfo, isImageTooLarge } = require('./image-optimizer');
 
 // OpenAI 클라이언트 초기화
 if (!process.env.OPENAI_API_KEY) {
@@ -69,13 +70,79 @@ const analyzeController = {
                 imagePath = req.file.path;
                 console.log('업로드된 이미지 경로:', imagePath);
                 
-                // OpenAI Vision API를 사용하여 이미지 분석
-                const analysis = await analyzeImageWithGPT(imagePath);
+                // 이미지 정보 확인
+                const imageInfo = await getImageInfo(imagePath);
+                console.log('📊 원본 이미지 정보:', imageInfo);
                 
-                res.json({
-                    message: '이미지 분석 완료',
-                    analysis: analysis
-                });
+                // 캐시 확인
+                const imageBuffer = fs.readFileSync(imagePath);
+                const imageHash = generateImageHash(imageBuffer);
+                const cachedResult = getFromCache(imageHash);
+                if (cachedResult) {
+                    console.log('📋 캐시에서 결과 반환');
+                    return res.json(cachedResult);
+                }
+                
+                // 이미지 최적화 (필요한 경우)
+                let optimizedImagePath = imagePath;
+                let optimizationApplied = false;
+                
+                if (await isImageTooLarge(imagePath)) {
+                    console.log('📦 이미지 최적화 중...');
+                    optimizedImagePath = await optimizeForTextAnalysis(imagePath);
+                    console.log('✅ 이미지 최적화 완료:', optimizedImagePath);
+                    optimizationApplied = true;
+                    
+                    // 최적화된 이미지 정보 확인
+                    const optimizedInfo = await getImageInfo(optimizedImagePath);
+                    console.log('📊 최적화된 이미지 정보:', optimizedInfo);
+                } else {
+                    console.log('✅ 이미지 최적화 생략');
+                }
+                
+                // Google Vision API를 사용한 텍스트 분석
+                const textAnalysis = await analyzeImageWithLogoDetection(optimizedImagePath);
+                
+                let finalAnalysis;
+                
+                // 텍스트 분석 결과를 GPT에게 전달하여 분석
+                console.log('📝 텍스트 분석 결과를 GPT에게 전달하여 분석합니다.');
+                finalAnalysis = await analyzeWithTextResults(textAnalysis);
+                
+                // API 사용량 통합
+                console.log('📊 Google Vision 사용량:', textAnalysis.usage);
+                console.log('📊 OpenAI 사용량:', finalAnalysis.usage);
+                
+                const apiUsage = {
+                    googleVision: textAnalysis.usage || null,
+                    openAI: finalAnalysis.usage || null,
+                    total: {
+                        estimatedTokens: (textAnalysis.usage?.estimatedTokens || 0) + (finalAnalysis.usage?.total_tokens || 0),
+                        imageSize: textAnalysis.usage?.imageSize || 0,
+                        textRegions: textAnalysis.usage?.textRegions || 0
+                    }
+                };
+                
+                console.log('📊 통합 API 사용량:', apiUsage);
+                
+                const result = {
+                    message: '이미지 분석 완료 (텍스트 기반 분석 포함)',
+                    analysis: finalAnalysis,
+                    textAnalysis: textAnalysis,
+                    apiUsage: apiUsage,
+                    optimization: {
+                        applied: optimizationApplied,
+                        originalSize: imageInfo?.size,
+                        optimizedSize: optimizationApplied ? (await getImageInfo(optimizedImagePath))?.size : imageInfo?.size,
+                        originalPixels: `${imageInfo?.width}x${imageInfo?.height}`,
+                        optimizedPixels: optimizationApplied ? `${(await getImageInfo(optimizedImagePath))?.width}x${(await getImageInfo(optimizedImagePath))?.height}` : `${imageInfo?.width}x${imageInfo?.height}`
+                    }
+                };
+                
+                // 결과를 캐시에 저장
+                saveToCache(imageHash, result);
+                
+                res.json(result);
                 
             } catch (error) {
                 console.error('이미지 분석 오류:', error);
@@ -84,13 +151,23 @@ const analyzeController = {
                     details: error.message 
                 });
             } finally {
-                // 분석 완료 후 임시 파일 삭제
+                // 분석 완료 후 임시 파일들 삭제
                 if (imagePath && fs.existsSync(imagePath)) {
                     try {
                         fs.unlinkSync(imagePath);
-                        console.log('임시 파일 삭제 완료:', imagePath);
+                        console.log('원본 임시 파일 삭제 완료:', imagePath);
                     } catch (deleteError) {
-                        console.error('임시 파일 삭제 실패:', deleteError);
+                        console.error('원본 임시 파일 삭제 실패:', deleteError);
+                    }
+                }
+                
+                // 최적화된 이미지 파일도 삭제 (있는 경우)
+                if (optimizedImagePath && optimizedImagePath !== imagePath && fs.existsSync(optimizedImagePath)) {
+                    try {
+                        fs.unlinkSync(optimizedImagePath);
+                        console.log('최적화된 임시 파일 삭제 완료:', optimizedImagePath);
+                    } catch (deleteError) {
+                        console.error('최적화된 임시 파일 삭제 실패:', deleteError);
                     }
                 }
             }
@@ -98,161 +175,65 @@ const analyzeController = {
     ]
 };
 
-// GPT Vision API를 사용한 이미지 분석 함수
-async function analyzeImageWithGPT(imagePath) {
+
+
+// 텍스트 분석 결과를 GPT에게 전달하여 분류하는 함수
+async function analyzeWithTextResults(textAnalysisResults) {
     try {
-        // API 키 확인
-        if (!process.env.OPENAI_API_KEY) {
-            throw new Error('OpenAI API 키가 설정되지 않았습니다.');
-        }
-
-        console.log('🔍 이미지 분석 시작:', imagePath);
+        console.log('🤖 텍스트 분석 결과를 GPT에게 전달하여 분류 시작');
         
-        // 이미지 정보 확인
-        const imageInfo = await getImageInfo(imagePath);
-        console.log('📊 원본 이미지 정보:', imageInfo);
+        // 텍스트 분석 결과를 프롬프트에 삽입
+        const prompt = TEXT_BASED_ANALYSIS_PROMPT.replace(
+            '{textAnalysisResults}',
+            JSON.stringify(textAnalysisResults, null, 2)
+        );
         
-        // 픽셀 크기 확인
-        const maxDimension = Math.max(imageInfo.width, imageInfo.height);
-        console.log(`📏 최대 픽셀 크기: ${maxDimension}px (${imageInfo.width}x${imageInfo.height})`);
-        console.log(`🎯 최적화 기준: 400px 초과 시 최적화 적용`);
-        
-        // 이미지 최적화 (필요한 경우)
-        let optimizedImagePath = imagePath;
-        let optimizationApplied = false;
-        
-        if (await isImageTooLarge(imagePath)) {
-            console.log('📦 이미지 최적화 중...');
-            optimizedImagePath = await optimizeForTextAnalysis(imagePath);
-            console.log('✅ 이미지 최적화 완료:', optimizedImagePath);
-            optimizationApplied = true;
-            
-            // 최적화된 이미지 정보 확인
-            const optimizedInfo = await getImageInfo(optimizedImagePath);
-            console.log('📊 최적화된 이미지 정보:', optimizedInfo);
-        } else {
-            console.log('✅ 이미지 최적화 생략');
-        }
-        
-        // 이미지 파일을 base64로 인코딩
-        const imageBuffer = fs.readFileSync(optimizedImagePath);
-        const base64Image = imageBuffer.toString('base64');
-        
-        console.log('📊 이미지 크기:', imageBuffer.length, 'bytes');
-        
-        // 정확한 토큰 계산 (Vision API 기준)
-        const imageTokens = Math.ceil(imageBuffer.length / 4 * 1.37); // Base64 토큰
-        const promptTokens = WASTE_ANALYSIS_PROMPT.length / 4; // 프롬프트 토큰
-        const totalInputTokens = imageTokens + promptTokens;
-        
-        console.log('💰 토큰 사용량 분석:');
-        console.log('   - 이미지 토큰:', imageTokens);
-        console.log('   - 프롬프트 토큰:', Math.ceil(promptTokens));
-        console.log('   - 총 입력 토큰:', Math.ceil(totalInputTokens));
-        console.log('   - 최적화 적용:', optimizationApplied ? '✅ 예' : '❌ 아니오');
-        
-        // 캐시 확인
-        const imageHash = generateImageHash(imageBuffer);
-        const cachedResult = getFromCache(imageHash);
-        if (cachedResult) {
-            return cachedResult;
-        }
-        
-        // 파일 확장자 확인
-        const fileExtension = path.extname(imagePath).toLowerCase();
-        let mimeType = 'image/jpeg'; // 기본값
-        
-        if (fileExtension === '.png') {
-            mimeType = 'image/png';
-        } else if (fileExtension === '.gif') {
-            mimeType = 'image/gif';
-        } else if (fileExtension === '.webp') {
-            mimeType = 'image/webp';
-        }
-
-        console.log('📁 파일 형식:', mimeType);
-
         const response = await openai.chat.completions.create({
-            model: "gpt-4.1-mini",
+            model: "gpt-4o-mini",
             messages: [
                 {
                     role: "user",
-                    content: [
-                        {
-                            type: "text",
-                            text: WASTE_ANALYSIS_PROMPT
-                        },
-                        {
-                            type: "image_url",
-                            image_url: {
-                                url: `data:${mimeType};base64,${base64Image}`
-                            }
-                        }
-                    ]
+                    content: prompt
                 }
             ],
-            max_tokens: 200
+            max_tokens: 300
         });
 
-        console.log('✅ GPT API 응답 성공');
-        console.log('📊 실제 토큰 사용량:', response.usage);
-
+        console.log('✅ GPT 텍스트 기반 분석 완료');
+        
         // JSON 응답 파싱
         let analysisData;
         try {
             const content = response.choices[0].message.content;
-            // JSON 부분만 추출 (```json과 ``` 사이의 내용)
             const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
             const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : content;
             analysisData = JSON.parse(jsonString);
         } catch (parseError) {
             console.error('JSON 파싱 오류:', parseError);
-            // 파싱 실패 시 기본 구조로 변환
             analysisData = {
                 wasteType: "분류 실패",
                 subType: "알 수 없음",
                 recyclingMark: "해당없음",
                 description: response.choices[0].message.content,
-                disposalMethod: "확인 필요"
+                disposalMethod: "확인 필요",
+                confidence: 0,
+                textAnalysisSummary: "GPT 분석 실패"
             };
         }
 
-        const result = {
+        return {
             analysis: analysisData,
             model: response.model,
             usage: response.usage,
-            optimization: {
-                applied: optimizationApplied,
-                originalSize: imageInfo?.size,
-                optimizedSize: optimizationApplied ? (await getImageInfo(optimizedImagePath))?.size : imageInfo?.size,
-                originalPixels: `${imageInfo?.width}x${imageInfo?.height}`,
-                optimizedPixels: optimizationApplied ? `${(await getImageInfo(optimizedImagePath))?.width}x${(await getImageInfo(optimizedImagePath))?.height}` : `${imageInfo?.width}x${imageInfo?.height}`
-            }
+            textAnalysisSource: textAnalysisResults
         };
         
-        // 결과를 캐시에 저장
-        saveToCache(imageHash, result);
-        
-        return result;
-        
     } catch (error) {
-        console.error('❌ GPT API 오류:', error);
-        
-        if (error.response) {
-            console.error('📋 응답 상태:', error.response.status);
-            console.error('📋 응답 데이터:', error.response.data);
-        }
-        
-        if (error.code) {
-            console.error('🔢 오류 코드:', error.code);
-        }
-        
-        if (error.message) {
-            console.error('💬 오류 메시지:', error.message);
-        }
-        
-        throw new Error(`이미지 분석에 실패했습니다: ${error.message}`);
+        console.error('❌ GPT 텍스트 기반 분석 오류:', error);
+        throw new Error(`텍스트 기반 분석에 실패했습니다: ${error.message}`);
     }
 }
+
+
 
 module.exports = analyzeController; 

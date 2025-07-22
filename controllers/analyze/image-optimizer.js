@@ -2,7 +2,7 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
-const MAX_PIXEL_SIZE = 400;
+const MAX_PIXEL_SIZE = 2048;
 
 // 이미지 최적화 함수
 async function optimizeImage(imagePath) {
@@ -10,7 +10,7 @@ async function optimizeImage(imagePath) {
         const outputPath = imagePath.replace(/\.[^/.]+$/, '_optimized.jpg');
         
         await sharp(imagePath)
-            .resize(512, 512, { // 더 작은 크기로 조정
+            .resize(MAX_PIXEL_SIZE, MAX_PIXEL_SIZE, { // 더 작은 크기로 조정
                 fit: 'inside',
                 withoutEnlargement: true
             })
