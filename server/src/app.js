@@ -1,22 +1,19 @@
 const express = require('express');
 const app = express();
-const incentivesRoutes = require('./routes/complain.routes');
 const path = require('path');
-const multer = require('multer');
-
-// 1. 파일 업로드용 폴더(src/uploads) 및 multer 설정
-const uploadDir = path.join(__dirname, 'uploads'); // src/uploads
-
-// 업로드 폴더 없으면 생성(최초 1회)
 const fs = require('fs');
+const multer = require('multer');
+const complainRoutes = require('./routes/complain.routes');
+
+// 1. 업로드 디렉토리 설정 (src/uploads)
+const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// 2. multer 저장 설정
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
+    destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => {
         const ext = path.extname(file.originalname);
         const filename = `${Date.now()}_${Math.round(Math.random() * 1E9)}${ext}`;
@@ -25,21 +22,21 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// 2. req.upload로 접근 가능하게 (라우터에서 사용)
-app.set('upload', upload);
-
-// 3. JSON 파싱
+// 3. 요청 본문 파싱
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 4. 정적 파일: client/index.html, 이미지 업로드
-app.use('/complain',express.static(path.join(__dirname, '../client')));
+// 4. 정적 파일 서빙 (이미지 등)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// 5. API (multer upload 객체를 routes에서 사용)
-app.use('/api', (req, res, next) => {
-    req.upload = upload; // router에서 req.upload로 사용
-    next();
-}, incentivesRoutes);
+// 5. 프론트엔드 정적 파일 서빙 (client 디렉토리)
+app.use('/complain', express.static(path.join(__dirname, '../../client')));
 
+// 6. API 라우팅 (upload 미들웨어 추가해서 req.upload 사용 가능하게)
+app.use('/api', (req, res, next) => {
+    req.upload = upload;
+    next();
+}, complainRoutes);
+
+// 7. app 객체 export (서버에서 listsen 가능하게)
 module.exports = app;

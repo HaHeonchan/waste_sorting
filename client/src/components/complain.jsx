@@ -29,23 +29,20 @@ export default function TrashReportBoard() {
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("desc");
   const [popupReport, setPopupReport] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    document.title = '분리배출 신고 게시판';
+    document.title = "분리배출 신고 게시판";
     fetchReports();
-  }, [sortBy, sortOrder]);
-
-  const fetchReportDetail = async (report_id) => {
-    const res = await fetch(`/api/reports/${report_id}`);
-    if (!res.ok) return alert("데이터 불러오기 실패");
-    const data = await res.json();
-    setPopupReport(data);
-  };
+  }, [sortBy, sortOrder, page]);
 
   const fetchReports = async () => {
-    const res = await fetch(`/api/reports?sortBy=${sortBy}&order=${sortOrder}`);
-    const list = await res.json();
-    setReports(list);
+    const sortParam = sortBy === "created_at" ? "date" : sortBy;
+    const res = await fetch(`/api/reports?sort=${sortParam}&order=${sortOrder}&page=${page}&limit=5`);
+    const result = await res.json();
+    setReports(result.data);
+    setTotalPages(Math.ceil(result.total / result.limit));
   };
 
   const handleSubmit = async (e) => {
@@ -57,13 +54,10 @@ export default function TrashReportBoard() {
     if (image) formData.append("image", image);
     await fetch("/api/reports", {
       method: "POST",
-      body: formData
+      body: formData,
     });
     setShowForm(false);
-    setTitle("");
-    setContent("");
-    setRewardType("");
-    setImage(null);
+    resetForm();
     fetchReports();
   };
 
@@ -75,23 +69,28 @@ export default function TrashReportBoard() {
   const handleEdit = async (e, id) => {
     e.preventDefault();
     const formData = new FormData();
-    formData.append("title", title); // ✅ 제목 추가
+    formData.append("title", title);
     formData.append("content", content);
     if (image) formData.append("image", image);
     await fetch(`/api/reports/${id}`, {
       method: "PUT",
-      body: formData
+      body: formData,
     });
     setShowEditForm(null);
-    setTitle("");
-    setContent("");
-    setImage(null);
+    resetForm();
     fetchReports();
   };
 
   const handleLike = async (id) => {
     await fetch(`/api/reports/${id}/like`, { method: "POST" });
     fetchReports();
+  };
+
+  const resetForm = () => {
+    setTitle("");
+    setContent("");
+    setRewardType("");
+    setImage(null);
   };
 
   return (
@@ -101,11 +100,11 @@ export default function TrashReportBoard() {
 
       <div style={{ marginTop: 16 }}>
         <label>정렬 기준: </label>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
           <option value="created_at">시간순</option>
           <option value="likes">추천순</option>
         </select>
-        <select value={sortOrder} onChange={e => setSortOrder(e.target.value)}>
+        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
           <option value="desc">내림차순</option>
           <option value="asc">오름차순</option>
         </select>
@@ -130,25 +129,25 @@ export default function TrashReportBoard() {
 
       <h2>전체 민원 목록</h2>
       {reports.map((r) => (
-        <div key={r.report_id} style={reportStyle}>
+        <div key={r._id || r.report_id} style={reportStyle}>
           <div><b>{r.title}</b></div>
           <div>{r.content}</div>
           {r.image_url && <img src={r.image_url} width="100" alt="report" style={{ margin: "8px 0" }} />}<br />
           <div><b>포상금 지급액:</b> {rewardAmountMap[r.reward] || '-'}</div>
           <div style={{ color: '#888', fontSize: '0.9em' }}>{new Date(r.created_at).toLocaleString()}</div>
           <div><b>추천수:</b> {r.likes || 0}</div>
-          <button onClick={() => handleLike(r.report_id)} style={{ color: 'green' }}>👍 추천</button>
+          <button onClick={() => handleLike(r._id || r.report_id)} style={{ color: 'green' }}>👍 추천</button>
           <button onClick={() => setPopupReport(r)} style={{ marginLeft: 8 }}>📢 신고</button>
-          <button onClick={() => handleDelete(r.report_id)} style={{ color: 'red', marginLeft: 8 }}>삭제</button>
+          <button onClick={() => handleDelete(r._id || r.report_id)} style={{ color: 'red', marginLeft: 8 }}>삭제</button>
           <button onClick={() => {
-            setShowEditForm(r.report_id);
-            setTitle(r.title);         // ✅ 제목 세팅
+            setShowEditForm(r._id || r.report_id);
+            setTitle(r.title);
             setContent(r.content);
             setImage(null);
           }} style={{ color: '#0a67d6', marginLeft: 8 }}>수정</button>
 
-          {showEditForm === r.report_id && (
-            <form onSubmit={(e) => handleEdit(e, r.report_id)} style={formStyle}>
+          {showEditForm === (r._id || r.report_id) && (
+            <form onSubmit={(e) => handleEdit(e, r._id || r.report_id)} style={formStyle}>
               <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목 수정" required /><br />
               <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} /><br />
               <textarea value={content} onChange={(e) => setContent(e.target.value)} required /><br />
@@ -158,6 +157,13 @@ export default function TrashReportBoard() {
           )}
         </div>
       ))}
+
+      {/* 페이지네이션 UI */}
+      <div style={{ marginTop: 24, textAlign: 'center' }}>
+        <button disabled={page === 1} onClick={() => setPage(page - 1)}>이전</button>
+        <span style={{ margin: "0 12px" }}>{page} / {totalPages}</span>
+        <button disabled={page === totalPages} onClick={() => setPage(page + 1)}>다음</button>
+      </div>
 
       {popupReport && (
         <div style={popupStyle}>
