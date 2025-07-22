@@ -11,7 +11,7 @@ const { optimizeForTextAnalysis, getImageInfo, isImageTooLarge } = require('./im
 // OpenAI 클라이언트 초기화
 if (!process.env.OPENAI_API_KEY) {
     console.error('❌ OPENAI_API_KEY가 설정되지 않았습니다!');
-    console.error('📝 .env 파일에 OPENAI_API_KEY=sk-your-actual-api-key를 추가해주세요.');
+    console.error('📝 .env 파일에 OPENAI_API_KEY를 추가해주세요.');
 }
 
 const openai = new OpenAI({
@@ -126,16 +126,17 @@ const analyzeController = {
                 console.log('📊 통합 API 사용량:', apiUsage);
                 
                 const result = {
-                    message: '이미지 분석 완료 (텍스트 기반 분석 포함)',
-                    analysis: finalAnalysis,
-                    textAnalysis: textAnalysis,
-                    apiUsage: apiUsage,
+                    message: '이미지 분석 완료',
+                    wasteType: finalAnalysis.analysis.wasteType,
+                    subType: finalAnalysis.analysis.subType,
+                    recyclingMark: finalAnalysis.analysis.recyclingMark,
+                    description: finalAnalysis.analysis.description,
+                    disposalMethod: finalAnalysis.analysis.disposalMethod,
+                    confidence: finalAnalysis.analysis.confidence,
                     optimization: {
                         applied: optimizationApplied,
                         originalSize: imageInfo?.size,
-                        optimizedSize: optimizationApplied ? (await getImageInfo(optimizedImagePath))?.size : imageInfo?.size,
-                        originalPixels: `${imageInfo?.width}x${imageInfo?.height}`,
-                        optimizedPixels: optimizationApplied ? `${(await getImageInfo(optimizedImagePath))?.width}x${(await getImageInfo(optimizedImagePath))?.height}` : `${imageInfo?.width}x${imageInfo?.height}`
+                        optimizedSize: optimizationApplied ? (await getImageInfo(optimizedImagePath))?.size : imageInfo?.size
                     }
                 };
                 
