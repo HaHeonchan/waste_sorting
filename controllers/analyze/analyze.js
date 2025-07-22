@@ -122,7 +122,7 @@ async function analyzeImageWithGPT(imagePath) {
         let optimizationApplied = false;
         
         if (await isImageTooLarge(imagePath)) {
-            console.log('📦 이미지 최적화 중... (400x400 픽셀 초과)');
+            console.log('📦 이미지 최적화 중...');
             optimizedImagePath = await optimizeForTextAnalysis(imagePath);
             console.log('✅ 이미지 최적화 완료:', optimizedImagePath);
             optimizationApplied = true;
@@ -131,7 +131,7 @@ async function analyzeImageWithGPT(imagePath) {
             const optimizedInfo = await getImageInfo(optimizedImagePath);
             console.log('📊 최적화된 이미지 정보:', optimizedInfo);
         } else {
-            console.log('✅ 이미지 픽셀이 400x400 이하여서 최적화 생략');
+            console.log('✅ 이미지 최적화 생략');
         }
         
         // 이미지 파일을 base64로 인코딩

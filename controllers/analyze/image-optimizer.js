@@ -2,6 +2,8 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
+const MAX_PIXEL_SIZE = 400;
+
 // 이미지 최적화 함수
 async function optimizeImage(imagePath) {
     try {
@@ -32,12 +34,12 @@ function getImageSize(imagePath) {
     return stats.size;
 }
 
-// 이미지 픽셀이 너무 큰지 확인 (400x400을 넘는 경우)
+// 이미지 픽셀이 너무 큰지 확인
 async function isImageTooLarge(imagePath) {
     try {
         const metadata = await sharp(imagePath).metadata();
         const maxDimension = Math.max(metadata.width, metadata.height);
-        return maxDimension > 400; // 400픽셀을 넘으면 최적화
+        return maxDimension > MAX_PIXEL_SIZE; // 해당 픽셀을 넘으면 최적화
     } catch (error) {
         console.error('이미지 크기 확인 실패:', error);
         // 에러 시 파일 크기로 판단
@@ -52,7 +54,7 @@ async function optimizeForTextAnalysis(imagePath) {
         const outputPath = imagePath.replace(/\.[^/.]+$/, '_text_optimized.jpg');
         
         await sharp(imagePath)
-            .resize(400, 400, { // 텍스트 분석에 충분한 크기
+            .resize(MAX_PIXEL_SIZE, MAX_PIXEL_SIZE, { // 텍스트 분석에 충분한 크기
                 fit: 'inside',
                 withoutEnlargement: true
             })

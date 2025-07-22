@@ -45,7 +45,7 @@ async function analyzeImage() {
         // 결과 표시
         const analysis = data.analysis.analysis;
         const optimization = data.analysis.optimization;
-        
+
         resultDiv.innerHTML = `
             <div class="result-container">
                 <h3>📊 분석 결과</h3>
