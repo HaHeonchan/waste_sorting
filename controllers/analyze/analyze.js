@@ -3,7 +3,7 @@ const OpenAI = require('openai');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const { TEXT_BASED_ANALYSIS_PROMPT } = require('./prompts');
+const { TEXT_BASED_ANALYSIS_PROMPT, DIRECT_IMAGE_ANALYSIS_PROMPT } = require('./prompts');
 const { analyzeImageWithLogoDetection } = require('./logo-detector');
 const { generateImageHash, getFromCache, saveToCache } = require('./cache');
 const { optimizeForTextAnalysis, getImageInfo, isImageTooLarge } = require('./image-optimizer');
@@ -105,9 +105,21 @@ const analyzeController = {
                 
                 let finalAnalysis;
                 
-                // 텍스트 분석 결과를 GPT에게 전달하여 분석
-                console.log('📝 텍스트 분석 결과를 GPT에게 전달하여 분석합니다.');
-                finalAnalysis = await analyzeWithTextResults(textAnalysis);
+                // 텍스트 분석 결과 확인
+                const hasRecyclingMarks = textAnalysis.hasRecyclingMarks;
+                const hasTextContent = textAnalysis.logoDetection && 
+                                     (textAnalysis.logoDetection.recyclingTexts.length > 0 || 
+                                      textAnalysis.logoDetection.recyclingMarks.length > 0);
+                
+                if (hasRecyclingMarks && hasTextContent) {
+                    // 텍스트 분석 결과를 GPT에게 전달하여 분석
+                    console.log('📝 텍스트 분석 결과를 GPT에게 전달하여 분석합니다.');
+                    finalAnalysis = await analyzeWithTextResults(textAnalysis);
+                } else {
+                    // 마크나 텍스트가 없는 경우 이미지를 직접 분석
+                    console.log('🖼️ 마크나 텍스트가 없어 이미지를 직접 분석합니다.');
+                    finalAnalysis = await analyzeImageDirectly(optimizedImagePath);
+                }
                 
                 // API 사용량 통합
                 console.log('📊 Google Vision 사용량:', textAnalysis.usage);
@@ -116,6 +128,7 @@ const analyzeController = {
                 const apiUsage = {
                     googleVision: textAnalysis.usage || null,
                     openAI: finalAnalysis.usage || null,
+                    analysisType: finalAnalysis.analysisType || "text_based",
                     total: {
                         estimatedTokens: (textAnalysis.usage?.estimatedTokens || 0) + (finalAnalysis.usage?.total_tokens || 0),
                         imageSize: textAnalysis.usage?.imageSize || 0,
@@ -133,6 +146,7 @@ const analyzeController = {
                     description: finalAnalysis.analysis.description,
                     disposalMethod: finalAnalysis.analysis.disposalMethod,
                     confidence: finalAnalysis.analysis.confidence,
+                    analysisType: finalAnalysis.analysisType || "text_based",
                     optimization: {
                         applied: optimizationApplied,
                         originalSize: imageInfo?.size,
@@ -232,6 +246,72 @@ async function analyzeWithTextResults(textAnalysisResults) {
     } catch (error) {
         console.error('❌ GPT 텍스트 기반 분석 오류:', error);
         throw new Error(`텍스트 기반 분석에 실패했습니다: ${error.message}`);
+    }
+}
+
+// 이미지를 직접 분석하는 함수
+async function analyzeImageDirectly(imagePath) {
+    try {
+        console.log('🤖 이미지를 직접 분석하여 분류 시작');
+        
+        // 이미지를 base64로 인코딩
+        const imageBuffer = fs.readFileSync(imagePath);
+        const base64Image = imageBuffer.toString('base64');
+        
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: DIRECT_IMAGE_ANALYSIS_PROMPT
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/jpeg;base64,${base64Image}`
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens: 300
+        });
+
+        console.log('✅ GPT 이미지 직접 분석 완료');
+        
+        // JSON 응답 파싱
+        let analysisData;
+        try {
+            const content = response.choices[0].message.content;
+            const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
+            const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : content;
+            analysisData = JSON.parse(jsonString);
+        } catch (parseError) {
+            console.error('JSON 파싱 오류:', parseError);
+            analysisData = {
+                wasteType: "분류 실패",
+                subType: "알 수 없음",
+                recyclingMark: "해당없음",
+                description: response.choices[0].message.content,
+                disposalMethod: "확인 필요",
+                confidence: 0,
+                imageAnalysisSummary: "GPT 이미지 분석 실패"
+            };
+        }
+
+        return {
+            analysis: analysisData,
+            model: response.model,
+            usage: response.usage,
+            analysisType: "direct_image"
+        };
+        
+    } catch (error) {
+        console.error('❌ GPT 이미지 직접 분석 오류:', error);
+        throw new Error(`이미지 직접 분석에 실패했습니다: ${error.message}`);
     }
 }
 
