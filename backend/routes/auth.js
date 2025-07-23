@@ -7,12 +7,26 @@ router.get('/google', passport.authenticate('google', {
     scope: ['profile', 'email']
 }));
 
+// 프론트엔드용 구글 로그인 (팝업 창용)
+router.get('/google/popup', passport.authenticate('google', {
+    scope: ['profile', 'email']
+}));
+
 // 구글 로그인 콜백
 router.get('/google/callback', 
     passport.authenticate('google', { 
-        failureRedirect: '/login',
-        successRedirect: '/'
-    })
+        failureRedirect: '/login?status=error&message=로그인 실패',
+        failureFlash: true
+    }),
+    (req, res) => {
+        // 로그인 성공 시 적절한 페이지로 리다이렉트
+        if (req.isAuthenticated()) {
+            // 로그인 성공 페이지로 리다이렉트
+            res.redirect('/login?status=success&message=성공적으로 로그인되었습니다.');
+        } else {
+            res.redirect('/login?status=error&message=로그인 처리 중 오류가 발생했습니다.');
+        }
+    }
 );
 
 // 로그아웃
