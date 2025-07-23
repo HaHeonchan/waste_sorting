@@ -1,4 +1,4 @@
-const { readReports, writeReports, getNextReportId } = require('../models/complain.model');
+const { readReports, writeReports, getNextReportId } = require('../models/report.model');
 
 // 1. 민원 목록 조회 (정렬 + 페이지네이션 지원)
 exports.listReports = (req, res) => {
