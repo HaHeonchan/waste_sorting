@@ -15,8 +15,8 @@ const crypto = require('crypto');
 
 // 환경 변수에서 설정 가져오기
 const CLOUDINARY_CONFIG = {
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dogfzdt6c',
-    api_key: process.env.CLOUDINARY_API_KEY || '217249691364428',
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 };
 
