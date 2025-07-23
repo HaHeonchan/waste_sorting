@@ -12,13 +12,33 @@ const fs = require('fs');
 
 let client = null;
 try {
-    client = new vision.ImageAnnotatorClient({
-        keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
-    });
-    console.log('✅ Google Vision API 클라이언트 초기화 성공');
+    // 여러 인증 방법 시도
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        // 방법 1: 서비스 계정 키 파일 경로
+        client = new vision.ImageAnnotatorClient({
+            keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
+        });
+        console.log('✅ Google Vision API 클라이언트 초기화 성공 (서비스 계정 키 파일 사용)');
+    } else if (process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_PRIVATE_KEY && process.env.GOOGLE_CLOUD_CLIENT_EMAIL) {
+        // 방법 2: 환경 변수로 직접 설정
+        client = new vision.ImageAnnotatorClient({
+            projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+            credentials: {
+                private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY.replace(/\\n/g, '\n'),
+                client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL
+            }
+        });
+        console.log('✅ Google Vision API 클라이언트 초기화 성공 (환경 변수 사용)');
+    } else {
+        console.log('⚠️ Google Cloud 인증 정보가 설정되지 않았습니다.');
+        console.log('📝 다음 중 하나의 방법으로 설정하세요:');
+        console.log('   1. GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account-key.json');
+        console.log('   2. GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_PRIVATE_KEY, GOOGLE_CLOUD_CLIENT_EMAIL');
+        return;
+    }
 } catch (error) {
-    console.log('⚠️ Google Vision API 인증 파일이 없습니다. 로고 탐지 기능이 비활성화됩니다.');
-    console.log('📝 Google Cloud Console에서 서비스 계정 키를 다운로드하여 gothic-brand-466306-a8-120b7ba62b78.json으로 저장하세요.');
+    console.log('⚠️ Google Vision API 클라이언트 초기화 실패:', error.message);
+    console.log('📝 인증 정보를 확인하고 다시 시도하세요.');
 }
 
 // ============================================================================
