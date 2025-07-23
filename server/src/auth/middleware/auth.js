@@ -10,6 +10,15 @@ const authMiddleware = (req, res, next) => {
         return next();
     }
     
+    // 개발 환경에서 테스트용 사용자 정보 설정 (선택사항)
+    if (process.env.NODE_ENV === 'development' && req.headers['x-test-user']) {
+        req.user = {
+            user_id: 1,               // 숫자형 ID (Report 모델과 연동됨)
+            name: '테스트유저'
+        };
+        return next();
+    }
+    
     // 인증되지 않은 사용자라면 401 Unauthorized 응답
     return res.status(401).json({ 
         message: '로그인이 필요합니다.',

@@ -84,4 +84,9 @@ app.get('/waste-sorting', (req, res) => {
     res.sendFile(path.join(__dirname, 'analyze/views/analyze/waste-sorting.html'));
 });
 
+// 로그인 페이지
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../client/public/login.html'));
+});
+
 module.exports = app;
