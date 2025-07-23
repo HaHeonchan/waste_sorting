@@ -14,43 +14,69 @@
 
 ---
 
-## 🏗️ 프로젝트 구조
+## 🗂️ 프로젝트 구조
 
-TRASH_SORT/
-├── client/ # 프론트엔드 (React)
-│ ├── node_modules/
-│ ├── public/
-│ │ └── index.html
-│ ├── src/
-│ │ ├── components/ # 리액트 컴포넌트 모음
-│ │ ├── app.js # 리액트 엔트리포인트
-│ │ └── index.js # 리액트 렌더러
-│ ├── package.json # 프론트 의존성
-│ └── package-lock.json
-├── server/ # 백엔드 (Node.js + Express)
-│ ├── config/
-│ │ └── db.js # DB 연결 설정 (MongoDB 등)
-│ ├── src/
-│ │ ├── controllers/
-│ │ │ └── complain.controller.js # 민원 컨트롤러(로직)
-│ │ ├── middleware/
-│ │ │ └── auth.middleware.js # 인증 미들웨어(JWT)
-│ │ ├── models/
-│ │ │ └── report.model.js # 민원 DB 모델(Mongoose)
-│ │ └── routes/
-│ │ └── complain.routes.js # 민원 관련 API 라우팅
-│ ├── uploads/ # (선택) 업로드 파일 저장
-│ ├── app.js # 익스프레스 앱 진입점
-│ └── package.json # 백엔드 의존성
-├── .env # 환경 변수 파일 (DB_URL, JWT_SECRET 등)
-├── docker-compose.yml # Docker 컨테이너 설정
-├── server.js # 서버 실행 엔트리포인트
-├── README.md # 프로젝트 설명 (이 파일)
+TRASH_SORT/  
+
+├── client/ # 프론트엔드 (React)  
+
+│ ├── node_modules/  
+
+│ ├── public/  
+
+│ │ └── index.html  
+
+│ ├── src/  
+ 
+│ │ ├── components/ # 리액트 컴포넌트 모음  
+
+│ │ ├── app.js # 리액트 엔트리포인트  
+
+│ │ └── index.js # 리액트 렌더러  
+
+│ ├── package.json # 프론트 의존성  
+
+│ └── package-lock.json  
+
+├── server/ # 백엔드 (Node.js + Express)  
+
+│ ├── config/  
+
+│ │ └── db.js # DB 연결 설정 (MongoDB 등)  
+
+│ ├── src/  
+
+│ │ ├── controllers/  
+
+│ │ │ └── complain.controller.js # 민원 컨트롤러(로직)  
+
+│ │ ├── middleware/  
+
+│ │ │ └── auth.middleware.js # 인증 미들웨어(JWT)  
+
+│ │ ├── models/  
+
+│ │ │ └── report.model.js # 민원 DB 모델(Mongoose)  
+
+│ │ └── routes/  
+
+│ │ └── complain.routes.js # 민원 관련 API 라우팅  
+
+│ ├── uploads/ # (선택) 업로드 파일 저장  
+
+│ ├── app.js # 익스프레스 앱 진입점  
+
+│ └── package.json # 백엔드 의존성  
+
+├── .env # 환경 변수 파일 (DB_URL, JWT_SECRET 등)  
+
+├── docker-compose.yml # Docker 컨테이너 설정  
+
+├── server.js # 서버 실행 엔트리포인트  
+
+├── README.md # 프로젝트 설명 (이 파일)  
+
 └── 기타(package-lock.json, .gitignore 등)
-
-markdown
-복사
-편집
 
 ---
 
@@ -110,17 +136,3 @@ markdown
     - dotenv, cors, morgan 등
 
 ---
-
-## 📂 상세 디렉터리 설명
-
-- `client/src/components/` : 분리배출 안내/신고 등 UI 구성 컴포넌트
-- `server/src/controllers/complain.controller.js` : 민원 등록/수정/삭제 등 비즈니스 로직
-- `server/src/middleware/auth.middleware.js` : JWT 인증 미들웨어
-- `server/src/models/report.model.js` : 민원 데이터 스키마 (Mongoose)
-- `server/src/routes/complain.routes.js` : 민원 REST API 라우팅
-- `server/config/db.js` : MongoDB 연결 설정
-- `server/uploads/` : 업로드 파일 저장 경로
-
----
-
-> 문의·기여·이슈는 언제든 PR 또는 Discussions로 남겨주세요!
