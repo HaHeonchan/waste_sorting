@@ -1,0 +1,30 @@
+{
+  "timestamp": 1753291560264,
+  "result": {
+    "message": "이미지 분석 완료",
+    "wasteType": "캔류",
+    "subType": "알루미늄",
+    "recyclingMark": "알루미늄",
+    "description": "이 음료수 캔은 알루미늄으로 만들어져 있어 재활용이 가능합니다. 캔을 깨끗이 행군 후 분리배출하면 자원 절약에 도움이 됩니다.",
+    "disposalMethod": "재활용품수거함",
+    "confidence": 0.85,
+    "analysisType": "direct_image",
+    "optimization": {
+      "applied": false,
+      "originalSize": 209338,
+      "optimizedSize": 209338,
+      "cloudinaryOptimization": true
+    },
+    "cloudinary": {
+      "id": "waste-sorting/waste-1753291552902-image1-1753291552928-9ad505d55c1b74ad",
+      "url": "https://res.cloudinary.com/dogfzdt6c/image/upload/v1753291555/waste-sorting/waste-1753291552902-image1-1753291552928-9ad505d55c1b74ad.jpg",
+      "optimizedUrl": "https://res.cloudinary.com/dogfzdt6c/image/upload/c_limit,f_auto,g_auto,h_800,q_auto:good,w_800/v1/waste-sorting/waste-1753291552902-image1-1753291552928-9ad505d55c1b74ad?_a=BAMAK+WO0",
+      "metadata": {
+        "width": 624,
+        "height": 889,
+        "size": 43913,
+        "format": "jpg"
+      }
+    }
+  }
+}

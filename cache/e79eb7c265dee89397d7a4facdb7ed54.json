@@ -1,0 +1,30 @@
+{
+  "timestamp": 1753291211243,
+  "result": {
+    "message": "이미지 분석 완료",
+    "wasteType": "캔류",
+    "subType": "알미늄",
+    "recyclingMark": "해당없음",
+    "description": "이 이미지는 Welch's 음료수가 담긴 알루미늄 캔입니다. 밝은 색상과 산뜻한 디자인이 특징입니다.",
+    "disposalMethod": "캔 재활용 통에 넣어주십시오.",
+    "confidence": 0.9,
+    "analysisType": "direct_image",
+    "optimization": {
+      "applied": false,
+      "originalSize": 62320,
+      "optimizedSize": 62320,
+      "cloudinaryOptimization": true
+    },
+    "cloudinary": {
+      "id": "waste-sorting/waste-1753291203664-ìì-1753291203692-431f16f1696e7b85",
+      "url": "https://res.cloudinary.com/dogfzdt6c/image/upload/v1753291205/waste-sorting/waste-1753291203664-%C3%AC%C2%98%C2%88%C3%AC%C2%8B%C2%9C-1753291203692-431f16f1696e7b85.jpg",
+      "optimizedUrl": "https://res.cloudinary.com/dogfzdt6c/image/upload/c_limit,f_auto,g_auto,h_800,q_auto:good,w_800/v1/waste-sorting/waste-1753291203664-%C3%AC%C2%98%C2%88%C3%AC%C2%8B%C2%9C-1753291203692-431f16f1696e7b85?_a=BAMAK+WO0",
+      "metadata": {
+        "width": 512,
+        "height": 512,
+        "size": 33300,
+        "format": "jpg"
+      }
+    }
+  }
+}

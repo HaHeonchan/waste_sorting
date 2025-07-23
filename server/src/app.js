@@ -8,6 +8,8 @@ const session = require('express-session');
 const passport = require('../config/passport'); // Passport 설정
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
+
+
 // Passport 설정
 require('../config/passport');
 

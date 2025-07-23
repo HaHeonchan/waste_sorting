@@ -1,28 +1,37 @@
 {
   "name": "trash_sort",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server/src/app.js",
   "scripts": {
-    "start": "concurrently \"npm run server\" \"npm run client\"",
-    "client": "npm --prefix client start",
-    "server": "npm --prefix server start"
-  },
+  "start": "concurrently \"npm run server\" \"npm run client\"",
+  "server": "nodemon server.js",
+  "client": "npm --prefix client start",
+  "check-env": "node -e \"require('dotenv').config(); console.log('Environment variables loaded successfully'); console.log('PORT:', process.env.PORT); console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not set'); console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Not set');\""
+},
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
+  "description": "쓰레기 분류 + 민원 시스템 통합 백엔드",
   "dependencies": {
+    "@google-cloud/vision": "^5.3.1",
+    "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.4",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "mysql2": "^3.14.2",
-    "sequelize": "^6.37.7"
+    "openai": "^5.10.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "sequelize": "^6.37.7",
+    "sharp": "^0.33.0"
   },
   "devDependencies": {
-    "concurrently": "^9.2.0"
+    "concurrently": "^9.2.0",
+    "nodemon": "^3.1.10"
   }
 }
