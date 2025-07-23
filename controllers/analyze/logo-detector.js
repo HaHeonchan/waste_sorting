@@ -1,8 +1,15 @@
-// Google Vision API를 사용한 로고 탐지 모듈
+/**
+ * Google Vision API를 사용한 로고 탐지 및 텍스트 분석 모듈
+ * 쓰레기 분류를 위한 재활용 마크 및 텍스트 인식
+ */
+
 const vision = require('@google-cloud/vision');
 const fs = require('fs');
 
-// Vision API 클라이언트 초기화 (선택적)
+// ============================================================================
+// Google Vision API 클라이언트 초기화
+// ============================================================================
+
 let client = null;
 try {
     client = new vision.ImageAnnotatorClient({
@@ -14,38 +21,36 @@ try {
     console.log('📝 Google Cloud Console에서 서비스 계정 키를 다운로드하여 gothic-brand-466306-a8-120b7ba62b78.json으로 저장하세요.');
 }
 
+// ============================================================================
+// 재활용 마크 키워드 정의
+// ============================================================================
 
 const RECYCLING_MARK_KEYWORDS = [
     // 플라스틱 계열 (Plastics)
-    '플라스틱',
-    '비닐류',
-    '무색페트',
-    '바이오',
-    'PET',
-    'HDPE',
-    'LDPE',
-    'PP',
-    'PS',
-    'OTHER',
-
+    '플라스틱', '비닐류', '무색페트', '바이오', 'PET', 'HDPE', 'LDPE', 'PP', 'PS', 'OTHER',
+    
     // 캔 계열 (Cans)
-    '캔류',
-    '철',
-    '알미늄',
-
+    '캔류', '철', '알미늄',
+    
     // 종이 계열 (Paper)
-    '종이',
-    '일반팩',
-    '멸균팩',
-
+    '종이', '일반팩', '멸균팩',
+    
     // 유리 (Glass)
     '유리',
-
+    
     // 일반쓰레기
     '일반쓰레기',
 ];
 
-// 로고 탐지 함수
+// ============================================================================
+// 기본 탐지 함수들
+// ============================================================================
+
+/**
+ * 로고 탐지 함수
+ * @param {string} imagePath - 이미지 경로
+ * @returns {Array} 탐지된 로고 배열
+ */
 async function detectLogos(imagePath) {
     try {
         if (!client) {
@@ -55,10 +60,7 @@ async function detectLogos(imagePath) {
         
         console.log('🔍 로고 탐지 시작:', imagePath);
         
-        // 이미지 파일 읽기
         const imageBuffer = fs.readFileSync(imagePath);
-        
-        // Vision API 호출
         const [result] = await client.logoDetection(imageBuffer);
         const logos = result.logoAnnotations;
         
@@ -72,7 +74,11 @@ async function detectLogos(imagePath) {
     }
 }
 
-// 텍스트 탐지 함수 (로고와 함께 텍스트도 확인)
+/**
+ * 텍스트 탐지 함수
+ * @param {string} imagePath - 이미지 경로
+ * @returns {Object} 텍스트 탐지 결과 및 사용량 정보
+ */
 async function detectText(imagePath) {
     try {
         if (!client) {
@@ -82,10 +88,7 @@ async function detectText(imagePath) {
         
         console.log('📝 텍스트 탐지 시작:', imagePath);
         
-        // 이미지 파일 읽기
         const imageBuffer = fs.readFileSync(imagePath);
-        
-        // Vision API 호출
         const [result] = await client.textDetection(imageBuffer);
         const detections = result.textAnnotations;
         
@@ -99,9 +102,9 @@ async function detectText(imagePath) {
             });
         }
         
-        // Google Vision API 사용량 정보 (실제로는 제한적이지만 추정)
+        // Google Vision API 사용량 정보 (추정)
         const imageSize = imageBuffer.length;
-        const estimatedTokens = Math.ceil(imageSize / 4 * 1.37); // 대략적인 추정
+        const estimatedTokens = Math.ceil(imageSize / 4 * 1.37);
         
         const usage = {
             imageSize: imageSize,
@@ -118,7 +121,51 @@ async function detectText(imagePath) {
     }
 }
 
-// 복합 텍스트 분석 함수 (개선된 버전)
+/**
+ * 객체 탐지 함수 (재활용 관련 물체 탐지)
+ * @param {string} imagePath - 이미지 경로
+ * @returns {Array} 탐지된 객체 배열
+ */
+async function detectObjects(imagePath) {
+    try {
+        if (!client) {
+            console.log('⚠️ Google Vision API 클라이언트가 초기화되지 않았습니다.');
+            return [];
+        }
+        
+        console.log('🎯 객체 탐지 시작:', imagePath);
+        
+        const imageBuffer = fs.readFileSync(imagePath);
+        const [result] = await client.objectLocalization(imageBuffer);
+        const objects = result.localizedObjectAnnotations;
+        
+        console.log(`✅ 객체 탐지 완료: ${objects.length}개의 객체 발견`);
+        
+        // 디버깅: 발견된 객체 출력
+        if (objects && objects.length > 0) {
+            console.log('🎯 발견된 객체들:');
+            objects.forEach((obj, index) => {
+                console.log(`   ${index + 1}. ${obj.name} (신뢰도: ${Math.round(obj.score * 100)}%)`);
+            });
+        }
+        
+        return objects;
+        
+    } catch (error) {
+        console.error('❌ 객체 탐지 오류:', error);
+        return [];
+    }
+}
+
+// ============================================================================
+// 텍스트 분석 함수들
+// ============================================================================
+
+/**
+ * 복합 텍스트 분석 함수 (개선된 버전)
+ * @param {string} text - 분석할 텍스트
+ * @returns {Array} 분석 결과 배열
+ */
 function analyzeComplexText(text) {
     const results = [];
     
@@ -134,32 +181,12 @@ function analyzeComplexText(text) {
         
         console.log(`   📋 파싱된 부분: "${part}" → "${wasteType}"`);
         
-        // 분리수거 키워드와 정확히 매칭되는지 확인
-        if (RECYCLING_MARK_KEYWORDS.some(keyword => 
-            wasteType.toLowerCase() === keyword.toLowerCase() ||
-            wasteType.toLowerCase().includes(keyword.toLowerCase())
-        )) {
-            // 중복 제거를 위해 이미 존재하는지 확인
-            const existingIndex = results.findIndex(r => 
-                r.part === part && r.wasteType === wasteType
-            );
-            
-            if (existingIndex === -1) {
-                results.push({
-                    part: part,
-                    wasteType: wasteType,
-                    type: 'labeled_part'
-                });
-                console.log(`   ✅ 추가됨: "${part}" → "${wasteType}"`);
-            } else {
-                console.log(`   ⚠️ 중복 제거: "${part}" → "${wasteType}"`);
-            }
-        } else {
-            console.log(`   ❌ 키워드 매칭 실패: "${wasteType}"`);
+        if (isValidWasteType(wasteType)) {
+            addUniqueResult(results, part, wasteType, 'labeled_part');
         }
     }
     
-    // 패턴 2: 쉼표로 구분된 복합 분류 (예: "뚜껑+라벨 : 플라스틱, 용기 : 일반쓰레기")
+    // 패턴 2: 쉼표로 구분된 복합 분류
     const pattern2 = /([^:]+)\s*:\s*([^,]+)(?:,\s*([^:]+)\s*:\s*([^,\n]+))?/g;
     let match2;
     
@@ -168,24 +195,8 @@ function analyzeComplexText(text) {
         const part1 = match2[1].trim();
         const wasteType1 = match2[2].trim();
         
-        console.log(`   📋 복합 파싱 1: "${part1}" → "${wasteType1}"`);
-        
-        if (RECYCLING_MARK_KEYWORDS.some(keyword => 
-            wasteType1.toLowerCase() === keyword.toLowerCase() ||
-            wasteType1.toLowerCase().includes(keyword.toLowerCase())
-        )) {
-            const existingIndex = results.findIndex(r => 
-                r.part === part1 && r.wasteType === wasteType1
-            );
-            
-            if (existingIndex === -1) {
-                results.push({
-                    part: part1,
-                    wasteType: wasteType1,
-                    type: 'labeled_part'
-                });
-                console.log(`   ✅ 복합 추가 1: "${part1}" → "${wasteType1}"`);
-            }
+        if (isValidWasteType(wasteType1)) {
+            addUniqueResult(results, part1, wasteType1, 'labeled_part');
         }
         
         // 두 번째 부분 (있는 경우)
@@ -193,49 +204,20 @@ function analyzeComplexText(text) {
             const part2 = match2[3].trim();
             const wasteType2 = match2[4].trim();
             
-            console.log(`   📋 복합 파싱 2: "${part2}" → "${wasteType2}"`);
-            
-            if (RECYCLING_MARK_KEYWORDS.some(keyword => 
-                wasteType2.toLowerCase() === keyword.toLowerCase() ||
-                wasteType2.toLowerCase().includes(keyword.toLowerCase())
-            )) {
-                const existingIndex = results.findIndex(r => 
-                    r.part === part2 && r.wasteType === wasteType2
-                );
-                
-                if (existingIndex === -1) {
-                    results.push({
-                        part: part2,
-                        wasteType: wasteType2,
-                        type: 'labeled_part'
-                    });
-                    console.log(`   ✅ 복합 추가 2: "${part2}" → "${wasteType2}"`);
-                }
+            if (isValidWasteType(wasteType2)) {
+                addUniqueResult(results, part2, wasteType2, 'labeled_part');
             }
         }
     }
     
-    // 패턴 3: 분리된 단어들을 조합하여 키워드 찾기 (예: "일반" + "쓰레기" = "일반쓰레기")
+    // 패턴 3: 분리된 단어들을 조합하여 키워드 찾기
     const words = text.split(/\s+/);
     for (let i = 0; i < words.length - 1; i++) {
         const combinedWord = words[i] + words[i + 1];
-        console.log(`   🔍 단어 조합 시도: "${words[i]}" + "${words[i + 1]}" = "${combinedWord}"`);
         
         RECYCLING_MARK_KEYWORDS.forEach(keyword => {
             if (combinedWord.toLowerCase() === keyword.toLowerCase()) {
-                console.log(`   ✅ 조합 키워드 정확 매칭: "${keyword}"`);
-                const existingIndex = results.findIndex(r => 
-                    r.part === combinedWord && r.wasteType === keyword
-                );
-                
-                if (existingIndex === -1) {
-                    results.push({
-                        part: combinedWord,
-                        wasteType: keyword,
-                        type: 'combined_word'
-                    });
-                    console.log(`   ✅ 조합 단어 추가: "${combinedWord}" → "${keyword}"`);
-                }
+                addUniqueResult(results, combinedWord, keyword, 'combined_word');
             }
         });
     }
@@ -244,7 +226,11 @@ function analyzeComplexText(text) {
     return results;
 }
 
-// 불필요한 텍스트 필터링 함수
+/**
+ * 불필요한 텍스트 필터링 함수
+ * @param {string} text - 필터링할 텍스트
+ * @returns {boolean} 건너뛸지 여부
+ */
 function shouldSkipText(text) {
     // 너무 긴 텍스트 (50자 이상)
     if (text.length > 50) {
@@ -274,42 +260,51 @@ function shouldSkipText(text) {
     return false;
 }
 
-// 객체 탐지 함수 (재활용 관련 물체 탐지)
-async function detectObjects(imagePath) {
-    try {
-        if (!client) {
-            console.log('⚠️ Google Vision API 클라이언트가 초기화되지 않았습니다.');
-            return [];
-        }
-        
-        console.log('🎯 객체 탐지 시작:', imagePath);
-        
-        // 이미지 파일 읽기
-        const imageBuffer = fs.readFileSync(imagePath);
-        
-        // Vision API 호출
-        const [result] = await client.objectLocalization(imageBuffer);
-        const objects = result.localizedObjectAnnotations;
-        
-        console.log(`✅ 객체 탐지 완료: ${objects.length}개의 객체 발견`);
-        
-        // 디버깅: 발견된 객체 출력
-        if (objects && objects.length > 0) {
-            console.log('🎯 발견된 객체들:');
-            objects.forEach((obj, index) => {
-                console.log(`   ${index + 1}. ${obj.name} (신뢰도: ${Math.round(obj.score * 100)}%)`);
-            });
-        }
-        
-        return objects;
-        
-    } catch (error) {
-        console.error('❌ 객체 탐지 오류:', error);
-        return [];
+// ============================================================================
+// 유틸리티 함수들
+// ============================================================================
+
+/**
+ * 유효한 쓰레기 타입인지 확인
+ * @param {string} wasteType - 확인할 쓰레기 타입
+ * @returns {boolean} 유효성 여부
+ */
+function isValidWasteType(wasteType) {
+    return RECYCLING_MARK_KEYWORDS.some(keyword => 
+        wasteType.toLowerCase() === keyword.toLowerCase() ||
+        wasteType.toLowerCase().includes(keyword.toLowerCase())
+    );
+}
+
+/**
+ * 중복을 제거하고 결과에 추가
+ * @param {Array} results - 결과 배열
+ * @param {string} part - 부분명
+ * @param {string} wasteType - 쓰레기 타입
+ * @param {string} type - 분석 타입
+ */
+function addUniqueResult(results, part, wasteType, type) {
+    const existingIndex = results.findIndex(r => 
+        r.part === part && r.wasteType === wasteType
+    );
+    
+    if (existingIndex === -1) {
+        results.push({ part, wasteType, type });
+        console.log(`   ✅ 추가됨: "${part}" → "${wasteType}"`);
+    } else {
+        console.log(`   ⚠️ 중복 제거: "${part}" → "${wasteType}"`);
     }
 }
 
-// 분리수거 마크 분석 함수
+// ============================================================================
+// 메인 분석 함수들
+// ============================================================================
+
+/**
+ * 분리수거 마크 분석 함수
+ * @param {string} imagePath - 이미지 경로
+ * @returns {Object} 분석 결과
+ */
 async function analyzeRecyclingMarks(imagePath) {
     try {
         console.log('♻️ 분리수거 마크 분석 시작');
@@ -326,12 +321,10 @@ async function analyzeRecyclingMarks(imagePath) {
             };
         }
         
-        // 텍스트 탐지만 실행 (로고 탐지 제거)
+        // 텍스트 탐지 실행
         const textResult = await detectText(imagePath);
         const textDetections = textResult.detections;
         const visionUsage = textResult.usage;
-        const logos = []; // 로고 탐지 비활성화
-        const objects = []; // 객체 탐지 비활성화
         
         const analysis = {
             logos: [],
@@ -342,26 +335,14 @@ async function analyzeRecyclingMarks(imagePath) {
             summary: ''
         };
         
-        // 로고 분석
-        if (logos && logos.length > 0) {
-            analysis.logos = logos.map(logo => ({
-                description: logo.description,
-                confidence: logo.score,
-                boundingPoly: logo.boundingPoly
-            }));
-            
-            console.log('🏷️ 발견된 로고들:', analysis.logos.map(l => l.description));
-        }
-        
         // 텍스트 분석 (복합 분석 버전)
         if (textDetections && textDetections.length > 0) {
             console.log('🔍 전체 텍스트 분석 시작...');
             
-            // 복합 분석을 위한 구조
             const analysisResults = {
-                parts: [], // 각 부분별 분석 결과
-                keywords: [], // 발견된 키워드
-                matchedTexts: [] // 매칭된 텍스트
+                parts: [],
+                keywords: [],
+                matchedTexts: []
             };
             
             // 연속된 텍스트들을 조합하여 전체 문장 생성
@@ -373,7 +354,6 @@ async function analyzeRecyclingMarks(imagePath) {
             const combinedParts = analyzeComplexText(combinedText);
             if (combinedParts.length > 0) {
                 analysisResults.parts.push(...combinedParts);
-                console.log(`   📋 조합 텍스트 복합 분석 결과:`, combinedParts);
             }
             
             // 연속된 단어들을 조합하여 키워드 매칭 시도
@@ -383,9 +363,6 @@ async function analyzeRecyclingMarks(imagePath) {
                 const nextWord = allTexts[i + 1];
                 const combinedWord = currentWord + nextWord;
                 
-                console.log(`   🔗 조합 시도 ${i + 1}: "${currentWord}" + "${nextWord}" = "${combinedWord}"`);
-                
-                // 조합된 단어로 키워드 매칭
                 RECYCLING_MARK_KEYWORDS.forEach(keyword => {
                     if (combinedWord.toLowerCase().includes(keyword.toLowerCase())) {
                         console.log(`   ✅ 조합 키워드 "${keyword}" 발견! (${combinedWord})`);
@@ -397,11 +374,10 @@ async function analyzeRecyclingMarks(imagePath) {
                 });
             }
             
-            // 개별 텍스트도 분석 (기존 로직)
+            // 개별 텍스트 분석
             textDetections.forEach((detection, index) => {
                 const text = detection.description;
                 
-                // 불필요한 텍스트 필터링 (영어 문장, 긴 텍스트 등)
                 if (shouldSkipText(text)) {
                     console.log(`   ⏭️ 건너뛴 텍스트 ${index + 1}: "${text}" (불필요한 텍스트)`);
                     return;
@@ -409,12 +385,11 @@ async function analyzeRecyclingMarks(imagePath) {
                 
                 console.log(`   텍스트 ${index + 1}: "${text}"`);
                 
-                // 복합 텍스트 분석 (예: "뚜껑+라벨 : 플라스틱, 용기 : 일반쓰레기")
+                // 복합 텍스트 분석
                 const parts = analyzeComplexText(text);
                 
                 if (parts.length > 0) {
                     analysisResults.parts.push(...parts);
-                    console.log(`   📋 복합 분석 결과:`, parts);
                 } else {
                     // 단순 키워드 매칭
                     const foundKeywords = [];
@@ -434,10 +409,7 @@ async function analyzeRecyclingMarks(imagePath) {
             
             // 결과 정리 (중복 제거 및 정리)
             if (analysisResults.parts.length > 0 || analysisResults.keywords.length > 0) {
-                // 중복 제거된 키워드
                 const uniqueKeywords = [...new Set(analysisResults.keywords)];
-                
-                // 복합 분석 결과에서 중복 제거
                 const uniqueParts = analysisResults.parts.filter((part, index, self) => 
                     index === self.findIndex(p => 
                         p.part === part.part && p.wasteType === part.wasteType
@@ -448,7 +420,7 @@ async function analyzeRecyclingMarks(imagePath) {
                     ...uniqueKeywords,
                     ...uniqueParts.map(part => part.wasteType)
                 ];
-                analysis.complexAnalysis = uniqueParts; // 중복 제거된 복합 분석 결과 저장
+                analysis.complexAnalysis = uniqueParts;
                 
                 console.log('♻️ 발견된 분리수거 정보:', analysis.recyclingTexts);
                 console.log('📝 정리된 복합 분석 결과:', uniqueParts);
@@ -457,28 +429,6 @@ async function analyzeRecyclingMarks(imagePath) {
             }
         } else {
             console.log('❌ 텍스트가 발견되지 않았습니다.');
-        }
-        
-        // 객체 분석
-        if (objects && objects.length > 0) {
-            const recyclingObjectKeywords = [
-                'bottle', '병', 'container', '용기', 'can', '캔', 'jar', '병',
-                'box', '박스', 'carton', '카톤', 'bag', '봉투', 'package', '패키지'
-            ];
-            
-            const foundObjects = objects.filter(obj => 
-                recyclingObjectKeywords.some(keyword => 
-                    obj.name.toLowerCase().includes(keyword.toLowerCase())
-                )
-            );
-            
-            if (foundObjects.length > 0) {
-                analysis.recyclingObjects = foundObjects.map(obj => ({
-                    name: obj.name,
-                    confidence: obj.score
-                }));
-                console.log('🎯 발견된 재활용 관련 객체:', foundObjects.map(obj => obj.name));
-            }
         }
         
         // 분리수거 마크 판단 (복합 분석 포함)
@@ -527,7 +477,11 @@ async function analyzeRecyclingMarks(imagePath) {
     }
 }
 
-// 통합 이미지 분석 함수 (기존 GPT 분석과 결합)
+/**
+ * 통합 이미지 분석 함수
+ * @param {string} imagePath - 이미지 경로
+ * @returns {Object} 통합 분석 결과
+ */
 async function analyzeImageWithLogoDetection(imagePath) {
     try {
         console.log('🔍 통합 이미지 분석 시작 (로고 탐지 포함)');
@@ -541,7 +495,7 @@ async function analyzeImageWithLogoDetection(imagePath) {
             confidence: logoAnalysis.confidence,
             detectedLogos: logoAnalysis.logos,
             recyclingKeywords: logoAnalysis.recyclingTexts,
-            usage: logoAnalysis.usage // 사용량 정보 추가
+            usage: logoAnalysis.usage
         };
         
     } catch (error) {
@@ -549,6 +503,10 @@ async function analyzeImageWithLogoDetection(imagePath) {
         throw error;
     }
 }
+
+// ============================================================================
+// 모듈 내보내기
+// ============================================================================
 
 module.exports = {
     detectLogos,
