@@ -19,8 +19,12 @@ const complainRoutes = require('./complain/routes/complain');
 
 const app = express();
 
-// 1. 업로드 디렉토리 설정 (src/uploads)
-const uploadDir = path.join(__dirname, 'uploads');
+// 1. 업로드 디렉토리 설정 - 도커 환경에 맞게 수정
+// 도커에서는 /app/uploads, 로컬에서는 src/uploads 사용
+const uploadDir = process.env.NODE_ENV === 'production' 
+    ? '/app/uploads' 
+    : path.join(__dirname, 'uploads');
+
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -57,11 +61,20 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// 정적 파일 서빙 - 새로운 폴더 구조에 맞게 수정
-app.use(express.static(path.join(__dirname, '../../client/public')));
-app.use('/analyze', express.static(path.join(__dirname, 'analyze/views/analyze')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/complain', express.static(path.join(__dirname, '../../client/public')));
+// 정적 파일 서빙 - 도커 환경에 맞게 수정
+if (process.env.NODE_ENV === 'production') {
+    // 도커 환경: React 빌드 결과물 서빙
+    app.use(express.static(path.join(__dirname, '../../client/build')));
+    app.use('/analyze', express.static(path.join(__dirname, 'analyze/views/analyze')));
+    app.use('/uploads', express.static('/app/uploads'));
+    app.use('/complain', express.static(path.join(__dirname, '../../client/build')));
+} else {
+    // 로컬 개발 환경: 기존 설정 유지
+    app.use(express.static(path.join(__dirname, '../../client/public')));
+    app.use('/analyze', express.static(path.join(__dirname, 'analyze/views/analyze')));
+    app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+    app.use('/complain', express.static(path.join(__dirname, '../../client/public')));
+}
 
 // API 라우팅 (upload 미들웨어 추가해서 req.upload 사용 가능하게)
 app.use('/api', (req, res, next) => {
@@ -74,9 +87,13 @@ app.use('/analyze', analyzeRouter);
 app.use('/api/waste', wasteRouter);
 app.use('/auth', authRouter);
 
-// 메인 페이지 - 새로운 경로로 수정
+// 메인 페이지 - 도커 환경에 맞게 수정
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/public/index.html'));
+    if (process.env.NODE_ENV === 'production') {
+        res.sendFile(path.join(__dirname, '../../client/build/index.html'));
+    } else {
+        res.sendFile(path.join(__dirname, '../../client/public/index.html'));
+    }
 });
 
 // 쓰레기 분류 시스템 페이지 - 새로운 경로로 수정

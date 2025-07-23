@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  app:
+    # 현재 폴더(프로젝트 루트)에 있는 Dockerfile을 사용해 이미지를 빌드
+    build: .
+    # 내 컴퓨터 80번 포트와 컨테이너 3000번 포트를 연결
+    ports:
+      - "80:3000"
+    # 항상 재시작
+    restart: always
+    # 서버의 .env 파일 사용
+    env_file:
+      - ./server/.env
+    # 볼륨 설정 (가장 중요!)
+    volumes:
+      # uploads_data라는 이름의 볼륨을 컨테이너의 /app/uploads 폴더에 연결
+      # 이렇게 하면 컨테이너가 삭제되어도 업로드된 파일은 안전하게 보관됨
+      - uploads_data:/app/uploads
+
+# 사용할 볼륨 정의
+volumes:
+  uploads_data:
