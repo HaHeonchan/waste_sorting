@@ -9,13 +9,13 @@ const passport = require('passport');
 require('dotenv').config();
 
 // Passport 설정
-require('../config/passport');
+require('./config/passport');
 
 // Router import
-const analyzeRouter = require('../routes/analyze/analyze');
-const wasteRouter = require('../routes/waste');
-const authRouter = require('../routes/auth');
-const complainRoutes = require('./routes/complain.routes');
+const analyzeRouter = require('./analyze/routes/analyze');
+const wasteRouter = require('./analyze/routes/waste');
+const authRouter = require('./auth/routes/auth');
+const complainRoutes = require('./complain/routes/complain');
 
 const app = express();
 
@@ -57,11 +57,11 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// 정적 파일 서빙
-app.use(express.static(path.join(__dirname, '../client')));
-app.use('/analyze', express.static(path.join(__dirname, '../client/analyze')));
+// 정적 파일 서빙 - 새로운 폴더 구조에 맞게 수정
+app.use(express.static(path.join(__dirname, '../../client/public')));
+app.use('/analyze', express.static(path.join(__dirname, 'analyze/views/analyze')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/complain', express.static(path.join(__dirname, '../../client')));
+app.use('/complain', express.static(path.join(__dirname, '../../client/public')));
 
 // API 라우팅 (upload 미들웨어 추가해서 req.upload 사용 가능하게)
 app.use('/api', (req, res, next) => {
@@ -74,14 +74,14 @@ app.use('/analyze', analyzeRouter);
 app.use('/api/waste', wasteRouter);
 app.use('/auth', authRouter);
 
-// 메인 페이지
+// 메인 페이지 - 새로운 경로로 수정
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/index.html'));
+    res.sendFile(path.join(__dirname, '../../client/public/index.html'));
 });
 
-// 쓰레기 분류 시스템 페이지
+// 쓰레기 분류 시스템 페이지 - 새로운 경로로 수정
 app.get('/waste-sorting', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/analyze/waste-sorting.html'));
+    res.sendFile(path.join(__dirname, 'analyze/views/analyze/waste-sorting.html'));
 });
 
 module.exports = app;
