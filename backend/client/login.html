@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 상태</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+        .user-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 10px auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>로그인 처리 중...</h2>
+        <div id="status"></div>
+        <div id="userInfo" class="user-info" style="display: none;"></div>
+    </div>
+
+    <script>
+        // URL에서 쿼리 파라미터 확인
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+        const message = urlParams.get('message');
+
+        const statusDiv = document.getElementById('status');
+        const userInfoDiv = document.getElementById('userInfo');
+
+        if (status === 'success') {
+            statusDiv.innerHTML = '<p class="success">✅ 로그인 성공!</p>';
+            statusDiv.innerHTML += '<p>' + (message || '성공적으로 로그인되었습니다.') + '</p>';
+            
+            // 부모 창에 메시지 전송 (팝업인 경우)
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'LOGIN_SUCCESS',
+                    message: '로그인 성공'
+                }, '*');
+                
+                // 2초 후 팝업 닫기
+                setTimeout(() => {
+                    window.close();
+                }, 2000);
+            }
+        } else if (status === 'error') {
+            statusDiv.innerHTML = '<p class="error">❌ 로그인 실패</p>';
+            statusDiv.innerHTML += '<p>' + (message || '로그인 중 오류가 발생했습니다.') + '</p>';
+            
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'LOGIN_ERROR',
+                    message: message || '로그인 실패'
+                }, '*');
+                
+                setTimeout(() => {
+                    window.close();
+                }, 3000);
+            }
+        } else {
+            // 현재 사용자 정보 확인
+            fetch('/auth/user')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.isAuthenticated) {
+                        statusDiv.innerHTML = '<p class="success">✅ 로그인됨</p>';
+                        userInfoDiv.style.display = 'block';
+                        userInfoDiv.innerHTML = `
+                            ${data.user.profilePicture ? `<img src="${data.user.profilePicture}" alt="프로필" class="avatar">` : ''}
+                            <h3>${data.user.displayName}</h3>
+                            <p>${data.user.email}</p>
+                            <button onclick="logout()">로그아웃</button>
+                        `;
+                    } else {
+                        statusDiv.innerHTML = '<p>로그인되지 않음</p>';
+                        statusDiv.innerHTML += '<a href="/auth/google" class="btn">Google로 로그인</a>';
+                    }
+                })
+                .catch(error => {
+                    statusDiv.innerHTML = '<p class="error">오류 발생: ' + error.message + '</p>';
+                });
+        }
+
+        function logout() {
+            fetch('/auth/logout')
+                .then(() => {
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error('로그아웃 오류:', error);
+                });
+        }
+    </script>
+</body>
+</html> 

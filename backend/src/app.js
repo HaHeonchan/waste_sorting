@@ -28,7 +28,8 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000 // 24시간
+        maxAge: 24 * 60 * 60 * 1000, // 24시간
+        sameSite: 'lax'
     }
 }));
 
@@ -53,6 +54,11 @@ app.get('/', (req, res) => {
 // 쓰레기 분류 시스템 페이지
 app.get('/waste-sorting', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/analyze/waste-sorting.html'));
+});
+
+// 로그인 페이지
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/login.html'));
 });
 
 module.exports = app;
