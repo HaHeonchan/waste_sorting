@@ -20,6 +20,12 @@ const {
     getImageInfo, 
     isImageTooLarge 
 } = require('./image-optimizer');
+const { 
+    uploadAndStoreImage, 
+    deleteImageFromCloudinary,
+    getImageUrl,
+    testCloudinaryConnection
+} = require('./cloudinary-storage');
 
 // ============================================================================
 // OpenAI 클라이언트 초기화
@@ -83,6 +89,52 @@ const analyzeController = {
     },
 
     /**
+     * 환경 변수 설정 확인 (디버깅용)
+     */
+    checkEnvironment: (req, res) => {
+        try {
+            const envCheck = {
+                openai: {
+                    apiKey: process.env.OPENAI_API_KEY ? '설정됨' : '설정되지 않음'
+                },
+                cloudinary: {
+                    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '기본값 사용',
+                    apiKey: process.env.CLOUDINARY_API_KEY || '기본값 사용',
+                    apiSecret: process.env.CLOUDINARY_API_SECRET ? '설정됨' : '설정되지 않음'
+                },
+                google: {
+                    credentials: process.env.GOOGLE_APPLICATION_CREDENTIALS ? '설정됨' : '설정되지 않음'
+                }
+            };
+            
+            res.json({
+                message: '환경 변수 설정 확인',
+                environment: envCheck
+            });
+        } catch (error) {
+            res.status(500).json({ error: '환경 변수 확인 중 오류가 발생했습니다.' });
+        }
+    },
+
+    /**
+     * Cloudinary 연결 테스트 (디버깅용)
+     */
+    testCloudinary: async (req, res) => {
+        try {
+            const testResult = await testCloudinaryConnection();
+            res.json({
+                message: 'Cloudinary 연결 테스트 결과',
+                result: testResult
+            });
+        } catch (error) {
+            res.status(500).json({ 
+                error: 'Cloudinary 연결 테스트 중 오류가 발생했습니다.',
+                details: error.message 
+            });
+        }
+    },
+
+    /**
      * 이미지 업로드 및 분석
      */
     uploadAndAnalyzeImage: [
@@ -90,6 +142,7 @@ const analyzeController = {
         async (req, res) => {
             let imagePath = null;
             let optimizedImagePath = null;
+            let cloudinaryResult = null;
             
             try {
                 // 1. 파일 검증
@@ -116,12 +169,14 @@ const analyzeController = {
                 
                 // 4. 이미지 최적화 (필요한 경우)
                 let optimizationApplied = false;
+                let imageToUpload = imagePath;
                 
                 if (await isImageTooLarge(imagePath)) {
                     console.log('📦 이미지 최적화 중...');
                     optimizedImagePath = await optimizeForTextAnalysis(imagePath);
                     console.log('✅ 이미지 최적화 완료:', optimizedImagePath);
                     optimizationApplied = true;
+                    imageToUpload = optimizedImagePath; // 최적화된 이미지를 업로드용으로 사용
                     
                     const optimizedInfo = await getImageInfo(optimizedImagePath);
                     console.log('📊 최적화된 이미지 정보:', optimizedInfo);
@@ -130,10 +185,53 @@ const analyzeController = {
                     optimizedImagePath = imagePath;
                 }
                 
-                // 5. Google Vision API를 사용한 텍스트 분석
+                // 5. Cloudinary에 최적화된 이미지 업로드
+                console.log('☁️ Cloudinary에 최적화된 이미지 업로드 중...');
+                console.log('📁 업로드할 이미지 경로:', imageToUpload);
+                console.log('📊 이미지 파일 존재 확인:', fs.existsSync(imageToUpload));
+                
+                try {
+                    cloudinaryResult = await uploadAndStoreImage(imageToUpload, {
+                        folder: 'waste-sorting',
+                        tags: ['waste-analysis'],
+                        optimization: true, // Cloudinary 최적화 활성화
+                        transformation: {
+                            // 추가 최적화 옵션
+                            quality: 'auto:good',
+                            fetch_format: 'auto',
+                            strip: true
+                        }
+                    });
+                    
+                    console.log('📤 Cloudinary 업로드 결과:', cloudinaryResult);
+                    
+                    if (!cloudinaryResult.success) {
+                        console.error('❌ Cloudinary 업로드 실패:', cloudinaryResult.error);
+                        return res.status(500).json({ 
+                            error: '이미지 업로드에 실패했습니다.',
+                            details: cloudinaryResult.error 
+                        });
+                    }
+                    
+                    console.log('✅ Cloudinary 업로드 완료:', {
+                        cloudinaryId: cloudinaryResult.cloudinaryId,
+                        url: cloudinaryResult.url,
+                        optimizationApplied: optimizationApplied,
+                        cloudinaryOptimization: cloudinaryResult.metadata.optimization
+                    });
+                    
+                } catch (uploadError) {
+                    console.error('❌ Cloudinary 업로드 중 예외 발생:', uploadError);
+                    return res.status(500).json({ 
+                        error: '이미지 업로드 중 오류가 발생했습니다.',
+                        details: uploadError.message 
+                    });
+                }
+                
+                // 6. Google Vision API를 사용한 텍스트 분석 (최적화된 이미지 사용)
                 const textAnalysis = await analyzeImageWithLogoDetection(optimizedImagePath);
                 
-                // 6. 분석 방법 결정 및 실행
+                // 7. 분석 방법 결정 및 실행
                 let finalAnalysis;
                 const hasRecyclingMarks = textAnalysis.hasRecyclingMarks;
                 const hasTextContent = textAnalysis.logoDetection && 
@@ -148,7 +246,7 @@ const analyzeController = {
                     finalAnalysis = await analyzeImageDirectly(optimizedImagePath);
                 }
                 
-                // 7. API 사용량 통합
+                // 8. API 사용량 통합
                 const apiUsage = {
                     googleVision: textAnalysis.usage || null,
                     openAI: finalAnalysis.usage || null,
@@ -163,7 +261,7 @@ const analyzeController = {
                 
                 console.log('📊 통합 API 사용량:', apiUsage);
                 
-                // 8. 결과 구성
+                // 9. 결과 구성
                 const result = {
                     message: '이미지 분석 완료',
                     wasteType: finalAnalysis.analysis.wasteType,
@@ -177,11 +275,28 @@ const analyzeController = {
                         applied: optimizationApplied,
                         originalSize: imageInfo?.size,
                         optimizedSize: optimizationApplied ? 
-                            (await getImageInfo(optimizedImagePath))?.size : imageInfo?.size
+                            (await getImageInfo(optimizedImagePath))?.size : imageInfo?.size,
+                        cloudinaryOptimization: cloudinaryResult.metadata.optimization
+                    },
+                    // Cloudinary 정보 추가
+                    cloudinary: {
+                        id: cloudinaryResult.cloudinaryId,
+                        url: cloudinaryResult.url,
+                        optimizedUrl: getImageUrl(cloudinaryResult.cloudinaryId, {
+                            width: 800,
+                            height: 800,
+                            quality: 'auto:good'
+                        }),
+                        metadata: {
+                            width: cloudinaryResult.metadata.width,
+                            height: cloudinaryResult.metadata.height,
+                            size: cloudinaryResult.metadata.size,
+                            format: cloudinaryResult.metadata.format
+                        }
                     }
                 };
                 
-                // 9. 결과를 캐시에 저장
+                // 10. 결과를 캐시에 저장
                 saveToCache(imageHash, result);
                 
                 res.json(result);
@@ -193,8 +308,18 @@ const analyzeController = {
                     details: error.message 
                 });
             } finally {
-                // 10. 임시 파일 정리
+                // 11. 임시 파일 정리
                 cleanupTempFiles(imagePath, optimizedImagePath);
+                
+                // 12. Cloudinary 업로드 실패 시 이미지 삭제 (선택사항)
+                if (cloudinaryResult && !cloudinaryResult.success && cloudinaryResult.cloudinaryId) {
+                    try {
+                        await deleteImageFromCloudinary(cloudinaryResult.cloudinaryId);
+                        console.log('🗑️ Cloudinary 업로드 실패로 인한 이미지 삭제 완료');
+                    } catch (deleteError) {
+                        console.error('❌ Cloudinary 이미지 삭제 실패:', deleteError);
+                    }
+                }
             }
         }
     ]

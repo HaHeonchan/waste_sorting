@@ -6,4 +6,8 @@ const analyzeController = require('../../controllers/analyze/analyze');
 router.get('/', analyzeController.getAnalyzePage);
 router.post('/upload-analyze', analyzeController.uploadAndAnalyzeImage);
 
+// 디버깅용 엔드포인트
+router.get('/check-env', analyzeController.checkEnvironment);
+router.get('/test-cloudinary', analyzeController.testCloudinary);
+
 module.exports = router; 
