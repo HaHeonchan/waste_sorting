@@ -4,4 +4,7 @@ node_modules/
 *.log
 cache/
 uploads/
-gothic-brand-466306-a8-120b7ba62b78.json
+# Google Cloud 서비스 계정 키 파일들
+*-service-account-key.json
+*-credentials.json
+google-credentials.json
