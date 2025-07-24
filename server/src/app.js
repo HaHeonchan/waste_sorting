@@ -46,7 +46,12 @@ if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
 }
 
 // 미들웨어 설정
-app.use(cors());
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://your-domain.vercel.app', 'https://your-domain.vercel.app'] 
+        : ['http://localhost:3000', 'http://localhost:3001'],
+    credentials: true
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -58,7 +63,8 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000 // 24시간
+        maxAge: 24 * 60 * 60 * 1000, // 24시간
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     }
 }));
 
