@@ -343,8 +343,15 @@ async function analyzeWithTextResults(textAnalysisResults) {
         
         const response = await openai.chat.completions.create({
             model: "gpt-4o-mini",
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: 300
+            messages: [
+                {
+                    role: "system",
+                    content: "당신은 쓰레기 분류 전문가입니다. 반드시 JSON 형식으로만 응답하세요. 다른 설명이나 텍스트는 포함하지 마세요."
+                },
+                { role: "user", content: prompt }
+            ],
+            max_tokens: 500,
+            temperature: 0.1
         });
 
         console.log('✅ GPT 텍스트 기반 분석 완료');
@@ -378,6 +385,10 @@ async function analyzeImageDirectly(imagePath) {
             model: "gpt-4o-mini",
             messages: [
                 {
+                    role: "system",
+                    content: "당신은 쓰레기 분류 전문가입니다. 반드시 JSON 형식으로만 응답하세요. 다른 설명이나 텍스트는 포함하지 마세요."
+                },
+                {
                     role: "user",
                     content: [
                         { type: "text", text: DIRECT_IMAGE_ANALYSIS_PROMPT },
@@ -388,7 +399,8 @@ async function analyzeImageDirectly(imagePath) {
                     ]
                 }
             ],
-            max_tokens: 300
+            max_tokens: 500,
+            temperature: 0.1
         });
 
         console.log('✅ GPT 이미지 직접 분석 완료');
@@ -413,12 +425,24 @@ async function analyzeImageDirectly(imagePath) {
  */
 function parseGPTResponse(content) {
     try {
-        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || 
-                         content.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : content;
-        return JSON.parse(jsonString);
-    } catch (parseError) {
-        console.error('JSON 파싱 오류:', parseError);
+        console.log('🔍 GPT 응답 파싱 시작:', content.substring(0, 100) + '...');
+        
+        // JSON 코드 블록에서 추출
+        let jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+            console.log('📦 JSON 코드 블록에서 추출');
+            return JSON.parse(jsonMatch[1]);
+        }
+        
+        // 중괄호로 둘러싸인 JSON 객체 찾기
+        jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            console.log('🔍 중괄호 JSON 객체에서 추출');
+            return JSON.parse(jsonMatch[0]);
+        }
+        
+        // JSON이 아닌 경우 기본 응답 생성
+        console.log('⚠️ JSON 형식이 아닌 응답 감지, 기본 응답 생성');
         return {
             wasteType: "분류 실패",
             subType: "알 수 없음",
@@ -426,7 +450,22 @@ function parseGPTResponse(content) {
             description: content,
             disposalMethod: "확인 필요",
             confidence: 0,
-            analysisSummary: "GPT 분석 실패"
+            analysisSummary: "GPT 분석 실패 - JSON 파싱 불가"
+        };
+        
+    } catch (parseError) {
+        console.error('❌ JSON 파싱 오류:', parseError);
+        console.error('📝 원본 응답:', content);
+        
+        // 오류 발생 시 기본 응답 반환
+        return {
+            wasteType: "분류 실패",
+            subType: "알 수 없음",
+            recyclingMark: "해당없음",
+            description: content,
+            disposalMethod: "확인 필요",
+            confidence: 0,
+            analysisSummary: `GPT 분석 실패 - ${parseError.message}`
         };
     }
 }

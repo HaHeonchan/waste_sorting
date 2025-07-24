@@ -46,22 +46,18 @@ const TEXT_BASED_ANALYSIS_PROMPT = `텍스트 분석 결과를 바탕으로 쓰�
 
 {textAnalysisResults}
 
-JSON 형식으로 응답:
+반드시 JSON 형식으로만 응답하세요. 다른 설명이나 텍스트는 포함하지 마세요.
+
+JSON 형식:
 {
   "wasteType": "플라스틱|종이|유리|캔류|비닐류|일반쓰레기|기타|복합",
-  "subType": "PET|HDPE|LDPE|PP|PS|OTHER|철|알미늄|유리|일반팩|멸균팩|복합 (해당하지 않을경우 wasteType과 동일)",
+  "subType": "PET|HDPE|LDPE|PP|PS|OTHER|철|알미늄|유리|일반팩|멸균팩|복합",
   "recyclingMark": "재활용 마크 또는 '해당없음'",
   "description": "친근한 설명 (복합 분석시 부분별 처리 명시)",
   "disposalMethod": "처리 방법 (복합시 부분별 제시)",
   "confidence": 0.95,
   "textAnalysisSummary": "주요 정보 요약",
-  "components": [
-    {
-      "part": "부분명",
-      "wasteType": "분류",
-      "disposalMethod": "처리방법"
-    }
-  ]
+  "components": []
 }
 
 복합 제품의 경우 components 배열에 각 부분별 분류를 포함하세요.
@@ -78,22 +74,18 @@ const DIRECT_IMAGE_ANALYSIS_PROMPT = `이미지를 직접 분석하여 쓰레기
 
 이미지에서 보이는 쓰레기의 모양, 색상, 재질, 특징을 바탕으로 분류해주세요.
 
-JSON 형식으로 응답:
+반드시 JSON 형식으로만 응답하세요. 다른 설명이나 텍스트는 포함하지 마세요.
+
+JSON 형식:
 {
   "wasteType": "플라스틱|종이|유리|캔류|비닐류|일반쓰레기|기타|복합",
-  "subType": "PET|HDPE|LDPE|PP|PS|OTHER|철|알미늄|유리|일반팩|멸균팩|복합 (해당하지 않을경우 wasteType과 동일)",
+  "subType": "PET|HDPE|LDPE|PP|PS|OTHER|철|알미늄|유리|일반팩|멸균팩|복합",
   "recyclingMark": "재활용 마크 또는 '해당없음'",
   "description": "이미지에서 보이는 특징을 바탕으로 한 친근한 설명",
   "disposalMethod": "처리 방법",
   "confidence": 0.85,
   "imageAnalysisSummary": "이미지에서 보이는 주요 특징들",
-  "components": [
-    {
-      "part": "부분명",
-      "wasteType": "분류",
-      "disposalMethod": "처리방법"
-    }
-  ]
+  "components": []
 }
 
 분석 기준:
