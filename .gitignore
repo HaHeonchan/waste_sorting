@@ -9,7 +9,7 @@ package-lock.json     # npm 자동 생성 lock 파일 (선택적으로 제외 �
 # 🔐 환경 변수 및 보안 파일
 #########################################
 
-.env                  # 환경변수 설정 파일 (.env)
+.env
 *.log                 # 로그 파일들
 .DS_Store             # macOS 자동 생성 시스템 파일
 
@@ -32,6 +32,7 @@ google-credentials.json      # 명시적 파일명 키
 # 💡 기타 무시하고 싶은 파일/폴더는 아래에 추가
 #########################################
 
-# 예시:
-# tmp/
-# .vscode/
+/client/node_modules/
+/node_modules/
+/server/node_modules/
+/server/cache/
