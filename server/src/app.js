@@ -36,8 +36,17 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// CORS 설정
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.CLIENT_URL || 'https://your-client-name.onrender.com']
+    : ['http://localhost:3000'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 // 미들웨어 설정
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

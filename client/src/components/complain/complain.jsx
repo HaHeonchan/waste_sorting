@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { API_ENDPOINTS } from "../../config/api";
 
 const rewardAmountMap = {
   a: "20,000원 상당",
@@ -39,7 +40,7 @@ export default function TrashReportBoard() {
 
   const fetchReports = async () => {
     const sortParam = sortBy === "created_at" ? "date" : sortBy;
-    const res = await fetch(`/api/reports?sort=${sortParam}&order=${sortOrder}&page=${page}&limit=5`);
+    const res = await fetch(`${API_ENDPOINTS.REPORTS}?sort=${sortParam}&order=${sortOrder}&page=${page}&limit=5`);
     const result = await res.json();
     setReports(result.data);
     setTotalPages(Math.ceil(result.total / result.limit));
@@ -52,7 +53,7 @@ export default function TrashReportBoard() {
     formData.append("content", content);
     formData.append("reward", rewardType);
     if (image) formData.append("image", image);
-    await fetch("/api/reports", {
+    await fetch(API_ENDPOINTS.REPORTS, {
       method: "POST",
       body: formData,
     });
@@ -62,7 +63,7 @@ export default function TrashReportBoard() {
   };
 
   const handleDelete = async (id) => {
-    await fetch(`/api/reports/${id}`, { method: "DELETE" });
+    await fetch(`${API_ENDPOINTS.REPORTS}/${id}`, { method: "DELETE" });
     fetchReports();
   };
 
@@ -72,7 +73,7 @@ export default function TrashReportBoard() {
     formData.append("title", title);
     formData.append("content", content);
     if (image) formData.append("image", image);
-    await fetch(`/api/reports/${id}`, {
+    await fetch(`${API_ENDPOINTS.REPORTS}/${id}`, {
       method: "PUT",
       body: formData,
     });
@@ -82,7 +83,7 @@ export default function TrashReportBoard() {
   };
 
   const handleLike = async (id) => {
-    await fetch(`/api/reports/${id}/like`, { method: "POST" });
+    await fetch(API_ENDPOINTS.REPORT_LIKE(id), { method: "POST" });
     fetchReports();
   };
 

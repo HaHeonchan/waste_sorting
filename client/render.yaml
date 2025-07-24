@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: waste-sorting-client
+    env: static
+    buildCommand: ./build.sh
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://your-server-name.onrender.com 

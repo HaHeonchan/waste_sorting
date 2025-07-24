@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./trashsort_ai.css";
+import { API_ENDPOINTS } from "../../config/api";
 
 const WasteSorting = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -30,7 +31,7 @@ const WasteSorting = () => {
     formData.append("image", selectedFile);
 
     try {
-      const response = await fetch("/analyze/upload-analyze", {
+      const response = await fetch(API_ENDPOINTS.ANALYZE, {
         method: "POST",
         body: formData,
       });
