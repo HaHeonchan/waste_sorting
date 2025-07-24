@@ -32,6 +32,8 @@ export default function TrashReportBoard() {
   const [popupReport, setPopupReport] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     document.title = "분리배출 신고 게시판";
@@ -39,27 +41,56 @@ export default function TrashReportBoard() {
   }, [sortBy, sortOrder, page]);
 
   const fetchReports = async () => {
-    const sortParam = sortBy === "created_at" ? "date" : sortBy;
-    const res = await fetch(`${API_ENDPOINTS.REPORTS}?sort=${sortParam}&order=${sortOrder}&page=${page}&limit=5`);
-    const result = await res.json();
-    setReports(result.data);
-    setTotalPages(Math.ceil(result.total / result.limit));
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching reports from:', API_ENDPOINTS.REPORTS);
+      const sortParam = sortBy === "created_at" ? "date" : sortBy;
+      const res = await fetch(`${API_ENDPOINTS.REPORTS}?sort=${sortParam}&order=${sortOrder}&page=${page}&limit=5`);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const result = await res.json();
+      console.log('Reports fetched successfully:', result);
+      setReports(result.data || []);
+      setTotalPages(Math.ceil((result.total || 0) / (result.limit || 5)));
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      setError('데이터를 불러오는 중 오류가 발생했습니다.');
+      setReports([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("content", content);
-    formData.append("reward", rewardType);
-    if (image) formData.append("image", image);
-    await fetch(API_ENDPOINTS.REPORTS, {
-      method: "POST",
-      body: formData,
-    });
-    setShowForm(false);
-    resetForm();
-    fetchReports();
+    try {
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", content);
+      formData.append("reward", rewardType);
+      if (image) formData.append("image", image);
+      
+      const res = await fetch(API_ENDPOINTS.REPORTS, {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      setShowForm(false);
+      resetForm();
+      fetchReports();
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      alert('민원 제출 중 오류가 발생했습니다.');
+    }
   };
 
   const handleDelete = async (id) => {
@@ -95,8 +126,8 @@ export default function TrashReportBoard() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>분리배출 신고 게시판</h1>
+    <div style={{ maxWidth: 800, margin: "0 auto", fontFamily: "sans-serif", padding: "0 20px" }}>
+      <h1 style={{ textAlign: 'center', color: '#28a745', marginBottom: '2rem' }}>📢 분리배출 신고 게시판</h1>
       <button onClick={() => setShowForm(true)}>+ 민원 제보</button>
 
       <div style={{ marginTop: 16 }}>
@@ -129,7 +160,26 @@ export default function TrashReportBoard() {
       )}
 
       <h2>전체 민원 목록</h2>
-      {reports.map((r) => (
+      
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+          데이터를 불러오는 중...
+        </div>
+      )}
+      
+      {error && (
+        <div style={{ textAlign: 'center', padding: '20px', color: 'red', backgroundColor: '#ffe6e6', borderRadius: '8px', margin: '10px 0' }}>
+          {error}
+        </div>
+      )}
+      
+      {!loading && !error && reports.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+          아직 등록된 민원이 없습니다.
+        </div>
+      )}
+      
+      {!loading && !error && reports.map((r) => (
         <div key={r._id || r.report_id} style={reportStyle}>
           <div><b>{r.title}</b></div>
           <div>{r.content}</div>
