@@ -134,4 +134,12 @@ if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
     });
 }
 
+// ================== 디버깅용 코드 추가 ==================
+app.get('/api/health', (req, res) => {
+    console.log("Health check API called!");
+    res.status(200).json({ status: "ok", message: "Server is alive!" });
+  });
+  // ======================================================
+  
+
 module.exports = app;
