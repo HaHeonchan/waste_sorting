@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { API_ENDPOINTS } from "../../config/api";
+import apiClient from "../../utils/apiClient";
 
 const rewardAmountMap = {
   a: "20,000원 상당",
@@ -44,21 +44,16 @@ export default function TrashReportBoard() {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching reports from:', API_ENDPOINTS.REPORTS);
       const sortParam = sortBy === "created_at" ? "date" : sortBy;
-      const res = await fetch(`${API_ENDPOINTS.REPORTS}?sort=${sortParam}&order=${sortOrder}&page=${page}&limit=5`);
+      const url = `/api/reports?sort=${sortParam}&order=${sortOrder}&page=${page}&limit=5`;
       
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      
-      const result = await res.json();
+      const result = await apiClient.requestWithRetry(url);
       console.log('Reports fetched successfully:', result);
       setReports(result.data || []);
       setTotalPages(Math.ceil((result.total || 0) / (result.limit || 5)));
     } catch (error) {
       console.error('Error fetching reports:', error);
-      setError('데이터를 불러오는 중 오류가 발생했습니다.');
+      setError('데이터를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       setReports([]);
       setTotalPages(1);
     } finally {
@@ -75,47 +70,60 @@ export default function TrashReportBoard() {
       formData.append("reward", rewardType);
       if (image) formData.append("image", image);
       
-      const res = await fetch(API_ENDPOINTS.REPORTS, {
+      await apiClient.requestWithRetry('/api/reports', {
         method: "POST",
         body: formData,
       });
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
       
       setShowForm(false);
       resetForm();
       fetchReports();
     } catch (error) {
       console.error('Error submitting report:', error);
-      alert('민원 제출 중 오류가 발생했습니다.');
+      alert('민원 제출 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
   const handleDelete = async (id) => {
-    await fetch(`${API_ENDPOINTS.REPORTS}/${id}`, { method: "DELETE" });
-    fetchReports();
+    try {
+      await apiClient.requestWithRetry(`/api/reports/${id}`, { method: "DELETE" });
+      fetchReports();
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      alert('삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    }
   };
 
   const handleEdit = async (e, id) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("content", content);
-    if (image) formData.append("image", image);
-    await fetch(`${API_ENDPOINTS.REPORTS}/${id}`, {
-      method: "PUT",
-      body: formData,
-    });
-    setShowEditForm(null);
-    resetForm();
-    fetchReports();
+    try {
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", content);
+      if (image) formData.append("image", image);
+      
+      await apiClient.requestWithRetry(`/api/reports/${id}`, {
+        method: "PUT",
+        body: formData,
+      });
+      
+      setShowEditForm(null);
+      resetForm();
+      fetchReports();
+    } catch (error) {
+      console.error('Error editing report:', error);
+      alert('수정 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    }
   };
 
   const handleLike = async (id) => {
-    await fetch(API_ENDPOINTS.REPORT_LIKE(id), { method: "POST" });
-    fetchReports();
+    try {
+      await apiClient.requestWithRetry(`/api/reports/${id}/like`, { method: "POST" });
+      fetchReports();
+    } catch (error) {
+      console.error('Error liking report:', error);
+      alert('추천 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    }
   };
 
   const resetForm = () => {
@@ -163,7 +171,10 @@ export default function TrashReportBoard() {
       
       {loading && (
         <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-          데이터를 불러오는 중...
+          <div>데이터를 불러오는 중...</div>
+          <div style={{ marginTop: '10px', fontSize: '0.9em', color: '#999' }}>
+            서버 응답이 느릴 수 있습니다. 잠시만 기다려주세요.
+          </div>
         </div>
       )}
       

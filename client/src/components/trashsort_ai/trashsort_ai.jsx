@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import "./trashsort_ai.css";
-import { API_ENDPOINTS } from "../../config/api";
+import apiClient from "../../utils/apiClient";
 
 const WasteSorting = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [progressMessage, setProgressMessage] = useState("");
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -26,22 +27,24 @@ const WasteSorting = () => {
 
     setLoading(true);
     setResult(null);
+    setProgressMessage("");
 
     const formData = new FormData();
     formData.append("image", selectedFile);
 
     try {
-      const response = await fetch(API_ENDPOINTS.ANALYZE, {
-        method: "POST",
-        body: formData,
+      const data = await apiClient.analyzeImage(formData, (message) => {
+        setProgressMessage(message);
       });
-
-      const data = await response.json();
       setResult(data);
     } catch (err) {
-      setResult({ error: "분석 실패" });
+      console.error("분석 오류:", err);
+      setResult({ 
+        error: err.message || "분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." 
+      });
     } finally {
       setLoading(false);
+      setProgressMessage("");
       setPreviewUrl(null); // 💡 분석 완료 후 미리보기 영역 숨김!
     }
   };
@@ -78,7 +81,14 @@ const WasteSorting = () => {
 
       <div id="result">
         {loading && (
-          <div className="loading">이미지를 분석하고 있습니다...</div>
+          <div className="loading">
+            {progressMessage || "이미지를 분석하고 있습니다..."}
+            <div className="loading-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
         )}
 
         {result && !result.error && (
