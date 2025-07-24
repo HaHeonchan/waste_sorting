@@ -40,16 +40,27 @@ const upload = multer({ storage });
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? [process.env.CLIENT_URL || 'https://your-client-name.onrender.com']
-    : ['http://localhost:3000'],
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
 // 미들웨어 설정
 app.use(cors(corsOptions));
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// 응답 타임아웃 설정 (5분)
+app.use((req, res, next) => {
+  res.setTimeout(300000, () => {
+    console.error('요청 타임아웃:', req.url);
+    res.status(408).json({ error: '요청이 시간 초과되었습니다.' });
+  });
+  next();
+});
 
 // 세션 설정
 app.use(session({
@@ -96,6 +107,39 @@ app.get('/waste-sorting', (req, res) => {
 // 로그인 페이지
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../../client/public/login.html'));
+});
+
+// 환경변수 확인 엔드포인트 (디버깅용)
+app.get('/api/debug/env', (req, res) => {
+    const envInfo = {
+        NODE_ENV: process.env.NODE_ENV,
+        PORT: process.env.PORT,
+        CLIENT_URL: process.env.CLIENT_URL,
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY ? '설정됨' : '설정되지 않음',
+        CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+        CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY ? '설정됨' : '설정되지 않음',
+        CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ? '설정됨' : '설정되지 않음',
+        MONGODB_URI: process.env.MONGODB_URI ? '설정됨' : '설정되지 않음',
+        SESSION_SECRET: process.env.SESSION_SECRET ? '설정됨' : '설정되지 않음',
+        timestamp: new Date().toISOString()
+    };
+    
+    res.json({
+        message: '환경변수 확인',
+        environment: envInfo,
+        serverTime: new Date().toISOString()
+    });
+});
+
+// 서버 상태 확인 엔드포인트
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        env: process.env.NODE_ENV
+    });
 });
 
 module.exports = app;
