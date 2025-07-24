@@ -118,4 +118,20 @@ app.get('/login', (req, res) => {
     }
 });
 
+// Vercel 환경에서 API가 아닌 모든 요청에 대한 처리
+if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+    app.get('*', (req, res) => {
+        // API 경로가 아닌 경우 React 앱이 처리하도록 함
+        if (!req.path.startsWith('/api') && !req.path.startsWith('/auth') && 
+            !req.path.startsWith('/analyze') && !req.path.startsWith('/uploads')) {
+            res.status(404).json({ 
+                error: 'Not Found', 
+                message: 'This route is handled by the React application' 
+            });
+        } else {
+            res.status(404).json({ error: 'API endpoint not found' });
+        }
+    });
+}
+
 module.exports = app;
