@@ -8,10 +8,8 @@
 - [x] 클라이언트 API 호출 수정
 - [x] multer 설정 Vercel 대응
 - [x] 정적 파일 서빙 설정
-- [x] 루트 package.json build 스크립트 수정
-- [x] 클라이언트 빌드 스크립트 Windows 대응
 
-### 2. 환경변수 설정 (Vercel 대시보드에서) ⚠️ 필수
+### 2. 환경변수 설정 (Vercel 대시보드에서)
 - [ ] NODE_ENV=production
 - [ ] MONGODB_URI=your_mongodb_connection_string
 - [ ] SESSION_SECRET=your_session_secret
@@ -20,7 +18,7 @@
 - [ ] CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 - [ ] GOOGLE_APPLICATION_CREDENTIALS=your_google_credentials_json
 
-### 3. 클라이언트 환경변수 설정 (선택사항)
+### 3. 클라이언트 환경변수 설정
 - [ ] REACT_APP_API_URL=https://your-server-domain.vercel.app/api
 - [ ] REACT_APP_AUTH_URL=https://your-server-domain.vercel.app/auth
 - [ ] REACT_APP_ANALYZE_URL=https://your-server-domain.vercel.app/analyze
@@ -32,18 +30,19 @@
 
 ## 배포 단계
 
-### 1단계: 환경변수 설정
-Vercel 대시보드 → Project Settings → Environment Variables에서 위의 환경변수들을 설정
-
-### 2단계: 배포 실행
+### 1단계: 서버 배포
 ```bash
-# 프로젝트 루트에서
 vercel --prod
 ```
 
-### 3단계: 배포 확인
-- 배포된 URL 확인
-- 기능 테스트 실행
+### 2단계: 도메인 확인 후 클라이언트 환경변수 업데이트
+- 배포된 서버 도메인 확인
+- 클라이언트 환경변수에 실제 도메인 입력
+
+### 3단계: 클라이언트 배포
+```bash
+vercel --prod
+```
 
 ## 배포 후 확인사항
 
@@ -73,9 +72,4 @@ vercel --prod
 ### 파일 업로드 에러
 1. Cloudinary 설정 확인
 2. 파일 크기 제한 확인
-3. multer 설정 확인
-
-### 빌드 에러
-1. package.json 스크립트 확인
-2. 의존성 설치 확인
-3. Node.js 버전 확인 
+3. multer 설정 확인 

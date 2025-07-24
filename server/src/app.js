@@ -156,21 +156,6 @@ app.get('/api/health', (req, res) => {
         message: "Server is alive!",
         environment: process.env.NODE_ENV,
         vercel: !!process.env.VERCEL,
-        port: process.env.PORT || 'not set',
-        timestamp: new Date().toISOString()
-    });
-});
-
-app.get('/api/debug', (req, res) => {
-    res.status(200).json({
-        environment: process.env.NODE_ENV,
-        vercel: !!process.env.VERCEL,
-        port: process.env.PORT || 'not set',
-        host: req.get('host'),
-        origin: req.get('origin'),
-        url: req.url,
-        method: req.method,
-        headers: req.headers,
         timestamp: new Date().toISOString()
     });
 });
