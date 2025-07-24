@@ -6,6 +6,9 @@ class ApiClient {
     this.timeout = 60000; // 60초 타임아웃 (더 긴 응답 시간 허용)
     this.maxRetries = 3; // 최대 3번 재시도
     this.retryDelay = 3000; // 재시도 간격 3초 (더 긴 간격)
+    
+    // 기본 API URL 추출 (REPORTS 엔드포인트에서 /api 부분 제거)
+    this.baseUrl = API_ENDPOINTS.REPORTS.replace('/api/reports', '');
   }
 
   // 타임아웃을 포함한 fetch 래퍼
@@ -30,11 +33,14 @@ class ApiClient {
   async requestWithRetry(url, options = {}, retries = this.maxRetries) {
     let lastError;
 
+    // URL이 상대 경로인 경우 기본 API URL과 결합
+    const fullUrl = url.startsWith('http') ? url : `${this.baseUrl}${url}`;
+
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        console.log(`API 요청 시도 ${attempt}/${retries}: ${url}`);
+        console.log(`API 요청 시도 ${attempt}/${retries}: ${fullUrl}`);
         
-        const response = await this.fetchWithTimeout(url, options);
+        const response = await this.fetchWithTimeout(fullUrl, options);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
