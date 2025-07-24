@@ -1,19 +1,12 @@
 {
-  "name": "trash_sort",
+  "name": "waste-sorting",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "npx concurrently \"npm start --prefix client\" \"npm start --prefix server\"",
+    "dev": "npx concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "install:all": "npm install && npm install --prefix client && npm install --prefix server"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.0",
-    "express": "^5.1.0",
-    "morgan": "^1.10.1"
+    "concurrently": "^1.0.0"
   }
 }

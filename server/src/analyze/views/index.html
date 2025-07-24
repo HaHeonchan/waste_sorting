@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>쓰레기 분류 시스템</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .container {
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        text-align: center;
+        max-width: 500px;
+        width: 100%;
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+      .user-info {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        display: none;
+      }
+      .user-info img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 10px;
+      }
+      .btn {
+        padding: 12px 24px;
+        margin: 10px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        transition: all 0.3s ease;
+      }
+      .btn-primary {
+        background: #007bff;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #0056b3;
+        transform: translateY(-2px);
+      }
+      .btn-success {
+        background: #28a745;
+        color: white;
+      }
+      .btn-success:hover {
+        background: #1e7e34;
+        transform: translateY(-2px);
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: white;
+      }
+      .btn-danger:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧹 쓰레기 분류 시스템</h1>
+      
+      <div id="userInfo" class="user-info">
+        <img id="userProfilePic" src="" alt="프로필">
+        <span id="userName"></span>
+        <p id="userEmail"></p>
+      </div>
+      
+      <div id="loginSection">
+        <a href="/auth/google" class="btn btn-primary">
+          🔐 Google로 로그인
+        </a>
+      </div>
+      
+      <div id="appSection" style="display: none;">
+        <a href="/waste-sorting" class="btn btn-success">
+          🧹 쓰레기 분류 시작하기
+        </a>
+        <a href="/auth/logout" class="btn btn-danger">
+          🚪 로그아웃
+        </a>
+      </div>
+    </div>
+
+    <script>
+      // 사용자 인증 상태 확인
+      async function checkAuthStatus() {
+        try {
+          const response = await fetch('/auth/user');
+          const data = await response.json();
+          
+          if (data.isAuthenticated) {
+            // 로그인된 상태
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('appSection').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'block';
+            
+            // 사용자 정보 표시
+            document.getElementById('userName').textContent = data.user.displayName;
+            document.getElementById('userEmail').textContent = data.user.email;
+            if (data.user.profilePicture) {
+              document.getElementById('userProfilePic').src = data.user.profilePicture;
+            }
+          } else {
+            // 로그인되지 않은 상태
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('appSection').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'none';
+          }
+        } catch (error) {
+          console.error('인증 상태 확인 중 오류:', error);
+        }
+      }
+
+      // 페이지 로드 시 인증 상태 확인
+      checkAuthStatus();
+    </script>
+  </body>
+</html>
