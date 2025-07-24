@@ -1,0 +1,64 @@
+/* src/components/Navbar.css */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  padding: 0 24px;
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 15px;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+}
+
+.title {
+  font-weight: 700;
+  color: #1b1b1b;
+}
+
+.navbar-center {
+  display: flex;
+  gap: 16px;
+  align-items: right;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-link:hover {
+  color: #0d9488;
+}
+
+.highlight {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.navbar-right .login-btn {
+  background-color: #22c55e;
+  color: white;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.navbar-right .login-btn:hover {
+  background-color: #16a34a;
+}
