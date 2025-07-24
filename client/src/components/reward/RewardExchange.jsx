@@ -17,7 +17,7 @@ function RewardExchange({ userPoint, rewardList, onExchange }) {
 
   return (
     <div>
-      <h3 style={{ marginBottom: 16 }}>리워드 내역</h3>
+      <h3 style={{ marginBottom: 16, fontSize: 30 }}>리워드 내역</h3>
       <div style={{
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
