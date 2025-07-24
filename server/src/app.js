@@ -36,8 +36,17 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// CORS 설정 - 개발/프로덕션 환경 구분
+const corsOptions = {
+    origin: process.env.NODE_ENV === 'production' 
+        ? [process.env.FRONTEND_URL, 'https://your-frontend-domain.vercel.app'] // 프로덕션 프론트엔드 URL
+        : ['http://localhost:3000', 'http://localhost:3001'], // 개발 환경
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+
 // 미들웨어 설정
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
