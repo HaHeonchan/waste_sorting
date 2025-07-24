@@ -1,6 +1,5 @@
 const Report = require('../models/report');
 const mongoose = require('mongoose');
-const cloudinaryStorage = require('../../analyze/controllers/cloudinary-storage');
 const fs = require('fs');
 const path = require('path');
 
@@ -31,54 +30,18 @@ exports.listReports = async (req, res) => {
     }
 };
 
-// 2. 민원 작성 (Cloudinary 통합)
+// 2. 민원 작성 (로컬 파일 저장)
 exports.createReport = async (req, res) => {
     try {
         let image_url = '';
-        let cloudinary_id = '';
-        let image_metadata = {};
 
         // 이미지 업로드 처리
         if (req.file) {
             console.log('📸 민원 이미지 업로드 시작:', req.file.filename);
             
-            // Cloudinary에 업로드
-            const uploadResult = await cloudinaryStorage.uploadImageToCloudinary(req.file.path, {
-                folder: 'complain-reports',
-                tags: ['complain', 'report'],
-                optimization: true
-            });
-
-            if (uploadResult.success) {
-                image_url = uploadResult.url;
-                cloudinary_id = uploadResult.publicId;
-                image_metadata = {
-                    width: uploadResult.width,
-                    height: uploadResult.height,
-                    size: uploadResult.size,
-                    format: uploadResult.format
-                };
-                
-                console.log('✅ Cloudinary 업로드 성공:', {
-                    cloudinary_id: cloudinary_id,
-                    url: image_url,
-                    size: uploadResult.size
-                });
-            } else {
-                console.error('❌ Cloudinary 업로드 실패:', uploadResult.error);
-                return res.status(500).json({ 
-                    message: '이미지 업로드 실패', 
-                    error: uploadResult.error 
-                });
-            }
-
-            // 로컬 임시 파일 삭제
-            try {
-                fs.unlinkSync(req.file.path);
-                console.log('🗑️ 임시 파일 삭제 완료:', req.file.path);
-            } catch (deleteError) {
-                console.warn('⚠️ 임시 파일 삭제 실패:', deleteError.message);
-            }
+            // 로컬 파일 경로로 저장
+            image_url = `/uploads/${req.file.filename}`;
+            console.log('✅ 로컬 파일 저장 완료:', image_url);
         } else {
             image_url = req.body.image_url || '';
         }
@@ -97,16 +60,13 @@ exports.createReport = async (req, res) => {
             content,
             reward,
             image_url,
-            cloudinary_id,
-            image_metadata,
             likes: 0
         });
 
         res.status(201).json({ 
             message: '등록 완료', 
             report_id: newReport._id,
-            image_url: image_url,
-            cloudinary_id: cloudinary_id
+            image_url: image_url
         });
     } catch (err) {
         console.error('민원 등록 에러:', err);
@@ -114,7 +74,7 @@ exports.createReport = async (req, res) => {
     }
 };
 
-// 3. 민원 수정 (Cloudinary 통합)
+// 3. 민원 수정 (로컬 파일 저장)
 exports.updateReport = async (req, res) => {
     try {
         const { report_id } = req.params;
@@ -133,52 +93,9 @@ exports.updateReport = async (req, res) => {
         if (req.file) {
             console.log('📸 민원 이미지 수정 업로드 시작:', req.file.filename);
             
-            // 기존 Cloudinary 이미지 삭제
-            if (report.cloudinary_id) {
-                try {
-                    await cloudinaryStorage.deleteImageFromCloudinary(report.cloudinary_id);
-                    console.log('🗑️ 기존 Cloudinary 이미지 삭제 완료:', report.cloudinary_id);
-                } catch (deleteError) {
-                    console.warn('⚠️ 기존 이미지 삭제 실패:', deleteError.message);
-                }
-            }
-
-            // 새 이미지를 Cloudinary에 업로드
-            const uploadResult = await cloudinaryStorage.uploadImageToCloudinary(req.file.path, {
-                folder: 'complain-reports',
-                tags: ['complain', 'report'],
-                optimization: true
-            });
-
-            if (uploadResult.success) {
-                report.image_url = uploadResult.url;
-                report.cloudinary_id = uploadResult.publicId;
-                report.image_metadata = {
-                    width: uploadResult.width,
-                    height: uploadResult.height,
-                    size: uploadResult.size,
-                    format: uploadResult.format
-                };
-                
-                console.log('✅ Cloudinary 수정 업로드 성공:', {
-                    cloudinary_id: uploadResult.publicId,
-                    url: uploadResult.url
-                });
-            } else {
-                console.error('❌ Cloudinary 수정 업로드 실패:', uploadResult.error);
-                return res.status(500).json({ 
-                    message: '이미지 업로드 실패', 
-                    error: uploadResult.error 
-                });
-            }
-
-            // 로컬 임시 파일 삭제
-            try {
-                fs.unlinkSync(req.file.path);
-                console.log('🗑️ 임시 파일 삭제 완료:', req.file.path);
-            } catch (deleteError) {
-                console.warn('⚠️ 임시 파일 삭제 실패:', deleteError.message);
-            }
+            // 로컬 파일 경로로 저장
+            report.image_url = `/uploads/${req.file.filename}`;
+            console.log('✅ 로컬 파일 수정 저장 완료:', report.image_url);
         }
 
         // 텍스트 필드 업데이트
@@ -189,8 +106,7 @@ exports.updateReport = async (req, res) => {
         await report.save();
         res.json({ 
             message: '수정 완료',
-            image_url: report.image_url,
-            cloudinary_id: report.cloudinary_id
+            image_url: report.image_url
         });
     } catch (err) {
         console.error('민원 수정 에러:', err);
@@ -198,7 +114,7 @@ exports.updateReport = async (req, res) => {
     }
 };
 
-// 4. 민원 삭제 (Cloudinary 통합)
+// 4. 민원 삭제 (로컬 파일 저장)
 exports.deleteReport = async (req, res) => {
     try {
         const { report_id } = req.params;
@@ -213,16 +129,6 @@ exports.deleteReport = async (req, res) => {
         
         if (!report) {
             return res.status(404).json({ message: '삭제할 민원 없음' });
-        }
-
-        // Cloudinary에서 이미지 삭제
-        if (report.cloudinary_id) {
-            try {
-                await cloudinaryStorage.deleteImageFromCloudinary(report.cloudinary_id);
-                console.log('🗑️ Cloudinary 이미지 삭제 완료:', report.cloudinary_id);
-            } catch (deleteError) {
-                console.warn('⚠️ Cloudinary 이미지 삭제 실패:', deleteError.message);
-            }
         }
 
         // 데이터베이스에서 삭제
