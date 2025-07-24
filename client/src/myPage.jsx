@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import MyProfileCard from "../component/MyProfileCard";
-import RewardExchange from "../component/RewardExchange";
+import MyProfileCard from "./components/reward/MyProfileCard";
+import RewardExchange from "./components//reward/RewardExchange";
 
 function MyPage() {
   const [user, setUser] = useState(null);
