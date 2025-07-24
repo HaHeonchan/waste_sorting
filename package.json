@@ -5,8 +5,8 @@
     "start": "npx concurrently \"npm start --prefix client\" \"npm start --prefix server\"",
     "dev": "npx concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
     "install:all": "npm install && npm install --prefix client && npm install --prefix server",
-    "build": "npm run build --prefix client",
-    "vercel-build": "npm run build --prefix client"
+    "build": "npx concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "vercel-build": "npx concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\""
   },
   "dependencies": {
     "concurrently": "^1.0.0"
