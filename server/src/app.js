@@ -40,7 +40,11 @@ const upload = multer({ storage });
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? [process.env.CLIENT_URL || 'https://your-client-name.onrender.com']
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    : [
+        'http://localhost:3000', 
+        'http://127.0.0.1:3000',
+        process.env.CLIENT_URL || 'http://localhost:3000'
+      ].filter(Boolean), // undefined 값 제거
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

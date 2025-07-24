@@ -3,7 +3,10 @@ import apiClient from './apiClient';
 
 class ServerStatus {
   constructor() {
-    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+    this.baseUrl = process.env.REACT_APP_API_URL || 
+                   (process.env.NODE_ENV === 'production' 
+                     ? process.env.REACT_APP_SERVER_URL || 'https://your-server-name.onrender.com'
+                     : 'http://localhost:3001');
   }
 
   // 서버 상태 확인
