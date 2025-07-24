@@ -1,12 +1,16 @@
 const express = require('express');
+const app = express();
 const cors = require('cors');
 const mongoose = require('mongoose');
-
-const app = express();
 const PORT = 4000;
+const authMiddleware = require('./middlewares/auth');
+const dotenv = require('dotenv');
+
+require('dotenv').config();
+
+
 app.use(cors());
 app.use(express.json());
-
 
 mongoose.connect('mongodb://localhost:27017/testdb' , { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("몽고DB 연결 성공!"))
@@ -15,11 +19,11 @@ mongoose.connect('mongodb://localhost:27017/testdb' , { useNewUrlParser: true, u
 const userSchema = new mongoose.Schema({
   name: String,
   email: String,
+  password: String,
   points: Number,
-  recycleCountL: Number,
-  reportCount:Number,
+  recycleCount: Number,
+  reportCount: Number,
 });
-
 const rewardSchema = new mongoose.Schema({
   userEmail: String,
   date: String,
@@ -28,35 +32,31 @@ const rewardSchema = new mongoose.Schema({
   desc: String,
   received: Boolean
 });
-
 const User = mongoose.model('User', userSchema);
-const Reward = mongoose.model('Reward',rewardSchema);
+const Reward = mongoose.model('Reward', rewardSchema);
 
-app.get('/api/user/me', async (req, res) => {
-  const user = await User.findOne({ email: "junsu5072@daum.net"});
+app.use('/api/auth', require('./routes/auth'));
+
+app.get('/api/user/info', authMiddleware, async (req, res) => {
+  const user = await User.findOne({ email: req.user.email });
   res.json(user);
 });
 
-app.get('/api/reward/list', async (req, res) => {
-  const { email } = req.query;
-  const rewards = await Reward.find(email ? { userEmail: email } : {});
+app.get('/api/reward/list', authMiddleware, async (req, res) => {
+  const rewards = await Reward.find({ userEmail: req.user.email }).sort({ date: -1 });
   res.json(rewards);
 });
 
-app.post('/api/reward/exchange', async (req, res) => {
-  const { userEmail, item, point } = req.body;
-  const user = await User.findOne({email : userEmail});
-
+app.post('/api/reward/exchange', authMiddleware, async (req, res) => {
+  const { item, point } = req.body;
+  const userEmail = req.user.email; 
+  const user = await User.findOne({ email: userEmail });
   if (!user) return res.json({ ok: false, msg: "유저를 찾을 수 없음" });
-
-  if (user.points < point) return res.json({ ok: false, msg: "포인트 부족" });  // 이 부분은 굳이 필요한가 싶음 어차피 포인트가 부족하면 교환요청이 안뜰텐데
-
-  const already = await Reward.findOne({ userEmail, item, received: true });  // 이 부분도. 교환 요청에서 수령 완료로 변했을텐데 굳이?
+  if (user.points < point) return res.json({ ok: false, msg: "포인트 부족" });
+  const already = await Reward.findOne({ userEmail, item, received: true });
   if (already) return res.json({ ok: false, msg: "이미 교환한 상품!" });
-
   user.points -= point;
   await user.save();
-
   await Reward.create({
     userEmail,
     item,
@@ -64,9 +64,7 @@ app.post('/api/reward/exchange', async (req, res) => {
     date: new Date().toISOString().slice(0, 10),
     received: true,
   });
-
-
-  res.json({ ok: true, newPoints : user.points });
+  res.json({ ok: true, newPoints: user.points });
 });
 
 app.listen(PORT, () => {
