@@ -19,6 +19,18 @@
       "dest": "server/server.js"
     },
     {
+      "src": "/auth/(.*)",
+      "dest": "server/server.js"
+    },
+    {
+      "src": "/analyze/(.*)",
+      "dest": "server/server.js"
+    },
+    {
+      "src": "/uploads/(.*)",
+      "dest": "server/server.js"
+    },
+    {
       "src": "/static/(.*)",
       "dest": "/client/build/static/$1"
     },

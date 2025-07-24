@@ -66,6 +66,12 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// 모든 요청 로깅 (디버깅용)
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path} - Vercel: ${!!process.env.VERCEL}`);
+    next();
+});
+
 // 정적 파일 서빙 - Vercel 환경에 맞게 수정
 if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
   // Vercel 환경에서는 정적 파일을 서빙하지 않음 (Vercel이 처리)
@@ -121,15 +127,23 @@ app.get('/login', (req, res) => {
 // Vercel 환경에서 API가 아닌 모든 요청에 대한 처리
 if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
     app.get('*', (req, res) => {
+        console.log(`404 - Path: ${req.path}, Method: ${req.method}`);
+        
         // API 경로가 아닌 경우 React 앱이 처리하도록 함
         if (!req.path.startsWith('/api') && !req.path.startsWith('/auth') && 
             !req.path.startsWith('/analyze') && !req.path.startsWith('/uploads')) {
             res.status(404).json({ 
                 error: 'Not Found', 
-                message: 'This route is handled by the React application' 
+                message: 'This route should be handled by the React application',
+                path: req.path,
+                timestamp: new Date().toISOString()
             });
         } else {
-            res.status(404).json({ error: 'API endpoint not found' });
+            res.status(404).json({ 
+                error: 'API endpoint not found',
+                path: req.path,
+                availableEndpoints: ['/api', '/auth', '/analyze', '/uploads']
+            });
         }
     });
 }
@@ -137,9 +151,15 @@ if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
 // ================== 디버깅용 코드 추가 ==================
 app.get('/api/health', (req, res) => {
     console.log("Health check API called!");
-    res.status(200).json({ status: "ok", message: "Server is alive!" });
-  });
-  // ======================================================
+    res.status(200).json({ 
+        status: "ok", 
+        message: "Server is alive!",
+        environment: process.env.NODE_ENV,
+        vercel: !!process.env.VERCEL,
+        timestamp: new Date().toISOString()
+    });
+});
+// ======================================================
   
 
 module.exports = app;

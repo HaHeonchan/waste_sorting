@@ -1,14 +1,34 @@
 // API 엔드포인트 설정
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? process.env.REACT_APP_API_URL || 'https://your-vercel-domain.vercel.app/api'
-  : 'http://localhost:3001/api';
+const getApiBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    // Vercel 환경에서는 현재 도메인을 사용
+    const currentDomain = window.location.origin;
+    console.log('Current domain:', currentDomain);
+    return `${currentDomain}/api`;
+  }
+  return 'http://localhost:3001/api';
+};
 
-const AUTH_BASE_URL = process.env.NODE_ENV === 'production'
-  ? process.env.REACT_APP_AUTH_URL || 'https://your-vercel-domain.vercel.app/auth'
-  : 'http://localhost:3001/auth';
+const getAuthBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    const currentDomain = window.location.origin;
+    return `${currentDomain}/auth`;
+  }
+  return 'http://localhost:3001/auth';
+};
 
-const ANALYZE_BASE_URL = process.env.NODE_ENV === 'production'
-  ? process.env.REACT_APP_ANALYZE_URL || 'https://your-vercel-domain.vercel.app/analyze'
-  : 'http://localhost:3001/analyze';
+const getAnalyzeBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    const currentDomain = window.location.origin;
+    return `${currentDomain}/analyze`;
+  }
+  return 'http://localhost:3001/analyze';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+const AUTH_BASE_URL = getAuthBaseUrl();
+const ANALYZE_BASE_URL = getAnalyzeBaseUrl();
+
+console.log('API URLs:', { API_BASE_URL, AUTH_BASE_URL, ANALYZE_BASE_URL });
 
 export { API_BASE_URL, AUTH_BASE_URL, ANALYZE_BASE_URL }; 
