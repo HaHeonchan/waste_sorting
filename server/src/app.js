@@ -48,7 +48,7 @@ if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
 // 미들웨어 설정
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://your-domain.vercel.app', 'https://your-domain.vercel.app'] 
+        ? true  // Vercel에서는 모든 origin 허용 (보안상 실제 도메인으로 제한하는 것이 좋음)
         : ['http://localhost:3000', 'http://localhost:3001'],
     credentials: true
 }));
@@ -99,6 +99,12 @@ app.use('/api', (req, res, next) => {
 app.use('/analyze', analyzeRouter);
 app.use('/api/waste', wasteRouter);
 app.use('/auth', authRouter);
+
+// Vercel 환경에서 API 경로 처리 개선
+app.use('/api', (req, res, next) => {
+    console.log(`API 요청: ${req.method} ${req.path}`);
+    next();
+});
 
 // 메인 페이지 - Vercel 환경에 맞게 수정
 app.get('/', (req, res) => {
