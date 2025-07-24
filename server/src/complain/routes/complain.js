@@ -70,6 +70,12 @@ const handleMulterError = (error, req, res, next) => {
 
 // router.use(auth); // 임시 비활성화
 
+// 디버깅 미들웨어
+router.use((req, res, next) => {
+    console.log(`🔍 민원 API 요청: ${req.method} ${req.url}`);
+    next();
+});
+
 // ✅ 민원 목록 조회 (정렬 query 지원: sort=latest|oldest|likes)
 router.get('/reports', controller.listReports);
 
