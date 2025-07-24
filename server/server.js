@@ -26,8 +26,9 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
         });
     });
 } else {
-    // Vercel 환경에서는 MongoDB만 연결
+    // Vercel 환경에서는 MongoDB만 연결하고 앱을 export
     startServer();
 }
 
+// Vercel을 위해 app을 export
 module.exports = app;
