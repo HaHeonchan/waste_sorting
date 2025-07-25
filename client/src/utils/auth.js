@@ -20,14 +20,30 @@ export const setUser = (user) => {
   localStorage.setItem('user', JSON.stringify(user));
 };
 
-// 사용자 정보 가져오기
+// 사용자 정보 가져오기 (안전한 JSON 파싱)
 export const getUser = () => {
-  const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
+  try {
+    const user = localStorage.getItem('user');
+    if (!user) return null;
+    
+    const parsedUser = JSON.parse(user);
+    return parsedUser;
+  } catch (error) {
+    console.error('사용자 정보 파싱 오류:', error);
+    // 파싱 오류 시 localStorage에서 제거
+    localStorage.removeItem('user');
+    return null;
+  }
 };
 
 // 사용자 정보 제거
 export const removeUser = () => {
+  localStorage.removeItem('user');
+};
+
+// 모든 인증 데이터 클리어
+export const clearAuthData = () => {
+  localStorage.removeItem('authToken');
   localStorage.removeItem('user');
 };
 
@@ -38,8 +54,7 @@ export const isAuthenticated = () => {
 
 // 로그아웃
 export const logout = () => {
-  removeToken();
-  removeUser();
+  clearAuthData();
   window.location.href = '/';
 };
 
@@ -57,9 +72,22 @@ export const loginWithEmail = async (email, password) => {
     // 토큰 저장
     setToken(result.token);
     
-    // 사용자 정보 저장 (토큰에서 디코드하거나 별도 API 호출)
-    const userInfo = await getUserInfo();
+    // 사용자 정보 구성 (서버에서 받은 정보 사용)
+    const userInfo = {
+      email: email,
+      name: result.name, // 서버에서 받은 name 필드 사용
+      id: result.id,
+      points: result.points || 0,
+      recycleCount: result.recycleCount || 0,
+      reportCount: result.reportCount || 0,
+      createdAt: result.createdAt || new Date().toISOString(),
+      lastLogin: new Date().toISOString()
+    };
+    
+    // 사용자 정보 저장
     setUser(userInfo);
+    
+    console.log('로그인 성공 - 사용자 정보:', userInfo);
 
     return { success: true, user: userInfo };
   } catch (error) {

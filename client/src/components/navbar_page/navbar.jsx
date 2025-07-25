@@ -37,13 +37,13 @@ const Navbar = () => {
   const getUserDisplayName = () => {
     if (!user) return '사용자';
     
-    // 구글 로그인 사용자
-    if (user.displayName) return user.displayName;
-    
-    // 이메일 로그인 사용자
+    // 실제 name 필드 우선 사용
     if (user.name) return user.name;
     
-    // 이메일에서 이름 추출
+    // 구글 로그인 사용자의 displayName
+    if (user.displayName) return user.displayName;
+    
+    // 이메일에서 이름 추출 (fallback)
     if (user.email) {
       const emailName = user.email.split('@')[0];
       return emailName.length > 10 ? emailName.substring(0, 10) + '...' : emailName;

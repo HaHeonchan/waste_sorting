@@ -62,7 +62,18 @@ router.post("/login", async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: "30d" }
         );
-        res.json({ token });
+        
+        // 토큰과 함께 사용자 정보도 반환
+        res.json({ 
+            token,
+            name: user.name,
+            id: user._id,
+            points: user.points,
+            recycleCount: user.recycleCount,
+            reportCount: user.reportCount,
+            createdAt: user.createdAt,
+            lastLogin: user.lastLogin
+        });
 
     } catch (err) {
         console.error("로그인 에러:", err);

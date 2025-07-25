@@ -45,13 +45,16 @@ const Login = () => {
     }
 
     try {
+      console.log('로그인 시도:', formData.email);
       const result = await loginWithEmail(formData.email, formData.password);
       
       if (result.success) {
+        console.log('로그인 성공:', result.user);
         login(result.user);
         alert('로그인 성공!');
         navigate('/');
       } else {
+        console.log('로그인 실패:', result.error);
         setError(result.error);
       }
     } catch (err) {
@@ -67,8 +70,10 @@ const Login = () => {
     setError('');
 
     try {
+      console.log('구글 로그인 시도');
       const result = await loginWithGoogle();
       if (result.success) {
+        console.log('구글 로그인 성공:', result.user);
         login(result.user);
         alert('구글 로그인 성공!');
         navigate('/');
