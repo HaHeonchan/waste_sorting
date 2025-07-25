@@ -16,7 +16,9 @@ const startServer = async () => {
     
     // 서버 시작
     app.listen(PORT, () => {
-        console.log(`🔧 서버 API: ${REACT_APP_API_URL}`);
+        console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다.`);
+        console.log(`📱 클라이언트: http://localhost:3000`);
+        console.log(`🔧 서버 API: http://localhost:${PORT}`);
     });
 };
 
