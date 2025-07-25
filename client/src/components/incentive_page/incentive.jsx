@@ -37,7 +37,7 @@ function Incentive() {
   return (
     <div className="incentive-container">
       <h1 className="incentive-title">인센티브 관리</h1>
-      <p className="incentive-subtitle">분리배출로 포인트를 모으면 자동 적립됩니다</p>
+      <p className="incentive-subtitle">스마트 분리배출 사진을 찍으면 얻게 될 포인트를 확인할 수 있습니다</p>
 
       <div className="point-box">
         <div className="point-text">

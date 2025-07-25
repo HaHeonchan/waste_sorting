@@ -1,4 +1,8 @@
 /* Home.css - JSX에 맞춘 반응형 대응 */
+/* 모든 요소에 드래그 방지 적용 */
+* {
+  user-select: none;
+}
 
 body {
   margin: 0;

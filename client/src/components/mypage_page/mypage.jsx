@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './mypage.css';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../utils/apiClient';
+import { Link } from "react-router-dom";
 
 export default function MyPage() {
   const navigate = useNavigate();
