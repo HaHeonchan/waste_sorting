@@ -41,3 +41,48 @@ exports.earnPoint = async (req, res) => {
     res.status(500).json({ error: '포인트 적립 실패', details: err.message });
   }
 };
+
+// ✅ 사용자의 인센티브 내역 조회
+exports.getIncentiveList = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'userId가 필요합니다.' });
+  }
+
+  try {
+    const incentives = await Incentive.find({ user_id: userId })
+      .sort({ created_at: -1 });
+
+    res.json(incentives);
+  } catch (err) {
+    console.error('🔥 인센티브 내역 조회 실패:', err.message);
+    res.status(500).json({ error: '인센티브 내역 조회 실패', details: err.message });
+  }
+};
+
+// ✅ 사용자의 포인트 요약 조회
+exports.getPointSummary = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'userId가 필요합니다.' });
+  }
+
+  try {
+    const incentives = await Incentive.find({ user_id: userId });
+
+    const totalPoints = incentives.reduce((sum, incentive) => sum + incentive.earned_point, 0);
+    const totalActivities = incentives.length;
+
+    res.json({
+      userId,
+      totalPoints,
+      totalActivities,
+      lastActivity: incentives.length > 0 ? incentives[0].created_at : null
+    });
+  } catch (err) {
+    console.error('🔥 포인트 요약 조회 실패:', err.message);
+    res.status(500).json({ error: '포인트 요약 조회 실패', details: err.message });
+  }
+};

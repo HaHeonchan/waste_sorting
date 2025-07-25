@@ -6,17 +6,25 @@ const fs = require('fs');
 const multer = require('multer');
 const session = require('express-session');
 const passport = require('passport');
+const cloudinary = require('cloudinary').v2;
 require('dotenv').config();
 
 // Passport 설정
 require('./config/passport');
+
+// Cloudinary 설정
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // Router import
 const analyzeRouter = require('./analyze/routes/analyze');
 const wasteRouter = require('./analyze/routes/waste');
 const authRouter = require('./auth/routes/auth');
 const complainRoutes = require('./complain/routes/complain');
-const incentiveRoutes = require('./incentive/routes/incentiveRoutes');
+const incentiveRoutes = require('./incentive/routes/incentive');
 
 const app = express();
 

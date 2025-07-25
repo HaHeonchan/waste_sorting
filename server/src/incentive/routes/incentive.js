@@ -4,7 +4,7 @@ const {
   earnPoint,
   getIncentiveList,
   getPointSummary
-} = require('../controllers/incentive.controller');
+} = require('../controllers/incentive');
 
 // 포인트 적립 (자동, 프론트에서 분석 결과 보내는 방식)
 router.post('/earn', earnPoint);
