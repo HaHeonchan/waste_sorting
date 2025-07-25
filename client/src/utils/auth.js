@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from '../config/api';
+import apiClient from './apiClient';
 
 // JWT 토큰 저장
 export const setToken = (token) => {
@@ -46,7 +46,7 @@ export const logout = () => {
 // 이메일/비밀번호 로그인
 export const loginWithEmail = async (email, password) => {
   try {
-    const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
+    const result = await apiClient.requestWithRetry('/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -54,14 +54,8 @@ export const loginWithEmail = async (email, password) => {
       body: JSON.stringify({ accountId: email, password }),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.msg || '로그인에 실패했습니다.');
-    }
-
     // 토큰 저장
-    setToken(data.token);
+    setToken(result.token);
     
     // 사용자 정보 저장 (토큰에서 디코드하거나 별도 API 호출)
     const userInfo = await getUserInfo();
@@ -70,14 +64,14 @@ export const loginWithEmail = async (email, password) => {
     return { success: true, user: userInfo };
   } catch (error) {
     console.error('로그인 에러:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || '로그인에 실패했습니다.' };
   }
 };
 
 // 회원가입
 export const signup = async (name, email, password) => {
   try {
-    const response = await fetch(API_ENDPOINTS.AUTH.SIGNUP, {
+    const result = await apiClient.requestWithRetry('/auth/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -85,16 +79,10 @@ export const signup = async (name, email, password) => {
       body: JSON.stringify({ name, email, password }),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.msg || '회원가입에 실패했습니다.');
-    }
-
-    return { success: true, message: data.msg };
+    return { success: true, message: result.msg || '회원가입이 완료되었습니다.' };
   } catch (error) {
     console.error('회원가입 에러:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || '회원가입에 실패했습니다.' };
   }
 };
 
@@ -104,18 +92,13 @@ export const getUserInfo = async () => {
     const token = getToken();
     if (!token) return null;
 
-    const response = await fetch(API_ENDPOINTS.AUTH.USER_INFO, {
+    const result = await apiClient.requestWithRetry('/auth/user', {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
 
-    if (!response.ok) {
-      throw new Error('사용자 정보를 가져올 수 없습니다.');
-    }
-
-    const data = await response.json();
-    return data.user;
+    return result.user;
   } catch (error) {
     console.error('사용자 정보 조회 에러:', error);
     return null;
@@ -124,8 +107,11 @@ export const getUserInfo = async () => {
 
 // 구글 로그인 팝업
 export const loginWithGoogle = () => {
+  // apiClient의 baseUrl을 사용하여 구글 로그인 URL 생성
+  const googleLoginUrl = `${apiClient.baseUrl}/auth/google/popup`;
+  
   const popup = window.open(
-    API_ENDPOINTS.AUTH.GOOGLE_POPUP,
+    googleLoginUrl,
     'googleLogin',
     'width=500,height=600,scrollbars=yes,resizable=yes'
   );

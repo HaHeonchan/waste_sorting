@@ -1,5 +1,5 @@
 // login.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './login.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginWithEmail, loginWithGoogle } from '../../utils/auth';
@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, error: authError, clearError } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -15,12 +15,22 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // AuthContext의 에러가 있으면 표시
+  useEffect(() => {
+    if (authError) {
+      setError(authError);
+      clearError();
+    }
+  }, [authError, clearError]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+    // 입력 시 에러 메시지 클리어
+    if (error) setError('');
   };
 
   const handleEmailLogin = async (e) => {
@@ -45,7 +55,8 @@ const Login = () => {
         setError(result.error);
       }
     } catch (err) {
-      setError('로그인 중 오류가 발생했습니다.');
+      console.error('로그인 에러:', err);
+      setError('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -63,7 +74,8 @@ const Login = () => {
         navigate('/');
       }
     } catch (err) {
-      setError('구글 로그인 중 오류가 발생했습니다.');
+      console.error('구글 로그인 에러:', err);
+      setError('구글 로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -76,7 +88,11 @@ const Login = () => {
         <h2 className="login-title">로그인</h2>
         <p className="login-sub">스마트 분리배출 도우미에 오신 것을 환영합니다</p>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-message">
+            ⚠️ {error}
+          </div>
+        )}
 
         <form onSubmit={handleEmailLogin}>
           <div className="login-input-group">
@@ -89,6 +105,7 @@ const Login = () => {
               value={formData.email}
               onChange={handleChange}
               disabled={loading}
+              required
             />
           </div>
 
@@ -103,6 +120,7 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 disabled={loading}
+                required
               />
               <span className="password-eye">👁️</span>
             </div>
@@ -118,7 +136,7 @@ const Login = () => {
             className="login-btn"
             disabled={loading}
           >
-            {loading ? '로그인 중...' : '로그인'}
+            {loading ? '🔄 로그인 중...' : '로그인'}
           </button>
         </form>
 
@@ -128,8 +146,9 @@ const Login = () => {
           className="login-btn-google"
           onClick={handleGoogleLogin}
           disabled={loading}
+          type="button"
         >
-          구글로 로그인
+          {loading ? '🔄 로그인 중...' : '🔍 구글로 로그인'}
         </button>
 
         <div className="signup-guide">

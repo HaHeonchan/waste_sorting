@@ -24,6 +24,37 @@ function Signup() {
       ...form,
       [name]: type === 'checkbox' ? checked : value,
     });
+    // 입력 시 에러 메시지 클리어
+    if (error) setError('');
+  };
+
+  const validateForm = () => {
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setError('올바른 이메일 형식을 입력해주세요.');
+      return false;
+    }
+
+    // 비밀번호 길이 확인
+    if (form.password.length < 6) {
+      setError('비밀번호는 6자 이상이어야 합니다.');
+      return false;
+    }
+
+    // 비밀번호 확인
+    if (form.password !== form.confirmPassword) {
+      setError('비밀번호가 일치하지 않습니다.');
+      return false;
+    }
+
+    // 필수 약관 동의 확인
+    if (!form.agreeTerms || !form.agreePrivacy) {
+      setError('필수 약관에 동의해주세요.');
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async (e) => {
@@ -31,23 +62,7 @@ function Signup() {
     setLoading(true);
     setError('');
 
-    // 비밀번호 확인
-    if (form.password !== form.confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.');
-      setLoading(false);
-      return;
-    }
-
-    // 필수 약관 동의 확인
-    if (!form.agreeTerms || !form.agreePrivacy) {
-      setError('필수 약관에 동의해주세요.');
-      setLoading(false);
-      return;
-    }
-
-    // 비밀번호 길이 확인
-    if (form.password.length < 6) {
-      setError('비밀번호는 6자 이상이어야 합니다.');
+    if (!validateForm()) {
       setLoading(false);
       return;
     }
@@ -56,13 +71,14 @@ function Signup() {
       const result = await signup(form.nickname, form.email, form.password);
       
       if (result.success) {
-        alert('회원가입이 완료되었습니다! 로그인해주세요.');
+        alert('✅ 회원가입이 완료되었습니다! 로그인해주세요.');
         navigate('/login');
       } else {
         setError(result.error);
       }
     } catch (err) {
-      setError('회원가입 중 오류가 발생했습니다.');
+      console.error('회원가입 에러:', err);
+      setError('회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -75,7 +91,11 @@ function Signup() {
         <h2>회원가입</h2>
         <p className="signup-subtext">환경 보호에 함께 참여해보세요</p>
         
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-message">
+            ⚠️ {error}
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="signup-form">
           <input
@@ -95,6 +115,8 @@ function Signup() {
             onChange={handleChange}
             required
             disabled={loading}
+            minLength={2}
+            maxLength={20}
           />
           <input
             type="password"
@@ -104,6 +126,7 @@ function Signup() {
             onChange={handleChange}
             required
             disabled={loading}
+            minLength={6}
           />
           <input
             type="password"
@@ -153,7 +176,7 @@ function Signup() {
             className="signup-btn"
             disabled={loading}
           >
-            <FaUserPlus /> {loading ? '가입 중...' : '회원가입'}
+            <FaUserPlus /> {loading ? '🔄 가입 중...' : '회원가입'}
           </button>
         </form>
         <p className="login-link">
