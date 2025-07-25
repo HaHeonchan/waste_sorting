@@ -147,4 +147,40 @@
     text-decoration: none;
     font-weight: 500;
   }
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 0.75rem;
+  border-radius: 5px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  border: 1px solid #ffcdd2;
+}
+
+.login-btn-google {
+  width: 100%;
+  background-color: #4285f4;
+  color: white;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.login-btn-google:hover {
+  background-color: #3367d6;
+}
+
+.login-btn:disabled,
+.login-btn-google:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
   
