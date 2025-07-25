@@ -162,5 +162,141 @@
   background-color: #007bff;
 }
 .btn.orange {
-  background-color: #ff6600;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+}
+
+/* 로딩 컨테이너 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+}
+
+.loading-spinner {
+  font-size: 48px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 에러 메시지 */
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 12px 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  font-size: 14px;
+  border: 1px solid #ffcdd2;
+  text-align: center;
+}
+
+/* 계정 정보 스타일 */
+.account-info {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.account-info li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.account-info li:last-child {
+  border-bottom: none;
+}
+
+.account-info li span:first-child {
+  font-weight: 600;
+  color: #333;
+}
+
+.account-info li span:last-child {
+  color: #666;
+  text-align: right;
+}
+
+/* 데이터 없음 메시지 */
+.no-data {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  padding: 20px;
+}
+
+/* 배지 없음 메시지 */
+.no-badges {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  padding: 20px;
+  grid-column: 1 / -1;
+}
+
+/* 로그아웃 버튼 */
+.btn.red {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.btn.red:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* 반응형 디자인 개선 */
+@media (max-width: 768px) {
+  .mypage {
+    padding: 20px;
+  }
+  
+  .mypage-profile-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  
+  .mypage-summary-box {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .mypage-stats {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .mypage-footer-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .account-info li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .account-info li span:last-child {
+    text-align: left;
+  }
 }
