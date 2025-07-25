@@ -45,11 +45,22 @@ try {
 // 재활용 마크 키워드 정의
 // ============================================================================
 
-const RECYCLING_MARK_KEYWORDS = [
+// 쓰레기 타입 키워드
+const WASTE_TYPE_KEYWORDS = [
     "무색페트", "비닐류", "캔류", "종이", "일반팩", "유리", "플라스틱", "폴리에틸렌"
-    ,"바이오", "PET", "HDPE", "LDPE", "PP", "PS", "OTHER",
+];
+
+// 하위 타입 키워드
+const SUB_TYPE_KEYWORDS = [
+    "바이오", "PET", "HDPE", "LDPE", "PP", "PS", "OTHER",
     "바이오PET", "바이오HDPE", "바이오LDPE", "바이오PP", "바이오PS",
     "철", "알미늄"
+];
+
+// 전체 키워드 (기존 호환성을 위해 유지)
+const RECYCLING_MARK_KEYWORDS = [
+    ...WASTE_TYPE_KEYWORDS,
+    ...SUB_TYPE_KEYWORDS
 ];
 
 // ============================================================================
@@ -225,7 +236,8 @@ function analyzeComplexText(text) {
     for (let i = 0; i < words.length - 1; i++) {
         const combinedWord = words[i] + words[i + 1];
         
-        RECYCLING_MARK_KEYWORDS.forEach(keyword => {
+        // 쓰레기 타입과 하위 타입 모두 확인
+        [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
             if (combinedWord.toLowerCase() === keyword.toLowerCase()) {
                 addUniqueResult(results, combinedWord, keyword, 'combined_word');
             }
@@ -280,10 +292,52 @@ function shouldSkipText(text) {
  * @returns {boolean} 유효성 여부
  */
 function isValidWasteType(wasteType) {
-    return RECYCLING_MARK_KEYWORDS.some(keyword => 
+    return WASTE_TYPE_KEYWORDS.some(keyword => 
         wasteType.toLowerCase() === keyword.toLowerCase() ||
         wasteType.toLowerCase().includes(keyword.toLowerCase())
     );
+}
+
+/**
+ * 유효한 하위 타입인지 확인
+ * @param {string} subType - 확인할 하위 타입
+ * @returns {boolean} 유효성 여부
+ */
+function isValidSubType(subType) {
+    return SUB_TYPE_KEYWORDS.some(keyword => 
+        subType.toLowerCase() === keyword.toLowerCase() ||
+        subType.toLowerCase().includes(keyword.toLowerCase())
+    );
+}
+
+/**
+ * 텍스트에서 쓰레기 타입과 하위 타입을 분리하여 반환
+ * @param {string} text - 분석할 텍스트
+ * @returns {Object} 분리된 타입 정보
+ */
+function extractWasteTypes(text) {
+    const result = {
+        wasteType: null,
+        subType: null
+    };
+    
+    // 쓰레기 타입 찾기
+    for (const keyword of WASTE_TYPE_KEYWORDS) {
+        if (text.toLowerCase().includes(keyword.toLowerCase())) {
+            result.wasteType = keyword;
+            break;
+        }
+    }
+    
+    // 하위 타입 찾기
+    for (const keyword of SUB_TYPE_KEYWORDS) {
+        if (text.toLowerCase().includes(keyword.toLowerCase())) {
+            result.subType = keyword;
+            break;
+        }
+    }
+    
+    return result;
 }
 
 /**
@@ -373,7 +427,8 @@ async function analyzeRecyclingMarks(imagePath) {
                 const nextWord = allTexts[i + 1];
                 const combinedWord = currentWord + nextWord;
                 
-                RECYCLING_MARK_KEYWORDS.forEach(keyword => {
+                // 쓰레기 타입과 하위 타입 모두 확인
+                [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
                     if (combinedWord.toLowerCase().includes(keyword.toLowerCase())) {
                         console.log(`   ✅ 조합 키워드 "${keyword}" 발견! (${combinedWord})`);
                         if (!analysisResults.keywords.includes(keyword)) {
@@ -403,7 +458,7 @@ async function analyzeRecyclingMarks(imagePath) {
                 } else {
                     // 단순 키워드 매칭
                     const foundKeywords = [];
-                    RECYCLING_MARK_KEYWORDS.forEach(keyword => {
+                    [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
                         if (text.toLowerCase().includes(keyword.toLowerCase())) {
                             foundKeywords.push(keyword);
                             console.log(`   ✅ 키워드 "${keyword}" 발견!`);
@@ -523,5 +578,13 @@ module.exports = {
     detectText,
     detectObjects,
     analyzeRecyclingMarks,
-    analyzeImageWithLogoDetection
+    analyzeImageWithLogoDetection,
+    // 새로운 키워드 상수들
+    WASTE_TYPE_KEYWORDS,
+    SUB_TYPE_KEYWORDS,
+    RECYCLING_MARK_KEYWORDS,
+    // 새로운 유틸리티 함수들
+    isValidWasteType,
+    isValidSubType,
+    extractWasteTypes
 }; 
