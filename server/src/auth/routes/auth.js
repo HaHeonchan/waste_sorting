@@ -9,22 +9,43 @@ const User = mongoose.model('User');
 // ===== 구글 OAuth 라우터 =====
 
 // 구글 로그인 시작
-router.get('/google', passport.authenticate('google', {
-    scope: ['profile', 'email']
-}));
+router.get('/google', (req, res, next) => {
+    console.log('🔍 Google OAuth 시작 요청:', {
+        url: req.url,
+        headers: req.headers,
+        userAgent: req.get('User-Agent')
+    });
+    passport.authenticate('google', {
+        scope: ['profile', 'email']
+    })(req, res, next);
+});
 
 // 프론트엔드용 구글 로그인 (팝업 창용)
-router.get('/google/popup', passport.authenticate('google', {
-    scope: ['profile', 'email']
-}));
+router.get('/google/popup', (req, res, next) => {
+    console.log('🔍 Google OAuth 팝업 요청:', {
+        url: req.url,
+        headers: req.headers,
+        userAgent: req.get('User-Agent')
+    });
+    passport.authenticate('google', {
+        scope: ['profile', 'email']
+    })(req, res, next);
+});
 
 // 구글 로그인 콜백
-router.get('/google/callback', 
+router.get('/google/callback', (req, res, next) => {
+    console.log('🔍 Google OAuth 콜백 요청:', {
+        url: req.url,
+        query: req.query,
+        headers: req.headers,
+        userAgent: req.get('User-Agent')
+    });
+    
     passport.authenticate('google', { 
         failureRedirect: '/login?status=error&message=로그인 실패',
         failureFlash: true
-    }),
-    (req, res) => {
+    })(req, res, next);
+}, (req, res) => {
         // 로그인 성공 시 적절한 페이지로 리다이렉트
         if (req.isAuthenticated()) {
             // 팝업 창에서 로그인 성공 시 부모 창에 메시지 전송 후 창 닫기

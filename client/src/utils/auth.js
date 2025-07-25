@@ -138,6 +138,9 @@ export const loginWithGoogle = () => {
   // apiClient의 baseUrl을 사용하여 구글 로그인 URL 생성
   const googleLoginUrl = `${apiClient.baseUrl}/auth/google/popup`;
   
+  console.log('🔍 구글 로그인 URL:', googleLoginUrl);
+  console.log('🔍 apiClient.baseUrl:', apiClient.baseUrl);
+  
   const popup = window.open(
     googleLoginUrl,
     'googleLogin',

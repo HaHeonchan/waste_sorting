@@ -138,6 +138,9 @@ app.get('/api/debug/env', (req, res) => {
         CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ? '설정됨' : '설정되지 않음',
         MONGODB_URI: process.env.MONGODB_URI ? '설정됨' : '설정되지 않음',
         SESSION_SECRET: process.env.SESSION_SECRET ? '설정됨' : '설정되지 않음',
+        // 실제 값들도 확인 (보안을 위해 일부만)
+        GOOGLE_CLIENT_ID_VALUE: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 10) + '...' : '없음',
+        REACT_APP_API_URL_VALUE: process.env.REACT_APP_API_URL || '없음',
         timestamp: new Date().toISOString()
     };
     
