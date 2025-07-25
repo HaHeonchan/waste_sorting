@@ -1,0 +1,142 @@
+import React, { useState } from "react";
+import './home.css';
+import { useNavigate } from 'react-router-dom';
+import apiClient from "../../utils/apiClient";
+
+export default function Home() {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [progressMessage, setProgressMessage] = useState("");
+  const navigate = useNavigate();
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreviewUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAnalyze = async () => {
+    if (!selectedFile) {
+      alert("이미지를 선택해주세요.");
+      return;
+    }
+
+    setLoading(true);
+    setResult(null);
+    setProgressMessage("");
+
+    const formData = new FormData();
+    formData.append("image", selectedFile);
+
+    try {
+      const data = await apiClient.analyzeImage(formData, (message) => {
+        setProgressMessage(message);
+      });
+      setResult(data);
+    } catch (err) {
+      console.error("분석 오류:", err);
+      setResult({ 
+        error: err.message || "분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." 
+      });
+    } finally {
+      setLoading(false);
+      setProgressMessage("");
+      setPreviewUrl(null); // 💡 분석 완료 후 미리보기 영역 숨김!
+    }
+  };
+
+
+  return (
+    <div className="home-container">
+      <div className="home-header">
+        <h1 className="home-title">AI가 도와주는 스마트 분리배출</h1>
+        <p className="home-description">사진을 업로드하면 AI가 분리배출 방법을 알려드려요</p>
+      </div>
+
+      <div className="upload-box">
+        <div className="upload-inner">
+          <i className="upload-icon">📤</i>
+          <h2 className="upload-title">사진을 업로드해주세요</h2>
+          <p className="upload-description">분리배출할 물건의 사진을 올려주시면 AI가 분석해드립니다</p>
+          <input
+            className="upload-input"
+            type="file"
+            id="imageInput"
+            accept="image/*"
+            onChange={handleFileChange}
+          />
+          <label htmlFor="imageInput" className="upload-btn">
+            이미지 선택
+          </label>
+        </div>
+        {previewUrl && (
+          <div className="preview">
+            <img className="preview-image" src={previewUrl} alt="미리보기" />
+            <br />
+            <br />
+            <button
+                className="upload-btn"
+                onClick={() => {
+                  navigate("/sortguide", {
+                    state: {
+                      imageFile: selectedFile,
+                      previewUrl: previewUrl
+                    }
+                  });
+                }}
+              >
+              분석하기
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="feature-cards">
+        <div onClick={() => navigate('/sortguide')} className="card card-green">
+          <div className="card-icon">🔍</div>
+          <div className="card-title">분리배출 안내</div>
+          <div className="card-desc">올바른 분리배출 방법을 확인하세요</div>
+        </div>
+        <div onClick={() => navigate('/incentive')} className="card card-orange">
+          <div className="card-icon">🎁</div>
+          <div className="card-title">인센티브 관리</div>
+          <div className="card-desc">포인트를 모아보세요</div>
+        </div>
+        <div onClick={() => navigate('/complain')} className="card card-red">
+          <div className="card-icon">🚨</div>
+          <div className="card-title">민원 제보</div>
+          <div className="card-desc">환경 오염을 신고하세요</div>
+        </div>
+        <div onClick={() => navigate('/mypage')} className="card card-blue">
+          <div className="card-icon">👤</div>
+          <div className="card-title">마이페이지</div>
+          <div className="card-desc">내 활동 기록을 확인하세요</div>
+        </div>
+      </div>
+
+      <div className="stats-box">
+        <h2 className="stats-title">오늘의 분리배출 현황</h2>
+        <div className="stats-grid">
+          <div className="stat-item">
+            <div className="stat-number green">1,247</div>
+            <div className="stat-label">총 분석 요청</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number green">98.5%</div>
+            <div className="stat-label">AI 정확도</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number orange">856</div>
+            <div className="stat-label">절약된 CO₂ (kg)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

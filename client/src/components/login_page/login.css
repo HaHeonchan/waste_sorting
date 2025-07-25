@@ -1,0 +1,150 @@
+/* login.css */
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+    background-color: #f9fafb;
+  }
+  
+  .login-container {
+    width: 380px;
+    padding: 2rem;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    text-align: center;
+  }
+  
+  .login-icon {
+    width: 60px;
+    height: 60px;
+    background-color: #4caf50;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+  }
+  
+  .login-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+  
+  .login-sub {
+    color: #666;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+  }
+  
+  .login-input-group {
+    text-align: left;
+    margin-bottom: 1.2rem;
+  }
+  
+  .login-input-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+  }
+  
+  .login-input-group input {
+    width: 100%;
+    padding: 0.65rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.95rem;
+  }
+  
+  .password-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+  
+  .password-eye {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #888;
+  }
+  
+  .login-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+  
+  .find-password {
+    color: #4caf50;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .login-btn {
+    width: 100%;
+    background-color: #4caf50;
+    color: white;
+    padding: 0.8rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+  }
+  
+  .login-divider {
+    margin: 1rem 0;
+    color: #999;
+    font-size: 0.85rem;
+    position: relative;
+  }
+  
+  .login-divider::before,
+  .login-divider::after {
+    content: '';
+    height: 1px;
+    background-color: #ddd;
+    flex: 1;
+    margin: 0 0.5rem;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  
+  .login-btn-kakao {
+    width: 100%;
+    background-color: #ffeb00;
+    color: #333;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 5px;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  
+  .login-btn-naver {
+    width: 100%;
+    background-color: #1ec800;
+    color: white;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 5px;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    cursor: pointer;
+  }
+  
+  .signup-guide {
+    font-size: 0.85rem;
+  }
+  
+  .signup-guide a {
+    color: #4caf50;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  

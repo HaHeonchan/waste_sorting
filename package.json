@@ -10,6 +10,7 @@
     "client-only": "npm start --prefix client"
   },
   "dependencies": {
-    "concurrently": "^1.0.0"
+    "concurrently": "^1.0.0",
+    "react-icons": "^5.5.0"
   }
 }

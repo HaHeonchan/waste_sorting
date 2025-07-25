@@ -1,0 +1,166 @@
+.mypage {
+  padding: 40px;
+  font-family: 'Pretendard', sans-serif;
+  background-color: #f7f8fa;
+}
+
+.mypage-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.mypage-header h1 {
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.mypage-profile-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0d84e4;
+  color: white;
+  padding: 30px;
+  border-radius: 20px;
+  margin-bottom: 30px;
+}
+
+.mypage-profile-left {
+  display: flex;
+  align-items: center;
+}
+
+.mypage-icon {
+  font-size: 50px;
+  margin-right: 20px;
+}
+
+.mypage-points {
+  text-align: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.mypage-summary-box {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  gap: 20px;
+}
+
+.mypage-summary-item {
+  flex: 1;
+  background: white;
+  padding: 20px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.mypage-summary-item .circle {
+  font-size: 36px;
+}
+
+.mypage-summary-item .count {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.mypage-summary-item .label {
+  color: #666;
+  margin-top: 10px;
+}
+
+.mypage-stats {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+.mypage-stats-section {
+  flex: 1;
+  background: white;
+  padding: 25px;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.mypage-stats-section ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.mypage-stats-section li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.bar {
+  flex: 1;
+  background: #ddd;
+  border-radius: 5px;
+  margin: 0 10px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.bar div {
+  background: #2da657;
+  height: 100%;
+}
+
+.activity-log li {
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.mypage-badges {
+  background: white;
+  padding: 25px;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  margin-bottom: 40px;
+}
+
+.badges {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.badges div span {
+  display: block;
+  color: #777;
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+.mypage-footer-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.btn.green {
+  background-color: #2da657;
+}
+.btn.blue {
+  background-color: #007bff;
+}
+.btn.orange {
+  background-color: #ff6600;
+}
