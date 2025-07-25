@@ -1,25 +1,46 @@
-/**
- * 인증 미들웨어
- * 사용자 로그인 상태를 확인하고 인증되지 않은 요청을 차단
- */
+const jwt = require('jsonwebtoken');
 
+/**
+ * 통합 인증 미들웨어
+ * Passport 세션 기반 인증과 JWT 토큰 기반 인증을 모두 지원
+ */
 const authMiddleware = (req, res, next) => {
-    // 세션에서 사용자 정보 확인
+    // 1. 먼저 Passport 세션 인증 확인
     if (req.isAuthenticated()) {
-        // 인증된 사용자라면 다음 미들웨어로 진행
         return next();
     }
     
-    // 개발 환경에서 테스트용 사용자 정보 설정 (선택사항)
+    // 2. JWT 토큰 인증 확인
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(" ")[1];
+        
+        // JWT 시크릿 체크
+        if (!process.env.JWT_SECRET) {
+            console.error("[authMiddleware] JWT_SECRET 환경변수 누락!");
+            return res.status(500).json({ msg: "Server misconfiguration (JWT_SECRET missing)" });
+        }
+        
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = decoded; // { email, name, ... } 구조
+            return next();
+        } catch (err) {
+            console.error("[authMiddleware] JWT 검증 실패:", err.message);
+            // JWT 실패 시 세션 인증으로 계속 진행
+        }
+    }
+    
+    // 3. 개발 환경에서 테스트용 사용자 정보 설정 (선택사항)
     if (process.env.NODE_ENV === 'development' && req.headers['x-test-user']) {
         req.user = {
-            user_id: 1,               // 숫자형 ID (Report 모델과 연동됨)
+            user_id: 1,
             name: '테스트유저'
         };
         return next();
     }
     
-    // 인증되지 않은 사용자라면 401 Unauthorized 응답
+    // 4. 모든 인증 방식 실패 시 401 Unauthorized 응답
     return res.status(401).json({ 
         message: '로그인이 필요합니다.',
         error: 'UNAUTHORIZED'

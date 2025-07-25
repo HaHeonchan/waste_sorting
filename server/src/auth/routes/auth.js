@@ -1,6 +1,12 @@
 const express = require('express');
 const passport = require('passport');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const router = express.Router();
+
+const User = mongoose.model('User');
+
+// ===== 구글 OAuth 라우터 =====
 
 // 구글 로그인 시작
 router.get('/google', passport.authenticate('google', {
@@ -29,6 +35,75 @@ router.get('/google/callback',
     }
 );
 
+// ===== 이메일/비밀번호 기반 인증 라우터 =====
+
+// 로그인
+router.post("/login", async (req, res) => {
+    try {
+        const { accountId, password } = req.body;
+        const user = await User.findOne({ email: accountId });
+
+        // 보안: 아이디/비번 불일치 모두 동일 응답
+        if (!user || user.password !== password) {
+            return res.status(401).json({ msg: "로그인 실패: 아이디 또는 비밀번호를 확인하세요" });
+        }
+
+        // JWT 시크릿 없을 때 에러
+        if (!process.env.JWT_SECRET) {
+            return res.status(500).json({ msg: "서버 환경변수(JWT_SECRET) 미설정" });
+        }
+
+        // 마지막 로그인 시간 업데이트
+        user.lastLogin = new Date();
+        await user.save();
+
+        const token = jwt.sign(
+            { email: user.email, name: user.name, id: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "30d" }
+        );
+        res.json({ token });
+
+    } catch (err) {
+        console.error("로그인 에러:", err);
+        res.status(500).json({ msg: "서버 오류" });
+    }
+});
+
+// 회원가입
+router.post("/signup", async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        // 입력값 검증
+        if (!name || !email || !password) {
+            return res.status(400).json({ msg: "모든 필드를 입력하세요" });
+        }
+
+        const exists = await User.findOne({ email });
+        if (exists) {
+            return res.status(409).json({ msg: "이미 가입된 이메일입니다." });
+        }
+
+        await User.create({
+            name,
+            email,
+            password,
+            points: 0,
+            recycleCount: 0,
+            reportCount: 0,
+        });
+
+        res.json({ ok: true, msg: "회원가입 완료!" });
+
+    } catch (err) {
+        console.error("회원가입 에러:", err);
+        res.status(500).json({ msg: "서버 오류" });
+    }
+});
+
+// ===== 공통 라우터 =====
+
 // 로그아웃
 router.get('/logout', (req, res) => {
     req.logout((err) => {
@@ -46,9 +121,12 @@ router.get('/user', (req, res) => {
             isAuthenticated: true,
             user: {
                 id: req.user._id,
-                displayName: req.user.displayName,
+                displayName: req.user.displayName || req.user.name,
                 email: req.user.email,
-                profilePicture: req.user.profilePicture
+                profilePicture: req.user.profilePicture,
+                points: req.user.points,
+                recycleCount: req.user.recycleCount,
+                reportCount: req.user.reportCount
             }
         });
     } else {
