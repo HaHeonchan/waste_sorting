@@ -110,19 +110,14 @@ app.use('/auth', authRouter);
 app.use('/api/auth', rewardRouter);
 app.use('/api/incentive', incentiveRoutes);
 
-// 메인 페이지 - 새로운 경로로 수정
-app.get('/', (req, res) => {
+// React 앱 라우팅 - 모든 페이지를 index.html로 처리
+app.get(['/', '/login', '/signup', '/mypage', '/incentive', '/complain', '/sortguide'], (req, res) => {
     res.sendFile(path.join(__dirname, '../../client/public/index.html'));
 });
 
 // 쓰레기 분류 시스템 페이지 - 새로운 경로로 수정
 app.get('/waste-sorting', (req, res) => {
     res.sendFile(path.join(__dirname, 'analyze/views/analyze/waste-sorting.html'));
-});
-
-// 로그인 페이지
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/public/login.html'));
 });
 
 // 환경변수 확인 엔드포인트 (디버깅용)

@@ -145,10 +145,36 @@ export const loginWithGoogle = () => {
   );
 
   return new Promise((resolve, reject) => {
+    // 팝업에서 오는 메시지 리스너
+    const messageListener = (event) => {
+      if (event.data.type === 'GOOGLE_LOGIN_SUCCESS') {
+        // 로그인 성공 시 사용자 정보 저장
+        const userInfo = {
+          ...event.data.user,
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        };
+        
+        setUser(userInfo);
+        window.removeEventListener('message', messageListener);
+        clearInterval(checkClosed);
+        resolve({ success: true, user: userInfo });
+      } else if (event.data.type === 'GOOGLE_LOGIN_ERROR') {
+        window.removeEventListener('message', messageListener);
+        clearInterval(checkClosed);
+        reject(new Error(event.data.error || '구글 로그인에 실패했습니다.'));
+      }
+    };
+
+    // 메시지 리스너 등록
+    window.addEventListener('message', messageListener);
+
+    // 팝업이 닫혔는지 확인하는 인터벌
     const checkClosed = setInterval(() => {
       if (popup.closed) {
         clearInterval(checkClosed);
-        // 팝업이 닫혔을 때 사용자 정보 확인
+        window.removeEventListener('message', messageListener);
+        // 팝업이 닫혔지만 메시지가 없었다면 취소된 것으로 간주
         const user = getUser();
         if (user) {
           resolve({ success: true, user });

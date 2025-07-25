@@ -27,10 +27,64 @@ router.get('/google/callback',
     (req, res) => {
         // 로그인 성공 시 적절한 페이지로 리다이렉트
         if (req.isAuthenticated()) {
-            // 로그인 성공 페이지로 리다이렉트
-            res.redirect('/login?status=success&message=성공적으로 로그인되었습니다.');
+            // 팝업 창에서 로그인 성공 시 부모 창에 메시지 전송 후 창 닫기
+            const successHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>로그인 성공</title>
+                </head>
+                <body>
+                    <script>
+                        // 부모 창에 로그인 성공 메시지 전송
+                        if (window.opener) {
+                            window.opener.postMessage({
+                                type: 'GOOGLE_LOGIN_SUCCESS',
+                                user: {
+                                    id: '${req.user._id}',
+                                    name: '${req.user.name || req.user.displayName}',
+                                    email: '${req.user.email}',
+                                    profilePicture: '${req.user.profilePicture || ''}',
+                                    points: ${req.user.points || 0},
+                                    recycleCount: ${req.user.recycleCount || 0},
+                                    reportCount: ${req.user.reportCount || 0}
+                                }
+                            }, '*');
+                            window.close();
+                        } else {
+                            // 팝업이 아닌 경우 일반 리다이렉트
+                            window.location.href = '/login?status=success&message=성공적으로 로그인되었습니다.';
+                        }
+                    </script>
+                    <p>로그인 성공! 창이 자동으로 닫힙니다...</p>
+                </body>
+                </html>
+            `;
+            res.send(successHtml);
         } else {
-            res.redirect('/login?status=error&message=로그인 처리 중 오류가 발생했습니다.');
+            const errorHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>로그인 실패</title>
+                </head>
+                <body>
+                    <script>
+                        if (window.opener) {
+                            window.opener.postMessage({
+                                type: 'GOOGLE_LOGIN_ERROR',
+                                error: '로그인 처리 중 오류가 발생했습니다.'
+                            }, '*');
+                            window.close();
+                        } else {
+                            window.location.href = '/login?status=error&message=로그인 처리 중 오류가 발생했습니다.';
+                        }
+                    </script>
+                    <p>로그인 실패! 창이 자동으로 닫힙니다...</p>
+                </body>
+                </html>
+            `;
+            res.send(errorHtml);
         }
     }
 );
