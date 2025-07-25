@@ -6,13 +6,6 @@ const ReportSchema = new mongoose.Schema({
   content: String,
   reward: String,
   image_url: String,
-  cloudinary_id: String, // Cloudinary public ID
-  image_metadata: {
-    width: Number,
-    height: Number,
-    size: Number,
-    format: String
-  },
   likes: { type: Number, default: 0 },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }

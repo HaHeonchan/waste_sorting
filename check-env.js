@@ -18,19 +18,6 @@ console.log(`📁 .env 파일: ${envExists ? '✅ 존재함' : '❌ 존재하지
 
 if (!envExists) {
   console.log('\n⚠️  .env 파일이 없습니다!');
-  console.log('📝 다음 단계를 따라 환경변수를 설정해주세요:');
-  console.log('1. 프로젝트 루트에 .env 파일을 생성하세요');
-  console.log('2. env.example 파일을 참고하여 필요한 환경변수를 설정하세요');
-  console.log('3. 특히 OPENAI_API_KEY는 필수입니다!\n');
-  
-  console.log('📋 필요한 환경변수:');
-  console.log('- NODE_ENV=development');
-  console.log('- PORT=3001');
-  console.log('- OPENAI_API_KEY=your_openai_api_key (필수)');
-  console.log('- MONGODB_URI=mongodb://localhost:27017/waste_sorting');
-  console.log('- SESSION_SECRET=your_session_secret');
-  console.log('- CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET (선택)');
-  
   process.exit(1);
 }
 
