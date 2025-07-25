@@ -147,8 +147,14 @@ const Login = () => {
 
         <div className="login-divider">또는</div>
 
-        <button className="login-btn-kakao">카카오로 로그인</button>
-        <button className="login-btn-naver">구글로 로그인</button>
+        <button 
+          className="login-btn-naver"
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          type="button"
+        >
+          {loading ? '🔄 로그인 중...' : '구글로 로그인'}
+        </button>
 
         <div className="signup-guide">
           계정이 없으신가요? <Link to="/signup">회원가입</Link>

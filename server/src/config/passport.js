@@ -19,8 +19,8 @@ passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.NODE_ENV === 'production' 
-        ? `${process.env.SERVER_URL || 'https://your-server-name.onrender.com'}/auth/google/callback`
-        : 'http://localhost:3001/auth/google/callback'
+        ? `${process.env.SERVER_URL || process.env.CLIENT_URL || 'https://your-server-domain.com'}/auth/google/callback`
+        : "/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         // 기존 사용자 확인
