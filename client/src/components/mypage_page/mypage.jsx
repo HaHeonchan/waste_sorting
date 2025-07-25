@@ -1,5 +1,6 @@
 import React from 'react';
 import './mypage.css';
+import { Link } from "react-router-dom";
 
 export default function MyPage() {
   return (
@@ -81,9 +82,15 @@ export default function MyPage() {
       </div>
 
       <div className="mypage-footer-buttons">
-        <button className="btn green">🎁 인센티브 관리</button>
-        <button className="btn blue">⚠️ 민원 제보</button>
-        <button className="btn orange">📸 사진 업로드</button>
+        <Link to="/incentive">
+          <button className="btn green">🎁 인센티브 관리</button>
+        </Link>
+        <Link to="/complain">
+          <button className="btn blue">⚠️ 민원 제보</button>
+        </Link>
+        <Link to="/sortguide">
+          <button className="btn orange">📸 사진 업로드</button>
+        </Link>
       </div>
     </div>
   );

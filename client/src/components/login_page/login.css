@@ -14,6 +14,8 @@
     background-color: white;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
     text-align: center;
+    margin-top: 3rem;   /* 요소 위쪽에 3rem 공간 */
+    margin-bottom: 3rem;/* 요소 아래쪽에 3rem 공간 */
   }
   
   .login-icon {
