@@ -15,11 +15,23 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
+// Google OAuth 설정 로깅
+console.log('🔧 Google OAuth 설정:', {
+    NODE_ENV: process.env.NODE_ENV,
+    CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? '설정됨' : '설정되지 않음',
+    CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? '설정됨' : '설정되지 않음',
+    REACT_APP_API_URL: process.env.REACT_APP_API_URL,
+    CLIENT_URL: process.env.CLIENT_URL,
+    callbackURL: process.env.NODE_ENV === 'production' 
+        ? `${process.env.REACT_APP_API_URL || process.env.CLIENT_URL || 'https://your-server-domain.com'}/auth/google/callback`
+        : "/auth/google/callback"
+});
+
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.NODE_ENV === 'production' 
-        ? `${process.env.SERVER_URL || process.env.CLIENT_URL || 'https://your-server-domain.com'}/auth/google/callback`
+        ? `${process.env.REACT_APP_API_URL || process.env.CLIENT_URL || 'https://your-server-domain.com'}/auth/google/callback`
         : "/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
     try {

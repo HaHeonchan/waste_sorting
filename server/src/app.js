@@ -83,8 +83,11 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24시간
-    }
+    },
+    proxy: process.env.NODE_ENV === 'production' // 프록시 뒤에서 실행 시 필요
 }));
 
 // Passport 초기화
@@ -125,7 +128,10 @@ app.get('/api/debug/env', (req, res) => {
     const envInfo = {
         NODE_ENV: process.env.NODE_ENV,
         PORT: process.env.PORT,
+        REACT_APP_API_URL: process.env.REACT_APP_API_URL,
         CLIENT_URL: process.env.CLIENT_URL,
+        GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? '설정됨' : '설정되지 않음',
+        GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? '설정됨' : '설정되지 않음',
         OPENAI_API_KEY: process.env.OPENAI_API_KEY ? '설정됨' : '설정되지 않음',
         CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
         CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY ? '설정됨' : '설정되지 않음',
