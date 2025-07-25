@@ -14,7 +14,6 @@ const {
     DIRECT_IMAGE_ANALYSIS_PROMPT 
 } = require('./prompts');
 const { analyzeImageWithLogoDetection } = require('./logo-detector');
-const { generateImageHash, getFromCache, saveToCache } = require('./cache');
 
 // OpenAI 클라이언트 초기화
 const openai = new OpenAI({
@@ -78,21 +77,8 @@ const analyzeController = {
                 }
 
                 try {
-                    // 캐시 확인
-                    const imageBuffer = fs.readFileSync(req.file.path);
-                    const imageHash = generateImageHash(imageBuffer);
-                    const cachedResult = getFromCache(imageHash);
-                    
-                    if (cachedResult) {
-                        console.log('📋 캐시에서 결과 반환');
-                        return res.json(cachedResult);
-                    }
-
                     // 분석 실행
                     const result = await performAnalysis(req.file.path);
-                    
-                    // 캐시에 저장
-                    saveToCache(imageHash, result);
                     
                     res.json(result);
                     
