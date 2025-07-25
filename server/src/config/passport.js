@@ -1,6 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const User = require('../analyze/models/User');
+const User = require('../auth/models/User');
 
 passport.serializeUser((user, done) => {
     done(null, user.id);
@@ -34,9 +34,13 @@ passport.use(new GoogleStrategy({
         // 새 사용자 생성
         user = new User({
             googleId: profile.id,
+            name: profile.displayName,
             displayName: profile.displayName,
             email: profile.emails[0].value,
-            profilePicture: profile.photos[0] ? profile.photos[0].value : null
+            profilePicture: profile.photos[0] ? profile.photos[0].value : null,
+            points: 0,
+            recycleCount: 0,
+            reportCount: 0
         });
         
         await user.save();

@@ -36,6 +36,9 @@ export default function Complain() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [deletingIds, setDeletingIds] = useState(new Set()); // 삭제 중인 ID들
+  const [uploading, setUploading] = useState(false); // 업로드 중 상태
+  const [uploadProgress, setUploadProgress] = useState(0); // 업로드 진행률
   const isBackendConnected = true;// 이 부분은 실제 백엔드 연결 상태에 따라 변경해야 합니다.
 
   useEffect(() => {
@@ -73,21 +76,48 @@ export default function Complain() {
       alert('🔌 백엔드 연결 필요: 제출 기능은 나중에 사용 가능합니다.');
       return;
     }
+    
+    if (uploading) return; // 이미 업로드 중이면 중복 요청 방지
+    
     try {
+      setUploading(true);
+      setUploadProgress(0);
+      
       const formData = new FormData();
       formData.append("title", title);
       formData.append("content", content);
       formData.append("reward", rewardType);
       if (image) formData.append("image", image);
+      
+      // 업로드 진행률 시뮬레이션
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 10;
+        });
+      }, 200);
+      
       await apiClient.requestWithRetry('/api/reports', {
         method: "POST",
         body: formData,
       });
-      setShowForm(false);
-      resetForm();
-      fetchReports();
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        setShowForm(false);
+        resetForm();
+        fetchReports();
+        setUploading(false);
+        setUploadProgress(0);
+      }, 500);
+      
     } catch (error) {
-      alert('민원 제출 중 오류');
+      console.error('민원 제출 중 오류:', error);
+      alert('민원 제출 중 오류가 발생했습니다.');
+      setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -96,11 +126,37 @@ export default function Complain() {
       alert('🔌 백엔드 연결 필요: 삭제 기능은 나중에 사용 가능합니다.');
       return;
     }
+    
+    // 이미 삭제 중인 경우 중복 요청 방지
+    if (deletingIds.has(id)) {
+      return;
+    }
+    
     try {
-      await apiClient.requestWithRetry(`/api/reports/${id}`, { method: "DELETE" });
+      setDeletingIds(prev => new Set(prev).add(id));
+      
+      // 삭제 요청 (재시도 없이 한 번만)
+      const response = await fetch(`/api/reports/${id}`, { 
+        method: "DELETE",
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       fetchReports();
     } catch (error) {
-      alert('삭제 중 오류');
+      console.error('삭제 중 오류:', error);
+      alert('삭제 중 오류가 발생했습니다.');
+    } finally {
+      setDeletingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
     }
   };
 
@@ -234,9 +290,25 @@ export default function Complain() {
               ))}
             </select>
 
+            {uploading && (
+              <div className="upload-progress">
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                <div className="progress-text">
+                  {uploadProgress < 100 ? '업로드 중...' : '완료!'}
+                </div>
+              </div>
+            )}
+            
             <div className="report-form-buttons">
-              <button type="submit">제보</button>
-              <button type="button" onClick={() => setShowForm(false)}>
+              <button type="submit" disabled={uploading}>
+                {uploading ? '업로드 중...' : '제보'}
+              </button>
+              <button type="button" onClick={() => setShowForm(false)} disabled={uploading}>
                 취소
               </button>
             </div>
@@ -248,10 +320,9 @@ export default function Complain() {
 
       {loading && (
         <div className='loading-container'>
-          <div className='loading-message'>데이터를 불러오는 중...</div>
-          <div className='loading-spinner'>
-            서버 응답이 느릴 수 있습니다. 잠시만 기다려주세요.
-          </div>
+          <div className="spinner"></div> {/* 🔄 로딩 원 추가 */}
+          <div className="loading-message">데이터를 불러오는 중...</div>
+          <div className="loading-spinner">서버 응답이 느릴 수 있습니다. 잠시만 기다려주세요.</div>
         </div>
       )}
 
@@ -277,7 +348,13 @@ export default function Complain() {
           <div className='report-likes'><b>추천수:</b> {r.likes || 0}</div>
           <button className='report-like-button' onClick={() => handleLike(r._id || r.report_id)}>👍 추천</button>
           <button className='report-popup-button' onClick={() => setPopupReport(r)}>📢 신고</button>
-          <button className='report-delete-button' onClick={() => handleDelete(r._id || r.report_id)}>삭제</button>
+          <button 
+            className='report-delete-button' 
+            onClick={() => handleDelete(r._id || r.report_id)}
+            disabled={deletingIds.has(r._id || r.report_id)}
+          >
+            {deletingIds.has(r._id || r.report_id) ? '삭제 중...' : '삭제'}
+          </button>
           <button className='report-edit-button' onClick={() => {
             setShowEditForm(r._id || r.report_id);
             setTitle(r.title);

@@ -14,9 +14,21 @@ export const API_ENDPOINTS = {
   
   // 인증 관련
   AUTH: {
+    // 구글 OAuth
     GOOGLE: `${API_BASE_URL}/auth/google`,
+    GOOGLE_POPUP: `${API_BASE_URL}/auth/google/popup`,
+    GOOGLE_CALLBACK: `${API_BASE_URL}/auth/google/callback`,
+    
+    // 이메일/비밀번호 인증
+    LOGIN: `${API_BASE_URL}/auth/login`,
+    SIGNUP: `${API_BASE_URL}/auth/signup`,
     LOGOUT: `${API_BASE_URL}/auth/logout`,
-    PROFILE: `${API_BASE_URL}/auth/profile`
+    USER_INFO: `${API_BASE_URL}/auth/user`,
+    
+    // 리워드 관련
+    USER_INFO_DETAIL: `${API_BASE_URL}/api/auth/user/info`,
+    REWARD_LIST: `${API_BASE_URL}/api/auth/reward/list`,
+    REWARD_EXCHANGE: `${API_BASE_URL}/api/auth/reward/exchange`
   }
 };
 
