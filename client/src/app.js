@@ -1,0 +1,36 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './components/login_page/login';
+import Signup from './components/signup_page/signup';
+import Mypage from './components/mypage_page/mypage';
+import Incentive from './components/incentive_page/incentive';
+import Complain from './components/complain_page/complain.jsx';
+import SortGuide from './components/sortguide_page/sortguide.jsx';
+import Home from './components/home_page/home';
+import Navbar from './components/navbar_page/navbar.jsx';
+import TestPage from './components/TestPage';
+
+function App() {
+  return (
+    <Router>
+      <div>
+        <Navbar />
+        <Routes>
+          
+          {/* API 테스트 페이지 */}
+          <Route path="/test" element={<TestPage />} />
+
+          <Route path="/" element={<Home />} /> // 쓰레기 분류 메인 페이지
+          <Route path="/sortguide" element={<SortGuide />} /> // 쓰레기 분류 ai 페이지
+          <Route path="/incentive" element={<Incentive />} /> // 인센티브 페이지
+          <Route path="/complain" element={<Complain />} /> // 민원 게시판 페이지
+          <Route path="/mypage" element={<Mypage />} /> // 마이페이지 페이지
+          <Route path="/login" element={<Login />} /> // 로그인 페이지
+          <Route path="/signup" element={<Signup />} /> // 회원가입 페이지 
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
