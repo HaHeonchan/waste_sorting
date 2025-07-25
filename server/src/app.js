@@ -23,6 +23,7 @@ cloudinary.config({
 const analyzeRouter = require('./analyze/routes/analyze');
 const wasteRouter = require('./analyze/routes/waste');
 const authRouter = require('./auth/routes/auth');
+const rewardRouter = require('./auth/routes/reward');
 const complainRoutes = require('./complain/routes/complain');
 const incentiveRoutes = require('./incentive/routes/incentive');
 
@@ -106,6 +107,7 @@ app.use('/api', (req, res, next) => {
 app.use('/analyze', analyzeRouter);
 app.use('/api/waste', wasteRouter);
 app.use('/auth', authRouter);
+app.use('/api/auth', rewardRouter);
 app.use('/api/incentive', incentiveRoutes);
 
 // 메인 페이지 - 새로운 경로로 수정
