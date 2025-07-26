@@ -166,23 +166,6 @@ export default function SortGuide() {
     return null;
   }
 
-  // AuthContext가 로딩 중이거나 인증되지 않은 경우
-  if (authLoading) {
-    return (
-      <div id="result">
-        <div className="loading-container">
-          <div className="loading-spinner">🔄</div>
-          <p>인증 상태를 확인하는 중...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // 인증되지 않은 경우 (리다이렉트 처리됨)
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
       <motion.div
         className="result"
@@ -272,92 +255,43 @@ export default function SortGuide() {
               <div className="result-item">
                 <span className="label">📂 쓰레기 종류:</span>
                 <span className="value recyclable">
-                  <Typewriter
-                    options={{
-                      strings: [result.type],
-                      autoStart: true,
-                      loop: false,
-                      delay: 10
-                    }}
-                  />
+                  {result.type || '분류 중...'}
                 </span>
               </div>
               <div className="result-item">
                 <span className="label">🗂 세부 분류:</span>
                 <span className="value">
-                  <Typewriter
-                    options={{
-                      strings: [result.subtype],
-                      autoStart: true,
-                      loop: false,
-                      delay: 20
-                    }}
-                  />
+                  {result.detail || '정보 없음'}
                 </span>
               </div>
               <div className="result-item">
                 <span className="label">♻️ 재활용 마크:</span>
                 <span className="value">
-                  <Typewriter
-                    options={{
-                      strings: [result.mark],
-                      autoStart: true,
-                      loop: false,
-                      delay: 30
-                    }}
-                  />
+                  {result.mark || '정보 없음'}
                 </span>
               </div>
               <div className="result-item">
                 <span className="label">💡 설명:</span>
                 <span className="value">
-                  <Typewriter
-                    options={{
-                      strings: [result.description],
-                      autoStart: true,
-                      loop: false,
-                      delay: 40
-                    }}
-                  />
+                  {result.description || '정보 없음'}
                 </span>
               </div>
               <div className="result-item">
                 <span className="label">🧺 처리 방법:</span>
                 <span className="value">
-                  <Typewriter
-                    options={{
-                      strings: [result.method],
-                      autoStart: true,
-                      loop: false,
-                      delay: 50
-                    }}
-                  />
+                  {result.method || '정보 없음'}
                 </span>
               </div>
               <div className="result-item">
                 <span className="label">🧠 모델:</span>
                 <span className="value">
-                  <Typewriter
-                    options={{
-                      strings: [result.model],
-                      autoStart: true,
-                      loop: false,
-                      delay: 60
-                    }}
-                  />
+                  {result.model || '정보 없음'}
                 </span>
               </div>
               <div className="result-item">
                 <span className="label">📊 토큰 사용량:</span>
                 <span className="value">
-                  <Typewriter
-                    options={{
-                      strings: [result.token_usage],
-                      autoStart: true,
-                      loop: false,
-                      delay: 70
-                    }}
-                  />
+                  {result.token_usage || '정보 없음'}
                 </span>
               </div>
             </div>
