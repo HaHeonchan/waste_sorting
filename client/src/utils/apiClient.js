@@ -1,5 +1,6 @@
 // API 클라이언트 유틸리티 - 타임아웃과 재시도 로직 포함
 import { API_ENDPOINTS } from '../config/api';
+import { authHeaders } from './auth';
 
 class ApiClient {
   constructor() {
@@ -36,11 +37,20 @@ class ApiClient {
     // URL이 상대 경로인 경우 기본 API URL과 결합
     const fullUrl = url.startsWith('http') ? url : `${this.baseUrl}${url}`;
 
+    // 인증 헤더 자동 추가
+    const headers = {
+      ...authHeaders(),
+      ...options.headers
+    };
+
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         console.log(`API 요청 시도 ${attempt}/${retries}: ${fullUrl}`);
         
-        const response = await this.fetchWithTimeout(fullUrl, options);
+        const response = await this.fetchWithTimeout(fullUrl, {
+          ...options,
+          headers
+        });
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -89,6 +99,74 @@ class ApiClient {
       return result;
     } catch (error) {
       console.error('이미지 분석 실패:', error);
+      throw error;
+    }
+  }
+
+  // 분석 결과 저장
+  async saveAnalysisResult(analysisResult, imageFile = null) {
+    const url = '/api/analysis-result/save';
+    
+    try {
+      const formData = new FormData();
+      
+      // 분석 결과 데이터 추가
+      formData.append('analysisResult', JSON.stringify(analysisResult));
+      
+      // 이미지 파일이 있으면 추가
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+
+      const result = await this.requestWithRetry(url, {
+        method: 'POST',
+        body: formData,
+      });
+
+      return result;
+    } catch (error) {
+      console.error('분석 결과 저장 실패:', error);
+      throw error;
+    }
+  }
+
+  // 사용자의 분석 결과 목록 조회
+  async getUserAnalysisResults(page = 1, limit = 10) {
+    const url = `/api/analysis-result/user?page=${page}&limit=${limit}`;
+    
+    try {
+      const result = await this.requestWithRetry(url);
+      return result;
+    } catch (error) {
+      console.error('분석 결과 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 특정 분석 결과 조회
+  async getAnalysisResult(id) {
+    const url = `/api/analysis-result/${id}`;
+    
+    try {
+      const result = await this.requestWithRetry(url);
+      return result;
+    } catch (error) {
+      console.error('분석 결과 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 분석 결과 삭제
+  async deleteAnalysisResult(id) {
+    const url = `/api/analysis-result/${id}`;
+    
+    try {
+      const result = await this.requestWithRetry(url, {
+        method: 'DELETE',
+      });
+      return result;
+    } catch (error) {
+      console.error('분석 결과 삭제 실패:', error);
       throw error;
     }
   }

@@ -15,6 +15,8 @@ export default function SortGuide() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   
   
   
@@ -54,6 +56,7 @@ export default function SortGuide() {
       const data = await apiClient.analyzeImage(formData, (message) => {
         setProgressMessage(message);
       });
+      console.log('분석 완료 결과:', data);
       setResult(data);
     } catch (err) {
       console.error("분석 오류:", err);
@@ -66,6 +69,39 @@ export default function SortGuide() {
     }
 
     
+  };
+
+  const handleSaveResult = async () => {
+    if (!result || result.error) {
+      alert("저장할 분석 결과가 없습니다.");
+      return;
+    }
+
+    console.log('저장할 분석 결과:', result);
+
+    setSaving(true);
+    setSaveMessage("분석 결과를 저장하고 있습니다...");
+
+    try {
+      const saveResult = await apiClient.saveAnalysisResult(result, selectedFile);
+      setSaveMessage("✅ 분석 결과가 성공적으로 저장되었습니다!");
+      
+      // 3초 후 메시지 제거
+      setTimeout(() => {
+        setSaveMessage("");
+      }, 3000);
+      
+    } catch (error) {
+      console.error("저장 오류:", error);
+      setSaveMessage("❌ 저장 중 오류가 발생했습니다: " + error.message);
+      
+      // 5초 후 메시지 제거
+      setTimeout(() => {
+        setSaveMessage("");
+      }, 5000);
+    } finally {
+      setSaving(false);
+    }
   };
 
    // FAQ 아코디언용 데이터
@@ -239,9 +275,26 @@ export default function SortGuide() {
                 <span className="value">{result.token_usage}</span>
               </div>
             </div>
-            <button className="upload-button" onClick={() => navigate("/")}>
-            사진 업로드하러 가기
-            </button>
+            
+            {/* 저장 메시지 표시 */}
+            {saveMessage && (
+              <div className={`save-message ${saveMessage.includes('✅') ? 'success' : 'error'}`}>
+                {saveMessage}
+              </div>
+            )}
+            
+            <div className="result-buttons">
+              <button 
+                className="save-button" 
+                onClick={handleSaveResult}
+                disabled={saving}
+              >
+                {saving ? '저장 중...' : '💾 분석 결과 저장'}
+              </button>
+              <button className="upload-button" onClick={() => navigate("/")}>
+                📸 새 사진 업로드
+              </button>
+            </div>
           </div>
         )}
 
