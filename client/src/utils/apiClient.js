@@ -11,6 +11,11 @@ class ApiClient {
     this.baseUrl = API_ENDPOINTS.REPORTS.replace('/api/reports', '');
   }
 
+  // 인증 토큰 설정
+  setAuthToken(token) {
+    this.token = token;
+  }
+
   // 타임아웃을 포함한 fetch 래퍼
   async fetchWithTimeout(url, options = {}, timeout = this.timeout) {
     const controller = new AbortController();
@@ -32,10 +37,23 @@ class ApiClient {
   // 재시도 로직이 포함된 API 호출
   async requestWithRetry(url, options = {}, retries = this.maxRetries) {
     let lastError;
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.error('토큰이 없습니다. 로그인이 필요합니다.');
+      throw new Error('로그인이 필요합니다.');
+    }
 
     // URL이 상대 경로인 경우 기본 API URL과 결합
     const fullUrl = url.startsWith('http') ? url : `${this.baseUrl}${url}`;
 
+    // 요청 헤더에 토큰 추가
+    options.headers = {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': options.headers?.['Content-Type'] || 'application/json',
+    };
+
+    // 재시도 로직
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         console.log(`API 요청 시도 ${attempt}/${retries}: ${fullUrl}`);

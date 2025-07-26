@@ -37,36 +37,56 @@ export default function MyPage() {
     }
   }, [isAuthenticated, authLoading, user, navigate]);
 
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      setError('');
+const fetchUserData = async () => {
+  try {
+    setLoading(true);
+    setError('');
 
-      console.log('마이페이지: 사용자 데이터 가져오기 시작');
+    console.log('마이페이지: 사용자 데이터 가져오기 시작');
 
-      // 사용자 상세 정보 가져오기
-      const userInfo = await apiClient.requestWithRetry('/api/auth/user/info');
-      
-      // 리워드 목록 가져오기
-      const rewardsData = await apiClient.requestWithRetry('/api/auth/reward/list');
+    const token = user?.token || localStorage.getItem("authToken");
 
-      setUserStats({
-        points: userInfo.points || 0,
-        recycleCount: userInfo.recycleCount || 0,
-        reportCount: userInfo.reportCount || 0,
-        receivedLikes: userInfo.receivedLikes || 0
-      });
+    // ✅ 각 요청마다 headers로 토큰 직접 전달
+    const headers = { 'Authorization': `Bearer ${token}` };
 
-      setRewards(rewardsData || []);
-      
-      console.log('마이페이지: 사용자 데이터 로드 완료', userInfo);
-    } catch (error) {
-      console.error('사용자 데이터 조회 에러:', error);
-      setError('사용자 정보를 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    // 사용자 상세 정보 가져오기
+    const userInfo = await apiClient.requestWithRetry('/api/auth/user/info', { headers });
+
+    // 리워드 목록 가져오기
+    const rewardsData = await apiClient.requestWithRetry('/api/auth/reward/list', { headers });
+
+    setUserStats({
+      points: userInfo.points || 0,
+      recycleCount: userInfo.recycleCount || 0,
+      reportCount: userInfo.reportCount || 0,
+      receivedLikes: userInfo.receivedLikes || 0
+    });
+
+    setRewards(rewardsData || []);
+    console.log('마이페이지: 사용자 데이터 로드 완료', userInfo);
+  } catch (error) {
+    console.error('사용자 데이터 조회 에러:', error);
+    setError('사용자 정보를 불러오는 중 오류가 발생했습니다.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+  
+  // 예시: login 함수(혹은 로그인 버튼 클릭 후 실행되는 곳)
+const handleLogin = async (email, password) => {
+  const res = await axios.post("/api/auth/login", { email, password });
+  
+
+  if (res.data.token) {
+    console.log('로그인 성공:', res.data);
+    localStorage.setItem("authToken", res.data.token);
+    login(res.data);
+    setUser({ ...res.data, token: res.data.token });
+  } else {
+    alert("서버에서 토큰이 오지 않았습니다.");
+  }
+};
 
   const handleLogout = () => {
     if (window.confirm('로그아웃하시겠습니까?')) {
