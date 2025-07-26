@@ -132,25 +132,33 @@ export default function Complain() {
       return;
     }
     
+    if (!confirm('정말로 이 민원을 삭제하시겠습니까?')) {
+      return;
+    }
+    
     try {
       setDeletingIds(prev => new Set(prev).add(id));
       
-      // 삭제 요청 (재시도 없이 한 번만)
-      const response = await fetch(`/api/reports/${id}`, { 
+      // apiClient를 사용하여 삭제 요청 (재시도 로직 포함)
+      const result = await apiClient.requestWithRetry(`/api/reports/${id}`, {
         method: "DELETE",
         headers: {
           'Content-Type': 'application/json',
         }
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      console.log('삭제 성공:', id, result);
       
-      fetchReports();
+      // UI에서 즉시 제거 (서버 응답 대기 없이)
+      setReports(prev => prev.filter(report => (report._id || report.report_id) !== id));
+      
+      // 백그라운드에서 목록 새로고침
+      setTimeout(() => {
+        fetchReports();
+      }, 1000);
     } catch (error) {
       console.error('삭제 중 오류:', error);
-      alert('삭제 중 오류가 발생했습니다.');
+      alert(`삭제 중 오류가 발생했습니다: ${error.message}`);
     } finally {
       setDeletingIds(prev => {
         const newSet = new Set(prev);
