@@ -83,10 +83,9 @@ export const AuthProvider = ({ children }) => {
   const login = (userData) => {
     console.log('AuthContext: 로그인 성공', userData);
 
-    if (userData.token) {
-      localStorage.setItem('authToken', userData.token);
+    if (userData.authToken) {
+      localStorage.setItem('authToken', userData.authToken);
     }
-    login(res.data);
     setUser(userData);
     setError(null);
   };
