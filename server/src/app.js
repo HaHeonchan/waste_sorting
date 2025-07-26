@@ -118,6 +118,7 @@ app.use('/complain', express.static(path.join(__dirname, '../../client/public'))
 // API 라우팅 (upload 미들웨어 추가해서 req.upload 사용 가능하게)
 app.use('/api', (req, res, next) => {
     req.upload = upload;
+    console.log('API 요청:', { method: req.method, url: req.url, path: req.path });
     next();
 }, complainRoutes);
 

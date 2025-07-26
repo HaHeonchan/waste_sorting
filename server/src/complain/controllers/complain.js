@@ -188,7 +188,13 @@ exports.deleteReport = async (req, res) => {
     try {
         const { report_id } = req.params;
         
-        console.log('🗑️ 삭제 요청 받음:', { report_id, params: req.params });
+        console.log('🗑️ 삭제 요청 받음:', { 
+            report_id, 
+            params: req.params,
+            method: req.method,
+            url: req.url,
+            headers: req.headers
+        });
         
         // ObjectId 검증
         if (!mongoose.Types.ObjectId.isValid(report_id)) {
@@ -251,7 +257,7 @@ exports.deleteReport = async (req, res) => {
         }
         
         console.log('✅ 삭제 완료');
-        res.status(204).send();
+        res.status(200).json({ message: '삭제 완료', deletedId: report_id });
     } catch (err) {
         console.error('민원 삭제 에러:', err);
         res.status(500).json({ message: '민원 삭제 실패', error: err.message });
