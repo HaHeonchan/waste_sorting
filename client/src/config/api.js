@@ -7,6 +7,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL ||
 export const API_ENDPOINTS = {
   // 분석 관련
   ANALYZE: `${API_BASE_URL}/analyze/upload-analyze`,
+  ANALYZE_COMPREHENSIVE: `${API_BASE_URL}/analyze/upload-analyze-comprehensive`,
   
   // 신고 관련
   REPORTS: `${API_BASE_URL}/api/reports`,
