@@ -10,6 +10,11 @@ class ApiClient {
     this.baseUrl = API_ENDPOINTS.REPORTS.replace('/api/reports', '');
   }
 
+  // 인증 토큰 설정
+  setAuthToken(token) {
+    this.token = token;
+  }
+
   // 타임아웃을 포함한 fetch 래퍼
   async fetchWithTimeout(url, options = {}, timeout = this.timeout) {
     const controller = new AbortController();
