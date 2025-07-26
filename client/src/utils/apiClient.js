@@ -4,9 +4,7 @@ import { authHeaders } from './auth';
 
 class ApiClient {
   constructor() {
-    this.timeout = 60000; // 60초 타임아웃 (더 긴 응답 시간 허용)
-    this.maxRetries = 3; // 최대 3번 재시도
-    this.retryDelay = 3000; // 재시도 간격 3초 (더 긴 간격)
+    this.timeout = 60000; // 60초 타임아웃
     
     // 기본 API URL 추출 (REPORTS 엔드포인트에서 /api 부분 제거)
     this.baseUrl = API_ENDPOINTS.REPORTS.replace('/api/reports', '');
@@ -30,10 +28,8 @@ class ApiClient {
     }
   }
 
-  // 재시도 로직이 포함된 API 호출
-  async requestWithRetry(url, options = {}, retries = this.maxRetries) {
-    let lastError;
-
+  // 단순 API 호출 (재시도 로직 제거)
+  async requestWithRetry(url, options = {}) {
     // URL이 상대 경로인 경우 기본 API URL과 결합
     const fullUrl = url.startsWith('http') ? url : `${this.baseUrl}${url}`;
 
@@ -43,39 +39,26 @@ class ApiClient {
       ...options.headers
     };
 
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        console.log(`API 요청 시도 ${attempt}/${retries}: ${fullUrl}`);
-        
-        const response = await this.fetchWithTimeout(fullUrl, {
-          ...options,
-          headers
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        lastError = error;
-        console.warn(`API 요청 실패 (시도 ${attempt}/${retries}):`, error.message);
-        
-        // 마지막 시도가 아니면 재시도
-        if (attempt < retries) {
-          console.log(`${this.retryDelay}ms 후 재시도합니다...`);
-          await this.delay(this.retryDelay);
-        }
+    try {
+      console.log(`API 요청: ${fullUrl}`);
+      
+      const response = await this.fetchWithTimeout(fullUrl, {
+        ...options,
+        headers
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`API 요청 실패:`, error.message);
+      throw error;
     }
-    
-    throw new Error(`API 요청 실패 (${retries}번 시도 후): ${lastError.message}`);
   }
 
-  // 지연 함수
-  delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
+
 
   // 이미지 분석 API 호출
   async analyzeImage(formData, onProgress = null) {
@@ -229,16 +212,6 @@ class ApiClient {
   // 타임아웃 설정 변경
   setTimeout(timeout) {
     this.timeout = timeout;
-  }
-
-  // 재시도 횟수 설정 변경
-  setMaxRetries(maxRetries) {
-    this.maxRetries = maxRetries;
-  }
-
-  // 재시도 간격 설정 변경
-  setRetryDelay(retryDelay) {
-    this.retryDelay = retryDelay;
   }
 }
 
