@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import "./complain.css";
 import apiClient from '../../utils/apiClient';
+import { useAuth } from '../../contexts/AuthContext';
 import { motion } from "framer-motion";
 
 const rewardAmountMap = {
@@ -22,6 +24,8 @@ const rewardAmountMap = {
   };
 
 export default function Complain() {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [reports, setReports] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(null);
@@ -42,9 +46,21 @@ export default function Complain() {
   const isBackendConnected = true;// 이 부분은 실제 백엔드 연결 상태에 따라 변경해야 합니다.
 
   useEffect(() => {
+    // AuthContext가 로딩 중이면 대기
+    if (authLoading) {
+      return;
+    }
+
+    // 로그인 상태 확인
+    if (!isAuthenticated) {
+      console.log('민원 게시판: 인증되지 않은 사용자');
+      navigate('/login');
+      return;
+    }
+
     document.title = "분리배출 신고 게시판";
     fetchReports();
-  }, [sortBy, sortOrder, page]);
+  }, [isAuthenticated, authLoading, sortBy, sortOrder, page, navigate]);
 
   const fetchReports = async () => {
     if (!isBackendConnected) {
@@ -210,6 +226,23 @@ export default function Complain() {
     setRewardType("");
     setImage(null);
   };
+
+  // AuthContext가 로딩 중이거나 인증되지 않은 경우
+  if (authLoading) {
+    return (
+      <div className="report-wrapper">
+        <div className="loading-container">
+          <div className="loading-spinner">🔄</div>
+          <p>인증 상태를 확인하는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 인증되지 않은 경우 (리다이렉트 처리됨)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <motion.div
