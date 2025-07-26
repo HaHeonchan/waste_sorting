@@ -148,12 +148,12 @@ const Login = () => {
         <div className="login-divider">또는</div>
 
         <button 
-          className="login-btn-google"
+          className="login-btn-naver"
           onClick={handleGoogleLogin}
           disabled={loading}
           type="button"
         >
-          {loading ? '🔄 로그인 중...' : '🔍 구글로 로그인'}
+          {loading ? '🔄 로그인 중...' : '구글로 로그인'}
         </button>
 
         <div className="signup-guide">

@@ -17,19 +17,85 @@ router.get('/google/popup', passport.authenticate('google', {
     scope: ['profile', 'email']
 }));
 
-// 구글 로그인 콜백
+// 구글 로그인 콜백 (팝업 창용으로 통일)
 router.get('/google/callback', 
     passport.authenticate('google', { 
         failureRedirect: '/login?status=error&message=로그인 실패',
         failureFlash: true
     }),
     (req, res) => {
-        // 로그인 성공 시 적절한 페이지로 리다이렉트
         if (req.isAuthenticated()) {
-            // 로그인 성공 페이지로 리다이렉트
-            res.redirect('/login?status=success&message=성공적으로 로그인되었습니다.');
+            // JWT 토큰 생성
+            const token = jwt.sign(
+                { email: req.user.email, name: req.user.name, id: req.user._id },
+                process.env.JWT_SECRET,
+                { expiresIn: "30d" }
+            );
+            
+            const userInfo = {
+                id: req.user._id,
+                name: req.user.name,
+                email: req.user.email,
+                points: req.user.points,
+                recycleCount: req.user.recycleCount,
+                reportCount: req.user.reportCount,
+                createdAt: req.user.createdAt,
+                lastLogin: req.user.lastLogin
+            };
+            
+            // 팝업 창용 응답 (postMessage로 부모 창에 전달)
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>로그인 완료</title>
+                </head>
+                <body>
+                    <script>
+                        console.log('Google login callback executed');
+                        if (window.opener) {
+                            console.log('Sending message to parent window');
+                            window.opener.postMessage({
+                                type: 'GOOGLE_LOGIN_SUCCESS',
+                                user: ${JSON.stringify(userInfo)},
+                                token: '${token}'
+                            }, '*');
+                            console.log('Message sent, closing window');
+                            window.close();
+                        } else {
+                            console.log('No opener window, redirecting');
+                            window.location.href = '/?login=success&message=성공적으로 로그인되었습니다.';
+                        }
+                    </script>
+                    <p>로그인 처리 중...</p>
+                </body>
+                </html>
+            `;
+            res.send(html);
         } else {
-            res.redirect('/login?status=error&message=로그인 처리 중 오류가 발생했습니다.');
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>로그인 실패</title>
+                </head>
+                <body>
+                    <script>
+                        if (window.opener) {
+                            window.opener.postMessage({
+                                type: 'GOOGLE_LOGIN_ERROR',
+                                error: '로그인 처리 중 오류가 발생했습니다.'
+                            }, '*');
+                            window.close();
+                        } else {
+                            window.location.href = '/login?status=error&message=로그인 처리 중 오류가 발생했습니다.';
+                        }
+                    </script>
+                    <p>로그인 실패! 창이 자동으로 닫힙니다...</p>
+                </body>
+                </html>
+            `;
+            res.send(errorHtml);
         }
     }
 );
