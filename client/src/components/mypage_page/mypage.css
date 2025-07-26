@@ -300,3 +300,81 @@
     text-align: left;
   }
 }
+
+/* 다크모드 전체 배경 및 기본 텍스트 */
+.dark .mypage {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+
+/* 프로필 카드 배경 및 텍스트 */
+.dark .mypage-profile-card {
+  background: #2c2c2c;
+  color: #fff;
+}
+
+/* 요약 박스 */
+.dark .mypage-summary-item {
+  background-color: #2b2b2b;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.dark .mypage-summary-item .label {
+  color: #ccc;
+}
+
+/* 통계 박스 */
+.dark .mypage-stats-section {
+  background-color: #2b2b2b;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* 배지 박스 */
+.dark .mypage-badges {
+  background-color: #2b2b2b;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* 에러 메시지 */
+.dark .error-message {
+  background-color: #3c1c1c;
+  color: #ffaaaa;
+  border: 1px solid #663333;
+}
+
+/* account info 텍스트 컬러 */
+.dark .account-info li span:first-child {
+  color: #bbb;
+}
+
+.dark .account-info li span:last-child {
+  color: #aaa;
+}
+
+/* no-data, no-badges */
+.dark .no-data,
+.dark .no-badges {
+  color: #888;
+}
+
+/* 버튼 hover 효과는 유지하되 배경만 조금 어둡게 */
+.dark .btn.green {
+  background-color: #228b50;
+}
+
+.dark .btn.blue {
+  background-color: #005cc5;
+}
+
+.dark .btn.orange {
+  background: linear-gradient(135deg, #cc4c1e, #cc7a1e);
+}
+
+.dark .btn.red {
+  background: linear-gradient(135deg, #991b1b, #7f1414);
+}
+
+/* 선택적: hover 시 버튼 조금 밝게 */
+.dark .btn:hover {
+  filter: brightness(1.1);
+}

@@ -4,6 +4,7 @@ import './mypage.css';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../utils/apiClient';
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 export default function MyPage() {
   const navigate = useNavigate();
@@ -150,7 +151,12 @@ export default function MyPage() {
   const userLevel = calculateLevel(userStats.recycleCount);
 
   return (
-    <div className="mypage">
+    <motion.div
+        className="mypage"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.5 }}
+      >
       <div className="mypage-header">
         <h1>마이페이지</h1>
         <p>내 활동 기록과 통계를 확인해보세요</p>
@@ -284,6 +290,6 @@ export default function MyPage() {
           🚪 로그아웃
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

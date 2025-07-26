@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./sortguide.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import apiClient from "../../utils/apiClient";
+import { motion } from "framer-motion";
 
 export default function SortGuide() {
   const navigate = useNavigate();
@@ -99,7 +100,12 @@ export default function SortGuide() {
   
 
   return (
-      <div id="result">
+      <motion.div
+        className="result"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.5 }}
+      >
         {/* 직접 업로드 + FAQ는 이미지가 없을 때만 표시 */}
         {!previewUrlState && (
           <div className="manual-upload">
@@ -181,31 +187,94 @@ export default function SortGuide() {
             <div className="analysis-result">
               <div className="result-item">
                 <span className="label">📂 쓰레기 종류:</span>
-                <span className="value recyclable">{result.type}</span>
+                <span className="value recyclable">
+                  <Typewriter
+                    options={{
+                      strings: [result.type],
+                      autoStart: true,
+                      loop: false,
+                      delay: 10
+                    }}
+                  />
+                </span>
               </div>
               <div className="result-item">
                 <span className="label">🗂 세부 분류:</span>
-                <span className="value">{result.detail}</span>
+                <span className="value">
+                  <Typewriter
+                    options={{
+                      strings: [result.subtype],
+                      autoStart: true,
+                      loop: false,
+                      delay: 20
+                    }}
+                  />
+                </span>
               </div>
               <div className="result-item">
                 <span className="label">♻️ 재활용 마크:</span>
-                <span className="value">{result.mark}</span>
+                <span className="value">
+                  <Typewriter
+                    options={{
+                      strings: [result.mark],
+                      autoStart: true,
+                      loop: false,
+                      delay: 30
+                    }}
+                  />
+                </span>
               </div>
               <div className="result-item">
                 <span className="label">💡 설명:</span>
-                <span className="value">{result.description}</span>
+                <span className="value">
+                  <Typewriter
+                    options={{
+                      strings: [result.description],
+                      autoStart: true,
+                      loop: false,
+                      delay: 40
+                    }}
+                  />
+                </span>
               </div>
               <div className="result-item">
                 <span className="label">🧺 처리 방법:</span>
-                <span className="value">{result.method}</span>
+                <span className="value">
+                  <Typewriter
+                    options={{
+                      strings: [result.method],
+                      autoStart: true,
+                      loop: false,
+                      delay: 50
+                    }}
+                  />
+                </span>
               </div>
               <div className="result-item">
                 <span className="label">🧠 모델:</span>
-                <span className="value">{result.model}</span>
+                <span className="value">
+                  <Typewriter
+                    options={{
+                      strings: [result.model],
+                      autoStart: true,
+                      loop: false,
+                      delay: 60
+                    }}
+                  />
+                </span>
               </div>
               <div className="result-item">
                 <span className="label">📊 토큰 사용량:</span>
-                <span className="value">{result.token_usage}</span>
+                <span className="value">
+                  <Typewriter
+                    options={{
+                      strings: [result.token_usage],
+                      autoStart: true,
+                      loop: false,
+                      delay: 70
+                    }}
+                  />
+                </span>
               </div>
             </div>
             <button className="upload-button" onClick={() => navigate("/")}>
@@ -215,6 +284,6 @@ export default function SortGuide() {
         )}
 
         {result?.error && <div className="error">{result.error}</div>}
-    </div>
+    </motion.div>
    );
 };

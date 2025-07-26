@@ -375,4 +375,136 @@
     width: 95%;
     padding: 1rem;
   }
+
+  .sorting-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sorting-controls label {
+    font-weight: 500;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    color: #333;
+  }
+
+  body.dark .sorting-controls label {
+    color: #eee;
+  }
+
+  .sorting-controls select {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+
+  body.dark .sorting-controls select {
+    background-color: #222;
+    color: #fff;
+    border: 1px solid #555;
+  }
+}
+
+/* ===============================
+   🌙 다크 모드 - Incentive Page
+   =============================== */
+
+/* 🌙 다크모드: 배경 및 텍스트 색상 */
+body.dark .incentive-container {
+  background-color: #121212;
+  color: #eaeaea;
+}
+
+body.dark .incentive-title,
+body.dark .incentive-subtitle {
+  color: #e0e0e0;
+}
+
+/* 포인트 박스 */
+body.dark .point-box {
+  background: linear-gradient(to right, #116530, #198754);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+body.dark .point-icon i {
+  color: #ffffff;
+}
+
+/* 최근 적립 카드 */
+body.dark .earned-card {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+body.dark .earned-card span {
+  color: #bbbbbb;
+}
+
+/* 좌우 화살표 */
+body.dark .arrow {
+  background: #1e1e1e;
+  border-color: #28a745;
+  color: #28a745;
+}
+
+body.dark .arrow:hover {
+  background-color: #28a745;
+  color: white;
+}
+
+/* 하단 버튼 */
+body.dark .link-buttons button {
+  background-color: #198754;
+}
+
+body.dark .link-buttons button:hover {
+  background-color: #157347;
+}
+
+/* 팝업 */
+body.dark .popup-box {
+  background-color: #1f1f1f;
+  color: #e0e0e0;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.5);
+}
+
+body.dark .popup-close {
+  color: #ffffff;
+}
+
+/* 공공누리 텍스트 */
+body.dark .public-license {
+  color: #aaaaaa;
+}
+
+/* 📋 민원제보 form 다크모드 */
+body.dark .report-form {
+  background-color: #1c1c1c;
+  color: #eeeeee;
+  border: 1px solid #333;
+}
+
+body.dark .report-form input,
+body.dark .report-form textarea,
+body.dark .report-form select {
+  background-color: #2a2a2a;
+  color: #ffffff;
+  border: 1px solid #444;
+}
+
+body.dark .report-form input::placeholder,
+body.dark .report-form textarea::placeholder {
+  color: #aaaaaa;
+}
+
+body.dark .report-form button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+}
+
+body.dark .report-form button:hover {
+  background-color: #218838;
 }

@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import './home.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from "../../utils/apiClient";
+import { useAuth } from "../../contexts/AuthContext";
+import { motion } from "framer-motion";
 
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -10,6 +12,24 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+
+  // 구글 로그인 콜백 처리
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const loginStatus = searchParams.get('login');
+    const message = searchParams.get('message');
+    
+    if (loginStatus === 'success') {
+      alert(message || '구글 로그인이 성공했습니다!');
+      // URL에서 쿼리 파라미터 제거
+      navigate('/', { replace: true });
+    } else if (loginStatus === 'error') {
+      alert(message || '구글 로그인에 실패했습니다.');
+      navigate('/', { replace: true });
+    }
+  }, [location, navigate]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -59,7 +79,12 @@ export default function Home() {
         <p className="home-description">사진을 업로드하면 AI가 분리배출 방법을 알려드려요</p>
       </div>
 
-      <div className="upload-box">
+      <motion.div
+        className="upload-box"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.75 }}
+      >
         <div className="upload-inner">
           <i className="upload-icon">📤</i>
           <h2 className="upload-title">사진을 업로드해주세요</h2>
@@ -95,9 +120,13 @@ export default function Home() {
             </button>
           </div>
         )}
-      </div>
-
-      <div className="feature-cards">
+      </motion.div>
+      <motion.div
+        className="feature-cards"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.5 }}
+      >
         <div onClick={() => navigate('/sortguide')} className="card card-green">
           <div className="card-icon">🔍</div>
           <div className="card-title">분리배출 안내</div>
@@ -118,9 +147,14 @@ export default function Home() {
           <div className="card-title">마이페이지</div>
           <div className="card-desc">내 활동 기록을 확인하세요</div>
         </div>
-      </div>
-
-      <div className="stats-box">
+      </motion.div>
+      
+      <motion.div
+        className="stats-box"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 3 }}
+      >
         <h2 className="stats-title">오늘의 분리배출 현황</h2>
         <div className="stats-grid">
           <div className="stat-item">
@@ -136,7 +170,7 @@ export default function Home() {
             <div className="stat-label">절약된 CO₂ (kg)</div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
