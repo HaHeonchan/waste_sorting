@@ -1,10 +1,9 @@
-const express = require('express');
+const express  = require('express');
+const bcrypt   = require('bcrypt');
+const jwt      = require('jsonwebtoken');
 const passport = require('passport');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-const router = express.Router();
-
-const User = mongoose.model('User');
+const User     = require('../models/User');
+const router   = express.Router();
 
 // ===== 구글 OAuth 라우터 =====
 
@@ -35,114 +34,46 @@ router.get('/google/callback',
     }
 );
 
-// ===== 이메일/비밀번호 기반 인증 라우터 =====
+// ===== 일반 로그인/회원가입 라우터 =====
+// 회원가입
+router.post('/signup', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name||!email||!password)
+      return res.status(400).json({ msg: '모두 입력해주세요.' });
+
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(409).json({ msg: '이미 가입된 이메일입니다.' });
+
+    const hash = await bcrypt.hash(password, 10);
+    const user = await User.create({ name, email, password: hash });
+    const token = jwt.sign({ email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { name: user.name, email: user.email, points: user.points } });
+  } catch (err) {
+    res.status(500).json({ msg: '서버 에러', error: err.message });
+  }
+});
 
 // 로그인
-router.post("/login", async (req, res) => {
-    try {
-        const { accountId, password } = req.body;
-        const user = await User.findOne({ email: accountId });
+router.post('/login', async (req, res) => {
+  console.log('로그인 요청:', req.body);
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ msg: '가입되지 않은 이메일입니다.' });
 
-        // 보안: 아이디/비번 불일치 모두 동일 응답
-        if (!user || user.password !== password) {
-            return res.status(401).json({ msg: "로그인 실패: 아이디 또는 비밀번호를 확인하세요" });
-        }
+    // 만약 비밀번호가 없는(소셜로그인) 유저라면
+    if (!user.password) return res.status(400).json({ msg: '비밀번호로 로그인할 수 없는 계정입니다.' });
 
-        // JWT 시크릿 없을 때 에러
-        if (!process.env.JWT_SECRET) {
-            return res.status(500).json({ msg: "서버 환경변수(JWT_SECRET) 미설정" });
-        }
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(401).json({ msg: '비밀번호가 틀렸습니다.' });
 
-        // 마지막 로그인 시간 업데이트
-        user.lastLogin = new Date();
-        await user.save();
-
-        const token = jwt.sign(
-            { email: user.email, name: user.name, id: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: "30d" }
-        );
-        
-        // 토큰과 함께 사용자 정보도 반환
-        res.json({ 
-            token,
-            name: user.name,
-            id: user._id,
-            points: user.points,
-            recycleCount: user.recycleCount,
-            reportCount: user.reportCount,
-            createdAt: user.createdAt,
-            lastLogin: user.lastLogin
-        });
-
-    } catch (err) {
-        console.error("로그인 에러:", err);
-        res.status(500).json({ msg: "서버 오류" });
-    }
+    const token = jwt.sign({ email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { name: user.name, email: user.email, points: user.points } });
+  } catch (err) {
+    res.status(500).json({ msg: '서버 에러', error: err.message });
+  }
 });
 
-// 회원가입
-router.post("/signup", async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
 
-        // 입력값 검증
-        if (!name || !email || !password) {
-            return res.status(400).json({ msg: "모든 필드를 입력하세요" });
-        }
-
-        const exists = await User.findOne({ email });
-        if (exists) {
-            return res.status(409).json({ msg: "이미 가입된 이메일입니다." });
-        }
-
-        await User.create({
-            name,
-            email,
-            password,
-            points: 0,
-            recycleCount: 0,
-            reportCount: 0,
-        });
-
-        res.json({ ok: true, msg: "회원가입 완료!" });
-
-    } catch (err) {
-        console.error("회원가입 에러:", err);
-        res.status(500).json({ msg: "서버 오류" });
-    }
-});
-
-// ===== 공통 라우터 =====
-
-// 로그아웃
-router.get('/logout', (req, res) => {
-    req.logout((err) => {
-        if (err) {
-            return res.status(500).json({ error: '로그아웃 중 오류가 발생했습니다.' });
-        }
-        res.redirect('/');
-    });
-});
-
-// 현재 사용자 정보 확인
-router.get('/user', (req, res) => {
-    if (req.isAuthenticated()) {
-        res.json({
-            isAuthenticated: true,
-            user: {
-                id: req.user._id,
-                displayName: req.user.displayName || req.user.name,
-                email: req.user.email,
-                profilePicture: req.user.profilePicture,
-                points: req.user.points,
-                recycleCount: req.user.recycleCount,
-                reportCount: req.user.reportCount
-            }
-        });
-    } else {
-        res.json({ isAuthenticated: false });
-    }
-});
-
-module.exports = router; 
+module.exports = router;

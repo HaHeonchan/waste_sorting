@@ -7,7 +7,12 @@ const multer = require('multer');
 const session = require('express-session');
 const passport = require('passport');
 const cloudinary = require('cloudinary').v2;
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+
 require('dotenv').config();
+require('./auth/models/User');
+require('./auth/models/Reward');
 
 // Passport 설정
 require('./config/passport');
@@ -23,6 +28,7 @@ cloudinary.config({
 const analyzeRouter = require('./analyze/routes/analyze');
 const wasteRouter = require('./analyze/routes/waste');
 const authRouter = require('./auth/routes/auth');
+const authMiddleware = require('./auth/middleware/auth'); 
 const rewardRouter = require('./auth/routes/reward');
 const complainRoutes = require('./complain/routes/complain');
 const incentiveRoutes = require('./incentive/routes/incentive');
@@ -106,8 +112,8 @@ app.use('/api', (req, res, next) => {
 // 기존 라우터
 app.use('/analyze', analyzeRouter);
 app.use('/api/waste', wasteRouter);
-app.use('/auth', authRouter);
-app.use('/api/auth', rewardRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/reward', authMiddleware, rewardRouter);
 app.use('/api/incentive', incentiveRoutes);
 
 // 메인 페이지 - 새로운 경로로 수정
@@ -159,5 +165,3 @@ app.get('/api/health', (req, res) => {
 });
 
 module.exports = app;
-
-
