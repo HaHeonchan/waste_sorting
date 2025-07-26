@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import "./sortguide.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import apiClient from "../../utils/apiClient";
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function SortGuide() {
   const navigate = useNavigate();
-  const location = useLocation()
+  const location = useLocation();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   // Home.jsx에서 넘겨준 이미지 데이터
   const { imageFile, previewUrl } = location.state || {};
   const [selectedFile, setSelectedFile] = useState(imageFile || null);
@@ -17,10 +19,22 @@ export default function SortGuide() {
   
   
   useEffect(() => {
+    // AuthContext가 로딩 중이면 대기
+    if (authLoading) {
+      return;
+    }
+
+    // 로그인 상태 확인
+    if (!isAuthenticated) {
+      console.log('SortGuide: 인증되지 않은 사용자');
+      navigate('/login');
+      return;
+    }
+
     if (selectedFile) {
       handleAnalyze(); // 페이지 로드 시 자동 분석
     }
-  }, [selectedFile]);
+  }, [isAuthenticated, authLoading, selectedFile, navigate]);
 
   const handleAnalyze = async () => {
     if (!selectedFile) {
@@ -97,6 +111,23 @@ export default function SortGuide() {
     );
   };
   
+
+  // AuthContext가 로딩 중이거나 인증되지 않은 경우
+  if (authLoading) {
+    return (
+      <div id="result">
+        <div className="loading-container">
+          <div className="loading-spinner">🔄</div>
+          <p>인증 상태를 확인하는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 인증되지 않은 경우 (리다이렉트 처리됨)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
       <div id="result">
