@@ -38,9 +38,14 @@ const upload = multer({
 // 분석 결과 저장
 const saveAnalysisResult = async (req, res) => {
   try {
+    console.log("1. 시작", req.body);
+
     let analysisResult = req.body.analysisResult;
     const userId = req.user.id; // 인증된 사용자 ID
+    console.log("2. 사용자 ID:", userId);
+
     if (typeof analysisResult === 'string') analysisResult = JSON.parse(analysisResult);
+    console.log("3. 분석 결과:", analysisResult);
 
     // 오늘 날짜에 대한 분석 결과 저장 제한
     const today = new Date();
@@ -51,6 +56,7 @@ const saveAnalysisResult = async (req, res) => {
         $gte: today
       }
     });
+    console.log("4. 오늘 분석 결과 개수:", countToday);
 
     if (countToday >= 5) {
       return res.status(429).json({
@@ -65,13 +71,17 @@ const saveAnalysisResult = async (req, res) => {
     'analysisResult.type': analysisResult.type,
     uploadedAt: { $gte: today }
   });
+    console.log("5. 같은 타입 분석 결과 개수:", sameTypeCount);
 
-    let point = 10 - (2 * sameTypeCount); // 같은 타입 분석 결과에 대해 포인트 차감
-    if (point < 1) point = 1; // 최소 포인트는 1점
+    let points = 10 - (2 * sameTypeCount); // 같은 타입 분석 결과에 대해 포인트 차감
+    if (points < 1) points = 1; // 최소 포인트는 1점
+
+    console.log("6. 포인트 계산:", points);
 
     await User.findByIdAndUpdate(userId, {
-      $inc: { point: point }
+      $inc: { points: points, recycleCount: 1 }
     });
+    console.log("7. 사용자 포인트 업데이트 완료");
 
 
     if (!analysisResult) {
@@ -169,7 +179,7 @@ const saveAnalysisResult = async (req, res) => {
         id: newAnalysisResult._id,
         imageUrl: newAnalysisResult.imageUrl,
         uploadedAt: newAnalysisResult.uploadedAt,
-        point: point
+        points: points
       } 
     }); 
     

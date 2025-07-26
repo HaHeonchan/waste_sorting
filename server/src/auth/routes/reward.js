@@ -32,15 +32,15 @@ router.get('/reward/list', authMiddleware, async (req, res) => {
 // 리워드 교환
 router.post('/reward/exchange', authMiddleware, async (req, res) => {
     try {
-        const { item, point } = req.body;
+        const { item, points } = req.body;
         const userEmail = req.user.email;
         
         const user = await User.findOne({ email: userEmail });
         if (!user) {
             return res.json({ ok: false, msg: "유저를 찾을 수 없음" });
         }
-        
-        if (user.points < point) {
+
+        if (user.points < points) {
             return res.json({ ok: false, msg: "포인트 부족" });
         }
         
@@ -49,13 +49,13 @@ router.post('/reward/exchange', authMiddleware, async (req, res) => {
             return res.json({ ok: false, msg: "이미 교환한 상품!" });
         }
         
-        user.points -= point;
+        user.points -= points;
         await user.save();
         
         await Reward.create({
             userEmail,
             item,
-            point,
+            points,
             date: new Date().toISOString().slice(0, 10),
             received: true,
         });

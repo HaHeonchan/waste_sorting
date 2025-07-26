@@ -225,7 +225,7 @@ const handleLogin = async (email, password) => {
                 <li key={index}>
                   🎁 <strong>{reward.item}</strong><br />
                   {reward.date} <br />
-                  {reward.point} 포인트 사용
+                  {reward.points} 포인트 사용
                 </li>
               ))}
             </ul>
