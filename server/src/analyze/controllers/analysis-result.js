@@ -2,19 +2,20 @@ const AnalysisResult = require('../models/AnalysisResult');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
 
-// 이미지 업로드 설정
+// 임시 이미지 업로드 설정 (Cloudinary 업로드 후 삭제됨)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../../uploads/analysis');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    const tempUploadDir = path.join(__dirname, '../../uploads/temp');
+    if (!fs.existsSync(tempUploadDir)) {
+      fs.mkdirSync(tempUploadDir, { recursive: true });
     }
-    cb(null, uploadDir);
+    cb(null, tempUploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'analysis-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, 'analysis-temp-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
 
@@ -63,7 +64,40 @@ const saveAnalysisResult = async (req, res) => {
     // 이미지 파일 처리
     let imageUrl = '';
     if (req.file) {
-      imageUrl = `/uploads/analysis/${req.file.filename}`;
+      console.log('📸 분석 이미지 Cloudinary 업로드 시작:', req.file.filename);
+      
+      try {
+        // Cloudinary에 업로드 (최적화 옵션 추가)
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'waste-sorting/analysis',
+          resource_type: 'auto',
+          quality: 'auto:good', // 자동 품질 최적화
+          fetch_format: 'auto', // 자동 포맷 선택
+          transformation: [
+            { width: 1200, height: 1200, crop: 'limit' }, // 최대 크기 제한
+            { quality: 'auto:good' }
+          ]
+        });
+        
+        imageUrl = result.secure_url;
+        console.log('✅ Cloudinary 업로드 완료:', imageUrl);
+        
+        // 임시 파일 삭제
+        fs.unlinkSync(req.file.path);
+        console.log('🗑️ 임시 파일 삭제 완료');
+        
+      } catch (uploadError) {
+        console.error('🔥 Cloudinary 업로드 실패:', uploadError);
+        // 임시 파일 삭제
+        if (fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(500).json({ 
+          success: false,
+          message: '이미지 업로드 실패', 
+          error: uploadError.message 
+        });
+      }
     } else if (req.body.imageUrl) {
       imageUrl = req.body.imageUrl;
     } else {
@@ -203,11 +237,29 @@ const deleteAnalysisResult = async (req, res) => {
       });
     }
 
-    // 이미지 파일 삭제
-    if (result.imageUrl && result.imageUrl.startsWith('/uploads/')) {
-      const imagePath = path.join(__dirname, '..', result.imageUrl);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
+    // 이미지 파일 삭제 (Cloudinary 또는 로컬)
+    if (result.imageUrl) {
+      if (result.imageUrl.includes('cloudinary.com')) {
+        // Cloudinary URL에서 public ID 추출
+        const urlParts = result.imageUrl.split('/');
+        const filename = urlParts[urlParts.length - 1];
+        const publicId = filename.split('.')[0];
+        
+        // 폴더 경로 포함하여 전체 public ID 구성
+        const fullPublicId = `waste-sorting/analysis/${publicId}`;
+        
+        console.log('🗑️ Cloudinary 이미지 삭제 시작:', fullPublicId);
+        
+        // 비동기로 삭제 처리 (응답을 기다리지 않음)
+        cloudinary.uploader.destroy(fullPublicId)
+          .then(() => console.log('🗑️ Cloudinary 이미지 삭제 완료'))
+          .catch(error => console.error('🔥 Cloudinary 이미지 삭제 실패:', error.message));
+      } else if (result.imageUrl.startsWith('/uploads/')) {
+        // 로컬 파일 삭제 (기존 방식)
+        const imagePath = path.join(__dirname, '..', result.imageUrl);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
       }
     }
 

@@ -27,17 +27,17 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-// Multer 설정
+// 임시 파일 저장 설정 (분석 후 자동 삭제)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadDir = 'uploads/';
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+        const tempUploadDir = 'uploads/temp/';
+        if (!fs.existsSync(tempUploadDir)) {
+            fs.mkdirSync(tempUploadDir, { recursive: true });
         }
-        cb(null, uploadDir);
+        cb(null, tempUploadDir);
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
+        cb(null, 'analysis-temp-' + Date.now() + '-' + file.originalname);
     }
 });
 
@@ -59,10 +59,12 @@ const analyzeController = {
     // 이미지 업로드 및 분석 처리
     uploadAndAnalyzeImage: async (req, res) => {
         console.log('🚀 이미지 분석 요청 시작');
+        let uploadedFile = null;
         
         try {
             upload.single('image')(req, res, async (err) => {
                 if (err) {
+                    console.error('❌ 파일 업로드 실패:', err.message);
                     return res.status(400).json({ error: '파일 업로드 실패', details: err.message });
                 }
 
@@ -70,23 +72,32 @@ const analyzeController = {
                     return res.status(400).json({ error: '이미지 파일을 선택해주세요.' });
                 }
 
+                uploadedFile = req.file.path;
+                console.log('📁 임시 파일 저장됨:', uploadedFile);
+
                 try {
                     // 분석 실행
-                    const result = await performAnalysis(req.file.path);
+                    const result = await performAnalysis(uploadedFile);
                     
                     res.json(result);
                     
                 } catch (analysisError) {
+                    console.error('❌ 분석 실패:', analysisError.message);
                     res.status(500).json({ 
                         error: '이미지 분석 중 오류가 발생했습니다.',
                         details: analysisError.message 
                     });
                 } finally {
-                    // 임시 파일 정리
-                    cleanupFile(req.file.path);
+                    // 임시 파일 정리 (성공/실패 관계없이)
+                    cleanupFile(uploadedFile);
                 }
             });
         } catch (error) {
+            console.error('❌ 서버 오류:', error.message);
+            // 업로드된 파일이 있으면 정리
+            if (uploadedFile) {
+                cleanupFile(uploadedFile);
+            }
             res.status(500).json({ error: '서버 오류가 발생했습니다.', details: error.message });
         }
     },
@@ -94,10 +105,12 @@ const analyzeController = {
     // 개선된 이미지 업로드 및 분석 처리 (객체/라벨 포함)
     uploadAndAnalyzeImageComprehensive: async (req, res) => {
         console.log('🚀 개선된 이미지 분석 요청 시작 (객체/라벨 포함)');
+        let uploadedFile = null;
         
         try {
             upload.single('image')(req, res, async (err) => {
                 if (err) {
+                    console.error('❌ 파일 업로드 실패:', err.message);
                     return res.status(400).json({ error: '파일 업로드 실패', details: err.message });
                 }
 
@@ -105,23 +118,32 @@ const analyzeController = {
                     return res.status(400).json({ error: '이미지 파일을 선택해주세요.' });
                 }
 
+                uploadedFile = req.file.path;
+                console.log('📁 임시 파일 저장됨:', uploadedFile);
+
                 try {
                     // 개선된 분석 실행
-                    const result = await performComprehensiveAnalysis(req.file.path);
+                    const result = await performComprehensiveAnalysis(uploadedFile);
                     
                     res.json(result);
                     
                 } catch (analysisError) {
+                    console.error('❌ 개선된 분석 실패:', analysisError.message);
                     res.status(500).json({ 
                         error: '이미지 분석 중 오류가 발생했습니다.',
                         details: analysisError.message 
                     });
                 } finally {
-                    // 임시 파일 정리
-                    cleanupFile(req.file.path);
+                    // 임시 파일 정리 (성공/실패 관계없이)
+                    cleanupFile(uploadedFile);
                 }
             });
         } catch (error) {
+            console.error('❌ 서버 오류:', error.message);
+            // 업로드된 파일이 있으면 정리
+            if (uploadedFile) {
+                cleanupFile(uploadedFile);
+            }
             res.status(500).json({ error: '서버 오류가 발생했습니다.', details: error.message });
         }
     }
@@ -380,15 +402,34 @@ function parseGPTResponse(content) {
     }
 }
 
-// 파일 정리
+// 임시 파일 정리 (강화된 버전)
 function cleanupFile(filePath) {
-    if (filePath && fs.existsSync(filePath)) {
-        try {
+    if (!filePath) {
+        console.log('⚠️ 파일 경로가 없어 정리 건너뜀');
+        return;
+    }
+
+    try {
+        if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
-            console.log('🗑️ 임시 파일 정리 완료');
-        } catch (error) {
-            console.error('❌ 파일 정리 실패:', error);
+            console.log('🗑️ 임시 파일 정리 완료:', filePath);
+        } else {
+            console.log('⚠️ 파일이 이미 존재하지 않음:', filePath);
         }
+    } catch (error) {
+        console.error('❌ 파일 정리 실패:', error.message);
+        
+        // 파일이 사용 중인 경우 잠시 후 재시도
+        setTimeout(() => {
+            try {
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                    console.log('🗑️ 지연 삭제 성공:', filePath);
+                }
+            } catch (retryError) {
+                console.error('❌ 지연 삭제도 실패:', retryError.message);
+            }
+        }, 1000);
     }
 }
 
