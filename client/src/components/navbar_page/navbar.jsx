@@ -106,7 +106,8 @@ const Navbar = () => {
         <Link to="/" className="nav-link" onClick={closeMenu}>🏠 홈</Link>
         <Link to="/sortguide" className="nav-link" onClick={closeMenu}>🔍 분리배출 안내</Link>
         <Link to="/incentive" className="nav-link" onClick={closeMenu}>🛍️ 인센티브 관리</Link>
-        <Link to="/complain" className="nav-link" onClick={closeMenu}>⚠️ 민원 제보</Link>
+        {/* <Link to="/complain" className="nav-link" onClick={closeMenu}>⚠️ 민원 제보</Link> */}
+        <Link to="/community" className="nav-link" onClick={closeMenu}>🌱 커뮤니티</Link>
         <Link to="/mypage" className="nav-link" onClick={closeMenu}>👤 마이페이지</Link>
         
         {isAuthenticated ? (
