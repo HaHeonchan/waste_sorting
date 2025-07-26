@@ -1,7 +1,9 @@
 const AnalysisResult = require('../models/AnalysisResult');
+const User = require('../../auth/models/User');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { type } = require('os');
 const cloudinary = require('cloudinary').v2;
 
 // 임시 이미지 업로드 설정 (Cloudinary 업로드 후 삭제됨)
@@ -38,6 +40,39 @@ const saveAnalysisResult = async (req, res) => {
   try {
     let analysisResult = req.body.analysisResult;
     const userId = req.user.id; // 인증된 사용자 ID
+    if (typeof analysisResult === 'string') analysisResult = JSON.parse(analysisResult);
+
+    // 오늘 날짜에 대한 분석 결과 저장 제한
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 오늘 날짜의 시작 시간  
+    const countToday = await AnalysisResult.countDocuments({
+      userId: userId,
+      uploadedAt: {
+        $gte: today
+      }
+    });
+
+    if (countToday >= 5) {
+      return res.status(429).json({
+        success: false,
+        message: '오늘은 최대 5개의 분석 결과만 저장할 수 있습니다.',
+        limit: 5
+      });
+    }
+
+    const sameTypeCount = await AnalysisResult.countDocuments({
+    userId,
+    'analysisResult.type': analysisResult.type,
+    uploadedAt: { $gte: today }
+  });
+
+    let point = 10 - (2 * sameTypeCount); // 같은 타입 분석 결과에 대해 포인트 차감
+    if (point < 1) point = 1; // 최소 포인트는 1점
+
+    await User.findByIdAndUpdate(userId, {
+      $inc: { point: point }
+    });
+
 
     if (!analysisResult) {
       return res.status(400).json({ 
@@ -133,10 +168,11 @@ const saveAnalysisResult = async (req, res) => {
       data: {
         id: newAnalysisResult._id,
         imageUrl: newAnalysisResult.imageUrl,
-        uploadedAt: newAnalysisResult.uploadedAt
-      }
-    });
-
+        uploadedAt: newAnalysisResult.uploadedAt,
+        point: point
+      } 
+    }); 
+    
   } catch (error) {
     console.error('분석 결과 저장 오류:', error);
     res.status(500).json({

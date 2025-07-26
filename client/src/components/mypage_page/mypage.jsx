@@ -4,7 +4,6 @@ import './mypage.css';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../utils/apiClient';
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 
 export default function MyPage() {
   const navigate = useNavigate();
@@ -38,36 +37,56 @@ export default function MyPage() {
     }
   }, [isAuthenticated, authLoading, user, navigate]);
 
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      setError('');
+const fetchUserData = async () => {
+  try {
+    setLoading(true);
+    setError('');
 
-      console.log('마이페이지: 사용자 데이터 가져오기 시작');
+    console.log('마이페이지: 사용자 데이터 가져오기 시작');
 
-      // 사용자 상세 정보 가져오기
-      const userInfo = await apiClient.requestWithRetry('/api/auth/user/info');
-      
-      // 리워드 목록 가져오기
-      const rewardsData = await apiClient.requestWithRetry('/api/auth/reward/list');
+    const token = user?.token || localStorage.getItem("authToken");
 
-      setUserStats({
-        points: userInfo.points || 0,
-        recycleCount: userInfo.recycleCount || 0,
-        reportCount: userInfo.reportCount || 0,
-        receivedLikes: userInfo.receivedLikes || 0
-      });
+    // ✅ 각 요청마다 headers로 토큰 직접 전달
+    const headers = { 'Authorization': `Bearer ${token}` };
 
-      setRewards(rewardsData || []);
-      
-      console.log('마이페이지: 사용자 데이터 로드 완료', userInfo);
-    } catch (error) {
-      console.error('사용자 데이터 조회 에러:', error);
-      setError('사용자 정보를 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    // 사용자 상세 정보 가져오기
+    const userInfo = await apiClient.requestWithRetry('/api/auth/user/info', { headers });
+
+    // 리워드 목록 가져오기
+    const rewardsData = await apiClient.requestWithRetry('/api/auth/reward/list', { headers });
+
+    setUserStats({
+      points: userInfo.points || 0,
+      recycleCount: userInfo.recycleCount || 0,
+      reportCount: userInfo.reportCount || 0,
+      receivedLikes: userInfo.receivedLikes || 0
+    });
+
+    setRewards(rewardsData || []);
+    console.log('마이페이지: 사용자 데이터 로드 완료', userInfo);
+  } catch (error) {
+    console.error('사용자 데이터 조회 에러:', error);
+    setError('사용자 정보를 불러오는 중 오류가 발생했습니다.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+  
+  // 예시: login 함수(혹은 로그인 버튼 클릭 후 실행되는 곳)
+const handleLogin = async (email, password) => {
+  const res = await axios.post("/api/auth/login", { email, password });
+  
+
+  if (res.data.token) {
+    console.log('로그인 성공:', res.data);
+    localStorage.setItem("authToken", res.data.token);
+    login(res.data);
+    setUser({ ...res.data, token: res.data.token });
+  } else {
+    alert("서버에서 토큰이 오지 않았습니다.");
+  }
+};
 
   const handleLogout = () => {
     if (window.confirm('로그아웃하시겠습니까?')) {
@@ -151,12 +170,7 @@ export default function MyPage() {
   const userLevel = calculateLevel(userStats.recycleCount);
 
   return (
-    <motion.div
-        className="mypage"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.5 }}
-      >
+    <div className="mypage">
       <div className="mypage-header">
         <h1>마이페이지</h1>
         <p>내 활동 기록과 통계를 확인해보세요</p>
@@ -243,25 +257,20 @@ export default function MyPage() {
         </div>
       </div>
 
-      <div className="mypage-badges">
-        <h3>획득 배지</h3>
-        <div className="badges">
-          {userStats.recycleCount >= 100 && (
-            <div>🏆<br />분리배출 마스터<br /><span>100회 달성</span></div>
-          )}
-          {userStats.reportCount >= 10 && (
-            <div>🌱<br />환경 지킴이<br /><span>10회 신고</span></div>
-          )}
-          {userStats.recycleCount >= 1 && (
-            <div>🪴<br />신입 환경지킴이<br /><span>첫 인증</span></div>
-          )}
-          {userStats.recycleCount >= 500 && (
-            <div>👑<br />플래티넘 멤버<br /><span>500회 달성</span></div>
-          )}
-          {userStats.recycleCount < 1 && userStats.reportCount < 10 && (
-            <div className="no-badges">아직 획득한 배지가 없습니다.<br /><span>활동을 시작해보세요!</span></div>
-          )}
-        </div>
+      <div
+        className="mypage-badges"
+        onClick={() => navigate('/analysis-results')}
+        style={{ 
+          cursor: 'pointer',
+          transition: "box-shadow 0.2s",
+          boxShadow: "0 0 8px rgba(0,0,0,0.08)",
+          borderRadius: "16px",
+        }}
+        onMouseOver={e => e.currentTarget.style.boxShadow = "0 2px 16px rgba(0,0,0,0.2)"}
+        onMouseOut={e => e.currentTarget.style.boxShadow = "0 0 8px rgba(0,0,0,0.08)"}
+      >
+        <h3>분석 결과 조회</h3>
+        <p>여기에서 사용자의 분리배출 활동에 대한 분석 결과를 확인할 수 있습니다.</p>
       </div>
 
       <div className="mypage-footer-buttons">
@@ -290,6 +299,6 @@ export default function MyPage() {
           🚪 로그아웃
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

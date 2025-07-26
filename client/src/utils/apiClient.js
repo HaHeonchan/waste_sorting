@@ -59,6 +59,24 @@ class ApiClient {
   }
 
 
+async saveAnalysisResult(result, imageFile) {
+  const formData = new FormData();
+  formData.append('analysisResult', JSON.stringify(result));
+  if (imageFile) formData.append('image', imageFile);
+
+  const token = localStorage.getItem('authToken'); // 로그인 인증 토큰 사용
+
+  const res = await fetch('/api/analysis-result', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}` // 토큰이 필요하다면
+    },
+    body: formData
+  });
+
+  if (!res.ok) throw new Error('저장 실패');
+  return res.json();
+}
 
   // 이미지 분석 API 호출
   async analyzeImage(formData, onProgress = null) {

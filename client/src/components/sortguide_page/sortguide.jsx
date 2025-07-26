@@ -85,6 +85,18 @@ export default function SortGuide() {
 
     try {
       const saveResult = await apiClient.saveAnalysisResult(result, selectedFile);
+
+      const point = saveResult?.data?.point;
+      if (typeof point === "number") {
+        setSaveMessage(`✅ 분석 결과가 성공적으로 저장되었습니다! (+${point}포인트)`);
+      } else {
+        setSaveMessage("✅ 분석 결과가 성공적으로 저장되었습니다!");
+      }
+
+      navigate("/analysis-results", {
+        state: { saveResult }
+      });
+
       setSaveMessage("✅ 분석 결과가 성공적으로 저장되었습니다!");
       
       // 3초 후 메시지 제거
