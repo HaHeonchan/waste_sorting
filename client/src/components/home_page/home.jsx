@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import './home.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from "../../utils/apiClient";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -10,6 +11,24 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+
+  // 구글 로그인 콜백 처리
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const loginStatus = searchParams.get('login');
+    const message = searchParams.get('message');
+    
+    if (loginStatus === 'success') {
+      alert(message || '구글 로그인이 성공했습니다!');
+      // URL에서 쿼리 파라미터 제거
+      navigate('/', { replace: true });
+    } else if (loginStatus === 'error') {
+      alert(message || '구글 로그인에 실패했습니다.');
+      navigate('/', { replace: true });
+    }
+  }, [location, navigate]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];

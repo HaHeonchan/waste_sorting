@@ -18,30 +18,98 @@ router.get('/google/popup', passport.authenticate('google', {
     scope: ['profile', 'email']
 }));
 
-// 구글 로그인 콜백
+// 구글 로그인 콜백 (팝업 창용으로 통일)
 router.get('/google/callback', 
     passport.authenticate('google', { 
         failureRedirect: '/login?status=error&message=로그인 실패',
         failureFlash: true
     }),
     (req, res) => {
-        // 로그인 성공 시 적절한 페이지로 리다이렉트
         if (req.isAuthenticated()) {
-            // 로그인 성공 페이지로 리다이렉트
-            res.redirect('/login?status=success&message=성공적으로 로그인되었습니다.');
+            // JWT 토큰 생성
+            const token = jwt.sign(
+                { email: req.user.email, name: req.user.name, id: req.user._id },
+                process.env.JWT_SECRET,
+                { expiresIn: "30d" }
+            );
+            
+            const userInfo = {
+                id: req.user._id,
+                name: req.user.name,
+                email: req.user.email,
+                points: req.user.points,
+                recycleCount: req.user.recycleCount,
+                reportCount: req.user.reportCount,
+                createdAt: req.user.createdAt,
+                lastLogin: req.user.lastLogin
+            };
+            
+            // 팝업 창용 응답 (postMessage로 부모 창에 전달)
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>로그인 완료</title>
+                </head>
+                <body>
+                    <script>
+                        console.log('Google login callback executed');
+                        if (window.opener) {
+                            console.log('Sending message to parent window');
+                            window.opener.postMessage({
+                                type: 'GOOGLE_LOGIN_SUCCESS',
+                                user: ${JSON.stringify(userInfo)},
+                                token: '${token}'
+                            }, '*');
+                            console.log('Message sent, closing window');
+                            window.close();
+                        } else {
+                            console.log('No opener window, redirecting');
+                            window.location.href = '/?login=success&message=성공적으로 로그인되었습니다.';
+                        }
+                    </script>
+                    <p>로그인 처리 중...</p>
+                </body>
+                </html>
+            `;
+            res.send(html);
         } else {
-            res.redirect('/login?status=error&message=로그인 처리 중 오류가 발생했습니다.');
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>로그인 실패</title>
+                </head>
+                <body>
+                    <script>
+                        if (window.opener) {
+                            window.opener.postMessage({
+                                type: 'GOOGLE_LOGIN_ERROR',
+                                error: '로그인 처리 중 오류가 발생했습니다.'
+                            }, '*');
+                            window.close();
+                        } else {
+                            window.location.href = '/?login=error&message=로그인 처리 중 오류가 발생했습니다.';
+                        }
+                    </script>
+                    <p>로그인 실패...</p>
+                </body>
+                </html>
+            `;
+            res.send(html);
         }
     }
 );
+
+
 
 // ===== 이메일/비밀번호 기반 인증 라우터 =====
 
 // 로그인
 router.post("/login", async (req, res) => {
     try {
-        const { accountId, password } = req.body;
-        const user = await User.findOne({ email: accountId });
+        const { email, password } = req.body;
+        const user = await User.findOne({ email: email });
 
         // 보안: 아이디/비번 불일치 모두 동일 응답
         if (!user || user.password !== password) {
@@ -126,22 +194,62 @@ router.get('/logout', (req, res) => {
 });
 
 // 현재 사용자 정보 확인
-router.get('/user', (req, res) => {
-    if (req.isAuthenticated()) {
-        res.json({
-            isAuthenticated: true,
-            user: {
-                id: req.user._id,
-                displayName: req.user.displayName || req.user.name,
-                email: req.user.email,
-                profilePicture: req.user.profilePicture,
-                points: req.user.points,
-                recycleCount: req.user.recycleCount,
-                reportCount: req.user.reportCount
+router.get('/user', async (req, res) => {
+    try {
+        // JWT 토큰에서 사용자 정보 확인
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(" ")[1];
+            
+            if (!process.env.JWT_SECRET) {
+                return res.status(500).json({ msg: "서버 환경변수(JWT_SECRET) 미설정" });
             }
-        });
-    } else {
+            
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const user = await User.findById(decoded.id);
+                
+                if (user) {
+                    return res.json({
+                        isAuthenticated: true,
+                        user: {
+                            id: user._id,
+                            name: user.name,
+                            email: user.email,
+                            points: user.points,
+                            recycleCount: user.recycleCount,
+                            reportCount: user.reportCount,
+                            createdAt: user.createdAt,
+                            lastLogin: user.lastLogin
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("JWT 검증 실패:", err);
+            }
+        }
+        
+        // Passport 세션 인증 확인
+        if (req.isAuthenticated()) {
+            return res.json({
+                isAuthenticated: true,
+                user: {
+                    id: req.user._id,
+                    name: req.user.name,
+                    email: req.user.email,
+                    points: req.user.points,
+                    recycleCount: req.user.recycleCount,
+                    reportCount: req.user.reportCount,
+                    createdAt: req.user.createdAt,
+                    lastLogin: req.user.lastLogin
+                }
+            });
+        }
+        
         res.json({ isAuthenticated: false });
+    } catch (err) {
+        console.error("사용자 정보 조회 에러:", err);
+        res.status(500).json({ msg: "서버 오류" });
     }
 });
 
