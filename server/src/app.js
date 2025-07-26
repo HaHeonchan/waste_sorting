@@ -27,6 +27,7 @@ const rewardRouter = require('./auth/routes/reward');
 const complainRoutes = require('./complain/routes/complain');
 const incentiveRoutes = require('./incentive/routes/incentive');
 const analysisResultRouter = require('./analyze/routes/analysis-result');
+const communityRouter = require('./community/routes/community');
 
 const app = express();
 
@@ -130,9 +131,10 @@ app.use('/auth', authRouter);
 app.use('/api/auth', rewardRouter);
 app.use('/api/incentive', incentiveRoutes);
 app.use('/api/analysis-result', analysisResultRouter);
+app.use('/api/community', communityRouter);
 
 // React 앱 라우팅 - 모든 페이지를 index.html로 처리
-app.get(['/', '/login', '/signup', '/mypage', '/incentive', '/complain', '/sortguide'], (req, res) => {
+app.get(['/', '/login', '/signup', '/mypage', '/incentive', '/complain', '/community', '/sortguide'], (req, res) => {
     res.sendFile(path.join(__dirname, '../../client/public/index.html'));
 });
 
