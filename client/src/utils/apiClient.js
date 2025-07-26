@@ -103,6 +103,32 @@ class ApiClient {
     }
   }
 
+  // 개선된 이미지 분석 API 호출 (객체/라벨 포함)
+  async analyzeImageComprehensive(formData, onProgress = null) {
+    const url = API_ENDPOINTS.ANALYZE_COMPREHENSIVE;
+    
+    try {
+      // 진행 상황 콜백이 있으면 호출
+      if (onProgress) {
+        onProgress('서버에 이미지를 전송하고 있습니다... (개선된 분석)');
+      }
+
+      const result = await this.requestWithRetry(url, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (onProgress) {
+        onProgress('개선된 분석이 완료되었습니다!');
+      }
+
+      return result;
+    } catch (error) {
+      console.error('개선된 이미지 분석 실패:', error);
+      throw error;
+    }
+  }
+
   // 분석 결과 저장
   async saveAnalysisResult(analysisResult, imageFile = null) {
     const url = '/api/analysis-result/save';
