@@ -124,7 +124,7 @@ export default function MyPage() {
     return (
       <div className="mypage">
         <div className="loading-container">
-          <div className="loading-spinner">🔄</div>
+          <div className="spinner"></div>
           <p>인증 상태를 확인하는 중...</p>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function MyPage() {
     return (
       <div className="mypage">
         <div className="loading-container">
-          <div className="loading-spinner">🔄</div>
+          <div className="spinner"></div>
           <p>사용자 정보를 불러오는 중...</p>
         </div>
       </div>
