@@ -301,6 +301,48 @@
   cursor: pointer;
 }
 
+/* 🔧 잘못된 회전 스타일 제거 및 정렬 */
+.loading-container {
+  transform: none !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  position: static !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-message {
+  transform: none !important;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.loading-spinner {
+  transform: none !important;
+  font-size: 0.875rem;
+  text-align: center;
+  color: #888;
+}
+
+/* 🔄 원형 스피너 애니메이션 */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 0.5rem solid #f3f3f3;
+  border-top: 0.5rem solid #4caf50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+
 /* ✅ 모바일 대응 미디어 쿼리 */
 @media screen and (max-width: 1200px) {
   .report-controls {

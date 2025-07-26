@@ -89,14 +89,14 @@ router.get('/google/callback',
                             }, '*');
                             window.close();
                         } else {
-                            window.location.href = '/?login=error&message=로그인 처리 중 오류가 발생했습니다.';
+                            window.location.href = '/login?status=error&message=로그인 처리 중 오류가 발생했습니다.';
                         }
                     </script>
-                    <p>로그인 실패...</p>
+                    <p>로그인 실패! 창이 자동으로 닫힙니다...</p>
                 </body>
                 </html>
             `;
-            res.send(html);
+            res.send(errorHtml);
         }
     }
 );

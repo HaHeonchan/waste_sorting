@@ -171,7 +171,7 @@ export const loginWithGoogle = () => {
         reject(new Error(event.data.error || '구글 로그인에 실패했습니다.'));
       }
     };
-
+    
     window.addEventListener('message', messageHandler);
 
     const checkClosed = setInterval(() => {

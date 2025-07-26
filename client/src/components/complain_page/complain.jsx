@@ -320,10 +320,9 @@ export default function Complain() {
 
       {loading && (
         <div className='loading-container'>
-          <div className='loading-message'>데이터를 불러오는 중...</div>
-          <div className='loading-spinner'>
-            서버 응답이 느릴 수 있습니다. 잠시만 기다려주세요.
-          </div>
+          <div className="spinner"></div> {/* 🔄 로딩 원 추가 */}
+          <div className="loading-message">데이터를 불러오는 중...</div>
+          <div className="loading-spinner">서버 응답이 느릴 수 있습니다. 잠시만 기다려주세요.</div>
         </div>
       )}
 
