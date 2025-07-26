@@ -61,12 +61,12 @@ export const logout = () => {
 // 이메일/비밀번호 로그인
 export const loginWithEmail = async (email, password) => {
   try {
-    const result = await apiClient.requestWithRetry('/auth/login', {
+    const result = await apiClient.requestWithRetry('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ accountId: email, password }),
+      body: JSON.stringify({ email, password }),
     });
 
     // 토큰 저장
@@ -99,7 +99,7 @@ export const loginWithEmail = async (email, password) => {
 // 회원가입
 export const signup = async (name, email, password) => {
   try {
-    const result = await apiClient.requestWithRetry('/auth/signup', {
+    const result = await apiClient.requestWithRetry('/api/auth/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -136,7 +136,7 @@ export const getUserInfo = async () => {
 // 구글 로그인 팝업
 export const loginWithGoogle = () => {
   // apiClient의 baseUrl을 사용하여 구글 로그인 URL 생성
-  const googleLoginUrl = `${apiClient.baseUrl}/auth/google/popup`;
+  const googleLoginUrl = `${apiClient.baseUrl}/api/auth/google/popup`;
   
   const popup = window.open(
     googleLoginUrl,
