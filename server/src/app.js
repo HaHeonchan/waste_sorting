@@ -48,13 +48,28 @@ const upload = multer({ storage });
 
 // CORS 설정
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.CLIENT_URL || 'https://your-client-name.onrender.com']
-    : [
-        'http://localhost:3000', 
-        'http://127.0.0.1:3000',
-        process.env.CLIENT_URL || 'http://localhost:3000'
-      ].filter(Boolean), // undefined 값 제거
+  origin: function (origin, callback) {
+    // 개발 환경에서는 모든 origin 허용
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // 프로덕션 환경에서 허용할 origin들
+    const allowedOrigins = [
+      process.env.CLIENT_URL,
+      'https://your-client-name.onrender.com',
+      'https://your-client-name.vercel.app',
+      'https://your-client-name.netlify.app'
+    ].filter(Boolean);
+    
+    // origin이 없거나 허용된 origin에 포함되면 허용
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS 차단된 origin:', origin);
+      callback(new Error('CORS 정책에 의해 차단되었습니다.'));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -82,9 +97,12 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production' && process.env.HTTPS === 'true',
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24시간
-    }
+    },
+    proxy: process.env.NODE_ENV === 'production'
 }));
 
 // Passport 초기화
