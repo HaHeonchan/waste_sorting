@@ -175,17 +175,20 @@
   text-align: center;
 }
 
-.loading-spinner {
-  font-size: 48px;
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #ccc;
+  border-top: 5px solid #00bfa5; /* 회전 강조 색 */
+  border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 20px;
+  margin-bottom: 1rem;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
-
 /* 에러 메시지 */
 .error-message {
   background-color: #ffebee;

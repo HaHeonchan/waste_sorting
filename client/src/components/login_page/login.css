@@ -186,6 +186,21 @@
   cursor: not-allowed;
 }
 
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #ccc;
+  border-top: 5px solid #00bfa5; /* 회전 강조 색 */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* 다크모드: 전체 배경 및 텍스트 */
 .dark .login-wrapper {
   background-color: #121212;

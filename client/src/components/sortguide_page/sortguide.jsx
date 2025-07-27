@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./sortguide.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import apiClient from "../../utils/apiClient";
@@ -18,6 +18,7 @@ export default function SortGuide() {
   const [progressMessage, setProgressMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
   
   
   
@@ -34,21 +35,27 @@ export default function SortGuide() {
       return;
     }
 
-    if (selectedFile) {
+    // selectedFile이 있고 아직 분석하지 않은 경우에만 분석 실행
+    if (selectedFile && !hasAnalyzed && !loading) {
       handleAnalyze(); // 페이지 로드 시 자동 분석
     }
-  }, [isAuthenticated, authLoading, selectedFile, navigate]);
+  }, [isAuthenticated, authLoading, selectedFile, navigate, hasAnalyzed, loading]);
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     if (!selectedFile) {
       alert("이미지를 선택해주세요.");
       return;
     }
 
-  
+    // 이미 분석 중이거나 분석 완료된 경우 중복 실행 방지
+    if (loading || hasAnalyzed) {
+      return;
+    }
+
     setLoading(true);
     setResult(null);
     setProgressMessage("");
+    setHasAnalyzed(true); // 분석 시작 플래그 설정
 
     const formData = new FormData();
     formData.append("image", selectedFile);
@@ -64,13 +71,12 @@ export default function SortGuide() {
       setResult({ 
         error: err.message || "분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." 
       });
+      setHasAnalyzed(false); // 에러 시 플래그 리셋
     } finally {
       setLoading(false);
       setProgressMessage("");
     }
-
-    
-  };
+  }, [selectedFile, loading, hasAnalyzed]);
 
   const handleSaveResult = async () => {
     if (!result || result.error) {
@@ -199,6 +205,8 @@ export default function SortGuide() {
                 const file = e.dataTransfer.files[0];
                 if (file) {
                   setSelectedFile(file);
+                  setHasAnalyzed(false); // 새로운 파일 선택 시 분석 상태 리셋
+                  setResult(null); // 이전 결과 초기화
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     setPreviewUrlState(reader.result);
@@ -218,6 +226,8 @@ export default function SortGuide() {
                   const file = e.target.files[0];
                   if (file) {
                     setSelectedFile(file);
+                    setHasAnalyzed(false); // 새로운 파일 선택 시 분석 상태 리셋
+                    setResult(null); // 이전 결과 초기화
                     const reader = new FileReader();
                     reader.onloadend = () => {
                       setPreviewUrlState(reader.result);
@@ -276,6 +286,7 @@ export default function SortGuide() {
                   {result.detail || '정보 없음'}
                 </span>
               </div>
+              {/* 재활용 마크와 설명은 잠시 숨김
               <div className="result-item">
                 <span className="label">♻️ 재활용 마크:</span>
                 <span className="value">
@@ -288,12 +299,41 @@ export default function SortGuide() {
                   {result.description || '정보 없음'}
                 </span>
               </div>
+              */}
+              {/* 처리 방법도 잠시 숨김
               <div className="result-item">
                 <span className="label">🧺 처리 방법:</span>
                 <span className="value">
                   {result.method || '정보 없음'}
                 </span>
               </div>
+              */}
+              
+              {/* 부위별 재질 정보 표시 */}
+              {result.materialParts && result.materialParts.length > 0 && (
+                <div className="material-parts-section">
+                  <h4>🔍 부위별 재질 분석</h4>
+                  <div className="material-parts-grid">
+                    {result.materialParts.map((part, index) => (
+                      <div key={index} className="material-part-card">
+                        <div className="part-header">
+                          <span className="part-name">{part.part}</span>
+                          <span className="material-type">{part.material}</span>
+                        </div>
+                        <div className="part-description">
+                          {part.description}
+                        </div>
+                        {part.disposalMethod && (
+                          <div className="part-disposal">
+                            <strong>처리 방법:</strong> {part.disposalMethod}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <div className="result-item">
                 <span className="label">🧠 모델:</span>
                 <span className="value">

@@ -7,6 +7,7 @@ import Signup from './components/signup_page/signup';
 import Mypage from './components/mypage_page/mypage';
 import Incentive from './components/incentive_page/incentive';
 import Complain from './components/complain_page/complain.jsx';
+import Community from './components/community_page/community.jsx';
 import SortGuide from './components/sortguide_page/sortguide.jsx';
 import Home from './components/home_page/home';
 import Navbar from './components/navbar_page/navbar.jsx';
@@ -29,6 +30,7 @@ function App() {
               <Route path="/sortguide" element={<SortGuide />} /> {/* 쓰레기 분류 ai 페이지 */}
               <Route path="/incentive" element={<Incentive />} /> {/* 인센티브 페이지 */}
               <Route path="/complain" element={<Complain />} /> {/* 민원 게시판 페이지 */}
+              <Route path="/community" element={<Community />} /> {/* 커뮤니티 페이지 */}
               <Route path="/mypage" element={<Mypage />} /> {/* 마이페이지 페이지 */}
               <Route path="/login" element={<Login />} /> {/* 로그인 페이지 */}
               <Route path="/signup" element={<Signup />} /> {/* 회원가입 페이지 */}

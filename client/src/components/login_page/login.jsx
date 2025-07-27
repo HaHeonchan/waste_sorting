@@ -108,6 +108,7 @@ const Login = () => {
         <form onSubmit={handleEmailLogin}>
           <div className="login-input-group">
             <label htmlFor="email">이메일</label>
+            <div class="password-wrapper">
             <input 
               type="email" 
               id="email" 
@@ -118,6 +119,7 @@ const Login = () => {
               disabled={loading}
               required
             />
+            </div>
           </div>
 
           <div className="login-input-group">

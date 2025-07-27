@@ -7,6 +7,7 @@ const OpenAI = require('openai');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const cloudinary = require('cloudinary').v2;
 
 // 내부 모듈 import
 const { 
@@ -21,31 +22,41 @@ const {
     analyzeRecyclingMarksWithObjectsAndLabels,
     performComprehensiveVisionAnalysis
 } = require('./logo-detector');
+const {
+    findMatchingDisposalMethod,
+    generateGPTFallbackPrompt,
+    convertMatchToAnalysisResult
+} = require('./waste-matcher');
 
 // OpenAI 클라이언트 초기화
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-// 임시 파일 저장 설정 (분석 후 자동 삭제)
+// 임시 파일 저장 설정 (Cloudinary 업로드 후 삭제됨)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const tempUploadDir = 'uploads/temp/';
+        const tempUploadDir = path.join(__dirname, '../../uploads/temp');
         if (!fs.existsSync(tempUploadDir)) {
             fs.mkdirSync(tempUploadDir, { recursive: true });
         }
         cb(null, tempUploadDir);
     },
     filename: (req, file, cb) => {
-        cb(null, 'analysis-temp-' + Date.now() + '-' + file.originalname);
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'analysis-temp-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
     fileFilter: (req, file, cb) => {
-        file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('이미지 파일만 업로드 가능합니다.'), false);
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('이미지 파일만 업로드 가능합니다.'), false);
+        }
     }
 });
 
@@ -56,10 +67,11 @@ const analyzeController = {
         res.render('analyze/waste-sorting');
     },
 
-    // 이미지 업로드 및 분석 처리
+    // 이미지 업로드 및 분석 처리 (Cloudinary 사용)
     uploadAndAnalyzeImage: async (req, res) => {
         console.log('🚀 이미지 분석 요청 시작');
         let uploadedFile = null;
+        let cloudinaryUrl = '';
         
         try {
             upload.single('image')(req, res, async (err) => {
@@ -76,10 +88,29 @@ const analyzeController = {
                 console.log('📁 임시 파일 저장됨:', uploadedFile);
 
                 try {
-                    // 분석 실행
-                    const result = await performAnalysis(uploadedFile);
+                    // Cloudinary에 업로드
+                    console.log('📸 분석 이미지 Cloudinary 업로드 시작:', req.file.filename);
+                    const result = await cloudinary.uploader.upload(uploadedFile, {
+                        folder: 'waste-sorting/analysis-temp',
+                        resource_type: 'auto',
+                        quality: 'auto:good',
+                        fetch_format: 'auto',
+                        transformation: [
+                            { width: 1200, height: 1200, crop: 'limit' },
+                            { quality: 'auto:good' }
+                        ]
+                    });
                     
-                    res.json(result);
+                    cloudinaryUrl = result.secure_url;
+                    console.log('✅ Cloudinary 업로드 완료:', cloudinaryUrl);
+
+                    // 분석 실행 (Cloudinary URL 사용)
+                    const analysisResult = await performAnalysis(cloudinaryUrl);
+                    
+                    // 분석 결과에 이미지 URL 추가
+                    analysisResult.imageUrl = cloudinaryUrl;
+                    
+                    res.json(analysisResult);
                     
                 } catch (analysisError) {
                     console.error('❌ 분석 실패:', analysisError.message);
@@ -102,10 +133,11 @@ const analyzeController = {
         }
     },
 
-    // 개선된 이미지 업로드 및 분석 처리 (객체/라벨 포함)
+    // 개선된 이미지 업로드 및 분석 처리 (객체/라벨 포함, Cloudinary 사용)
     uploadAndAnalyzeImageComprehensive: async (req, res) => {
         console.log('🚀 개선된 이미지 분석 요청 시작 (객체/라벨 포함)');
         let uploadedFile = null;
+        let cloudinaryUrl = '';
         
         try {
             upload.single('image')(req, res, async (err) => {
@@ -122,10 +154,29 @@ const analyzeController = {
                 console.log('📁 임시 파일 저장됨:', uploadedFile);
 
                 try {
-                    // 개선된 분석 실행
-                    const result = await performComprehensiveAnalysis(uploadedFile);
+                    // Cloudinary에 업로드
+                    console.log('📸 개선된 분석 이미지 Cloudinary 업로드 시작:', req.file.filename);
+                    const result = await cloudinary.uploader.upload(uploadedFile, {
+                        folder: 'waste-sorting/analysis-temp',
+                        resource_type: 'auto',
+                        quality: 'auto:good',
+                        fetch_format: 'auto',
+                        transformation: [
+                            { width: 1200, height: 1200, crop: 'limit' },
+                            { quality: 'auto:good' }
+                        ]
+                    });
                     
-                    res.json(result);
+                    cloudinaryUrl = result.secure_url;
+                    console.log('✅ Cloudinary 업로드 완료:', cloudinaryUrl);
+
+                    // 개선된 분석 실행 (Cloudinary URL 사용)
+                    const analysisResult = await performComprehensiveAnalysis(cloudinaryUrl);
+                    
+                    // 분석 결과에 이미지 URL 추가
+                    analysisResult.imageUrl = cloudinaryUrl;
+                    
+                    res.json(analysisResult);
                     
                 } catch (analysisError) {
                     console.error('❌ 개선된 분석 실패:', analysisError.message);
@@ -149,7 +200,7 @@ const analyzeController = {
     }
 };
 
-// 기존 분석 수행 함수
+// 기존 분석 수행 함수 (매칭 시스템 통합)
 async function performAnalysis(imagePath) {
     console.log('🔍 이미지 분석 시작...');
     
@@ -171,19 +222,26 @@ async function performAnalysis(imagePath) {
         finalAnalysis = await analyzeImageDirectly(imagePath);
     }
     
+    // 새로운 매칭 시스템 적용
+    const matchedResult = await applyMatchingSystem(finalAnalysis.analysis, textAnalysis);
+    
     return {
-        type: finalAnalysis.analysis.wasteType,
-        detail: finalAnalysis.analysis.subType,
-        mark: finalAnalysis.analysis.recyclingMark,
-        description: finalAnalysis.analysis.description,
-        method: finalAnalysis.analysis.disposalMethod,
+        type: matchedResult.wasteType,
+        detail: matchedResult.subType,
+        mark: matchedResult.recyclingMark,
+        description: matchedResult.description,
+        method: matchedResult.disposalMethod,
         model: finalAnalysis.model,
         token_usage: finalAnalysis.usage?.total_tokens || 0,
-        analysis_type: finalAnalysis.analysisType || "text_based"
+        analysis_type: matchedResult.analysisType || finalAnalysis.analysisType || "text_based",
+        confidence: matchedResult.confidence || 0.8,
+        detailed_method: matchedResult.detailedMethod || null,
+        note: matchedResult.note || null,
+        materialParts: finalAnalysis.analysis.materialParts || []
     };
 }
 
-// 개선된 분석 수행 함수 (객체/라벨 포함)
+// 개선된 분석 수행 함수 (객체/라벨 포함, 매칭 시스템 통합)
 async function performComprehensiveAnalysis(imagePath) {
     console.log('🔍 개선된 이미지 분석 시작 (객체/라벨 포함)...');
     
@@ -204,17 +262,23 @@ async function performComprehensiveAnalysis(imagePath) {
         finalAnalysis = await analyzeImageDirectly(imagePath);
     }
     
+    // 새로운 매칭 시스템 적용
+    const matchedResult = await applyMatchingSystem(finalAnalysis.analysis, comprehensiveAnalysis);
+    
     return {
-        type: finalAnalysis.analysis.wasteType,
-        detail: finalAnalysis.analysis.subType,
-        mark: finalAnalysis.analysis.recyclingMark,
-        description: finalAnalysis.analysis.description,
-        method: finalAnalysis.analysis.disposalMethod,
+        type: matchedResult.wasteType,
+        detail: matchedResult.subType,
+        mark: matchedResult.recyclingMark,
+        description: matchedResult.description,
+        method: matchedResult.disposalMethod,
         model: finalAnalysis.model,
         token_usage: finalAnalysis.usage?.total_tokens || 0,
-        analysis_type: finalAnalysis.analysisType || "comprehensive",
-        confidence: comprehensiveAnalysis.confidence || 0,
-        analysis_details: finalAnalysis.analysis.analysisDetails || null
+        analysis_type: matchedResult.analysisType || finalAnalysis.analysisType || "comprehensive",
+        confidence: matchedResult.confidence || comprehensiveAnalysis.confidence || 0,
+        analysis_details: finalAnalysis.analysis.analysisDetails || null,
+        detailed_method: matchedResult.detailedMethod || null,
+        note: matchedResult.note || null,
+        materialParts: finalAnalysis.analysis.materialParts || []
     };
 }
 
@@ -352,10 +416,21 @@ async function analyzeWithLabelResults(labelResults) {
     };
 }
 
-// 이미지 직접 분석
+// 이미지 직접 분석 (Cloudinary URL 및 로컬 파일 지원)
 async function analyzeImageDirectly(imagePath) {
-    const imageBuffer = fs.readFileSync(imagePath);
-    const base64Image = imageBuffer.toString('base64');
+    let imageUrl;
+    
+    // Cloudinary URL인 경우
+    if (imagePath.includes('cloudinary.com')) {
+        imageUrl = imagePath;
+    } else {
+        // 로컬 파일인 경우 base64로 변환
+        const imageBuffer = fs.readFileSync(imagePath);
+        const base64Image = imageBuffer.toString('base64');
+        imageUrl = `data:image/jpeg;base64,${base64Image}`;
+    }
+    
+    console.log('🖼️ 재활용 마크가 없는 이미지 직접 분석 시작');
     
     const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
@@ -366,20 +441,95 @@ async function analyzeImageDirectly(imagePath) {
                     { type: "text", text: DIRECT_IMAGE_ANALYSIS_PROMPT },
                     {
                         type: "image_url",
-                        image_url: { url: `data:image/jpeg;base64,${base64Image}` }
+                        image_url: { url: imageUrl }
                     }
                 ]
             }
         ],
-        max_tokens: 300
+        max_tokens: 500  // 토큰 수 증가
+    });
+
+    const analysis = parseGPTResponse(response.choices[0].message.content);
+    
+    // materialParts가 없거나 비어있는 경우 기본값 설정
+    if (!analysis.materialParts || analysis.materialParts.length === 0) {
+        console.log('⚠️ materialParts가 없어서 기본값 설정');
+        analysis.materialParts = [
+            {
+                part: "본체",
+                material: analysis.wasteType || "기타",
+                description: "이미지에서 확인된 주요 재질",
+                disposalMethod: analysis.disposalMethod || "일반쓰레기"
+            }
+        ];
+    }
+    
+    console.log('✅ 직접 분석 완료:', {
+        wasteType: analysis.wasteType,
+        materialPartsCount: analysis.materialParts?.length || 0
     });
 
     return {
-        analysis: parseGPTResponse(response.choices[0].message.content),
+        analysis: analysis,
         model: response.model,
         usage: response.usage,
         analysisType: "direct_image"
     };
+}
+
+// 매칭 시스템 적용 함수
+async function applyMatchingSystem(gptAnalysis, visionAnalysis) {
+    console.log('🎯 매칭 시스템 적용 시작');
+    
+    const { wasteType, subType, description } = gptAnalysis;
+    
+    // 1. 사전 정의된 가이드에서 매칭 시도 (객체/라벨 분석 결과 포함)
+    const matchedMethod = await findMatchingDisposalMethod(wasteType, subType, description, visionAnalysis);
+    
+    if (matchedMethod) {
+        console.log('✅ 매칭 성공:', matchedMethod.matchType);
+        return convertMatchToAnalysisResult(matchedMethod, gptAnalysis);
+    }
+    
+    // 2. 매칭 실패 시 GPT 완전 분석으로 폴백
+    console.log('🔄 GPT 완전 분석으로 폴백');
+    const fallbackPrompt = generateGPTFallbackPrompt(wasteType, subType, description, visionAnalysis);
+    
+    try {
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: fallbackPrompt }],
+            max_tokens: 500
+        });
+        
+        const fallbackResult = parseGPTResponse(response.choices[0].message.content);
+        
+        return {
+            wasteType: fallbackResult.wasteType,
+            subType: fallbackResult.subType,
+            recyclingMark: fallbackResult.recyclingMark,
+            description: fallbackResult.description,
+            disposalMethod: fallbackResult.disposalMethod.title || fallbackResult.disposalMethod,
+            confidence: fallbackResult.confidence || 0.9,
+            analysisType: 'gpt_fallback',
+            detailedMethod: fallbackResult.disposalMethod,
+            note: 'GPT 완전 분석으로 생성된 결과입니다.'
+        };
+        
+    } catch (error) {
+        console.error('❌ GPT 폴백 분석 실패:', error);
+        // 원본 GPT 분석 결과 반환
+        return {
+            wasteType: gptAnalysis.wasteType,
+            subType: gptAnalysis.subType,
+            recyclingMark: gptAnalysis.recyclingMark,
+            description: gptAnalysis.description,
+            disposalMethod: gptAnalysis.disposalMethod,
+            confidence: 0.7,
+            analysisType: 'original_gpt',
+            note: '매칭 실패 및 GPT 폴백 실패로 원본 결과를 사용합니다.'
+        };
+    }
 }
 
 // GPT 응답 파싱
@@ -402,13 +552,34 @@ function parseGPTResponse(content) {
     }
 }
 
-// 임시 파일 정리 (강화된 버전)
+// 임시 파일 정리 (Cloudinary 및 로컬 파일 지원)
 function cleanupFile(filePath) {
     if (!filePath) {
         console.log('⚠️ 파일 경로가 없어 정리 건너뜀');
         return;
     }
 
+    // Cloudinary URL인 경우
+    if (filePath.includes('cloudinary.com')) {
+        try {
+            // Cloudinary URL에서 public ID 추출
+            const urlParts = filePath.split('/');
+            const filename = urlParts[urlParts.length - 1];
+            const folder = urlParts[urlParts.length - 2];
+            const fullPublicId = `${folder}/${filename.split('.')[0]}`;
+            
+            console.log('🗑️ Cloudinary 이미지 삭제 시작:', fullPublicId);
+            
+            cloudinary.uploader.destroy(fullPublicId)
+                .then(() => console.log('🗑️ Cloudinary 이미지 삭제 완료'))
+                .catch(error => console.error('🔥 Cloudinary 이미지 삭제 실패:', error.message));
+        } catch (error) {
+            console.error('❌ Cloudinary 이미지 삭제 중 오류:', error.message);
+        }
+        return;
+    }
+
+    // 로컬 파일인 경우
     try {
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);

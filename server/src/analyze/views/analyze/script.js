@@ -72,6 +72,29 @@ async function analyzeImage() {
                         <span class="label">🗑️ 처리 방법:</span>
                         <span class="value">${data.disposalMethod}</span>
                     </div>
+                    
+                    ${data.materialParts && data.materialParts.length > 0 ? `
+                    <div class="material-parts-section">
+                        <h4>🔍 부위별 재질 분석</h4>
+                        <div class="material-parts-grid">
+                            ${data.materialParts.map(part => `
+                                <div class="material-part-card">
+                                    <div class="part-header">
+                                        <span class="part-name">${part.part}</span>
+                                        <span class="material-type">${part.material}</span>
+                                    </div>
+                                    <div class="part-description">${part.description}</div>
+                                    ${part.disposalMethod ? `
+                                        <div class="part-disposal">
+                                            <strong>처리 방법:</strong> ${part.disposalMethod}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
                     <div class="result-item">
                         <span class="label">🎯 분석 신뢰도:</span>
                         <span class="value">${Math.round(data.confidence * 100)}%</span>

@@ -6,6 +6,19 @@
 const vision = require('@google-cloud/vision');
 const fs = require('fs');
 
+// Node.js 18+ 내장 fetch 사용, 없으면 node-fetch 사용
+let fetch;
+if (typeof globalThis.fetch === 'function') {
+    fetch = globalThis.fetch;
+} else {
+    try {
+        fetch = require('node-fetch');
+    } catch (error) {
+        console.error('❌ fetch 함수를 사용할 수 없습니다. node-fetch를 설치하거나 Node.js 18+를 사용하세요.');
+        fetch = null;
+    }
+}
+
 // ============================================================================
 // Google Vision API 클라이언트 초기화
 // ============================================================================
@@ -63,13 +76,31 @@ const RECYCLING_MARK_KEYWORDS = [
     ...SUB_TYPE_KEYWORDS
 ];
 
+// 재활용 마크 우선순위 (더 구체적인 마크가 우선)
+const RECYCLING_MARK_PRIORITY = {
+    'HDPE': 1,
+    'PP': 1,
+    'PET': 1,
+    'LDPE': 1,
+    'PS': 1,
+    'OTHER': 1,
+    '플라스틱': 2,
+    '무색페트': 2,
+    '비닐류': 2,
+    '캔류': 2,
+    '종이': 2,
+    '일반팩': 2,
+    '유리': 2,
+    '폴리에틸렌': 2
+};
+
 // ============================================================================
 // 기본 탐지 함수들
 // ============================================================================
 
 /**
- * 로고 탐지 함수
- * @param {string} imagePath - 이미지 경로
+ * 로고 탐지 함수 (Cloudinary URL 및 로컬 파일 지원)
+ * @param {string} imagePath - 이미지 경로 또는 Cloudinary URL
  * @returns {Array} 탐지된 로고 배열
  */
 async function detectLogos(imagePath) {
@@ -81,7 +112,20 @@ async function detectLogos(imagePath) {
         
         console.log('🔍 로고 탐지 시작:', imagePath);
         
-        const imageBuffer = fs.readFileSync(imagePath);
+        let imageBuffer;
+        if (imagePath.includes('cloudinary.com')) {
+            // Cloudinary URL인 경우
+            if (!fetch) {
+                console.error('❌ fetch 함수를 사용할 수 없어 Cloudinary URL을 처리할 수 없습니다.');
+                return [];
+            }
+            const response = await fetch(imagePath);
+            imageBuffer = Buffer.from(await response.arrayBuffer());
+        } else {
+            // 로컬 파일인 경우
+            imageBuffer = fs.readFileSync(imagePath);
+        }
+        
         const [result] = await client.logoDetection(imageBuffer);
         const logos = result.logoAnnotations;
         
@@ -96,8 +140,8 @@ async function detectLogos(imagePath) {
 }
 
 /**
- * 텍스트 탐지 함수
- * @param {string} imagePath - 이미지 경로
+ * 텍스트 탐지 함수 (Cloudinary URL 및 로컬 파일 지원)
+ * @param {string} imagePath - 이미지 경로 또는 Cloudinary URL
  * @returns {Object} 텍스트 탐지 결과 및 사용량 정보
  */
 async function detectText(imagePath) {
@@ -109,7 +153,20 @@ async function detectText(imagePath) {
         
         console.log('📝 텍스트 탐지 시작:', imagePath);
         
-        const imageBuffer = fs.readFileSync(imagePath);
+        let imageBuffer;
+        if (imagePath.includes('cloudinary.com')) {
+            // Cloudinary URL인 경우
+            if (!fetch) {
+                console.error('❌ fetch 함수를 사용할 수 없어 Cloudinary URL을 처리할 수 없습니다.');
+                return { detections: [], usage: null };
+            }
+            const response = await fetch(imagePath);
+            imageBuffer = Buffer.from(await response.arrayBuffer());
+        } else {
+            // 로컬 파일인 경우
+            imageBuffer = fs.readFileSync(imagePath);
+        }
+        
         const [result] = await client.textDetection(imageBuffer);
         const detections = result.textAnnotations;
         
@@ -143,8 +200,8 @@ async function detectText(imagePath) {
 }
 
 /**
- * 객체 탐지 함수 (재활용 관련 물체 탐지)
- * @param {string} imagePath - 이미지 경로
+ * 객체 탐지 함수 (재활용 관련 물체 탐지, Cloudinary URL 및 로컬 파일 지원)
+ * @param {string} imagePath - 이미지 경로 또는 Cloudinary URL
  * @returns {Array} 탐지된 객체 배열
  */
 async function detectObjects(imagePath) {
@@ -156,7 +213,15 @@ async function detectObjects(imagePath) {
         
         console.log('🎯 객체 탐지 시작:', imagePath);
         
-        const imageBuffer = fs.readFileSync(imagePath);
+        let imageBuffer;
+        if (imagePath.includes('cloudinary.com')) {
+            // Cloudinary URL인 경우
+            const response = await fetch(imagePath);
+            imageBuffer = Buffer.from(await response.arrayBuffer());
+        } else {
+            // 로컬 파일인 경우
+            imageBuffer = fs.readFileSync(imagePath);
+        }
         const [result] = await client.objectLocalization(imageBuffer);
         const objects = result.localizedObjectAnnotations;
         
@@ -179,8 +244,8 @@ async function detectObjects(imagePath) {
 }
 
 /**
- * 라벨 탐지 함수 (이미지 전체 라벨링)
- * @param {string} imagePath - 이미지 경로
+ * 라벨 탐지 함수 (이미지 전체 라벨링, Cloudinary URL 및 로컬 파일 지원)
+ * @param {string} imagePath - 이미지 경로 또는 Cloudinary URL
  * @returns {Array} 탐지된 라벨 배열
  */
 async function detectLabels(imagePath) {
@@ -192,7 +257,15 @@ async function detectLabels(imagePath) {
         
         console.log('🏷️ 라벨 탐지 시작:', imagePath);
         
-        const imageBuffer = fs.readFileSync(imagePath);
+        let imageBuffer;
+        if (imagePath.includes('cloudinary.com')) {
+            // Cloudinary URL인 경우
+            const response = await fetch(imagePath);
+            imageBuffer = Buffer.from(await response.arrayBuffer());
+        } else {
+            // 로컬 파일인 경우
+            imageBuffer = fs.readFileSync(imagePath);
+        }
         const [result] = await client.labelDetection(imageBuffer);
         const labels = result.labelAnnotations;
         
@@ -218,8 +291,8 @@ async function detectLabels(imagePath) {
 }
 
 /**
- * 통합 Vision API 분석 함수 (텍스트, 객체, 라벨 모두 탐지)
- * @param {string} imagePath - 이미지 경로
+ * 통합 Vision API 분석 함수 (텍스트, 객체, 라벨 모두 탐지, Cloudinary URL 및 로컬 파일 지원)
+ * @param {string} imagePath - 이미지 경로 또는 Cloudinary URL
  * @returns {Object} 통합 분석 결과
  */
 async function performComprehensiveVisionAnalysis(imagePath) {
@@ -237,7 +310,15 @@ async function performComprehensiveVisionAnalysis(imagePath) {
         
         console.log('🔍 통합 Vision API 분석 시작:', imagePath);
         
-        const imageBuffer = fs.readFileSync(imagePath);
+        let imageBuffer;
+        if (imagePath.includes('cloudinary.com')) {
+            // Cloudinary URL인 경우
+            const response = await fetch(imagePath);
+            imageBuffer = Buffer.from(await response.arrayBuffer());
+        } else {
+            // 로컬 파일인 경우
+            imageBuffer = fs.readFileSync(imagePath);
+        }
         
         // 모든 분석을 병렬로 실행
         const [textResult, objectResult, labelResult, logoResult] = await Promise.allSettled([
@@ -359,6 +440,86 @@ function analyzeComplexText(text) {
         });
     }
     
+    // 패턴 4: 단독 재질 마크 찾기 (예: "HDPE", "PP" 등)
+    const words2 = text.split(/\s+/);
+    words2.forEach(word => {
+        // 특수문자 제거 후 확인
+        const cleanWord = word.replace(/[^\w가-힣]/g, '');
+        
+        // 쓰레기 타입과 하위 타입 모두 확인
+        [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
+            if (cleanWord.toLowerCase() === keyword.toLowerCase()) {
+                addUniqueResult(results, cleanWord, keyword, 'single_mark');
+                console.log(`   ✅ 단독 마크 발견: "${cleanWord}" → "${keyword}"`);
+            }
+        });
+    });
+    
+    // 패턴 5: 줄바꿈으로 구분된 파츠/재질 패턴 (예: "본체\nHDPE")
+    if (text.includes('\n')) {
+        const lines = text.split('\n');
+        if (lines.length >= 2) {
+            const part = lines[0].trim();
+            const material = lines[1].trim();
+            
+            // 재질이 유효한지 확인
+            [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
+                if (material.toLowerCase().includes(keyword.toLowerCase())) {
+                    addUniqueResult(results, part, keyword, 'line_separated');
+                    console.log(`   ✅ 줄바꿈 패턴 발견: "${part}" → "${keyword}"`);
+                }
+            });
+        }
+    }
+    
+    // 패턴 6: 슬래시로 구분된 패턴 (예: "본체/HDPE")
+    const slashPattern = /([^\/]+)\s*\/\s*([^\/\s]+)/g;
+    let slashMatch;
+    
+    while ((slashMatch = slashPattern.exec(text)) !== null) {
+        const part = slashMatch[1].trim();
+        const material = slashMatch[2].trim();
+        
+        [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
+            if (material.toLowerCase().includes(keyword.toLowerCase())) {
+                addUniqueResult(results, part, keyword, 'slash_separated');
+                console.log(`   ✅ 슬래시 패턴 발견: "${part}" → "${keyword}"`);
+            }
+        });
+    }
+    
+    // 패턴 7: 괄호로 구분된 패턴 (예: "본체(HDPE)")
+    const bracketPattern = /([^\(\)]+)\s*\(\s*([^\(\)]+)\s*\)/g;
+    let bracketMatch;
+    
+    while ((bracketMatch = bracketPattern.exec(text)) !== null) {
+        const part = bracketMatch[1].trim();
+        const material = bracketMatch[2].trim();
+        
+        [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
+            if (material.toLowerCase().includes(keyword.toLowerCase())) {
+                addUniqueResult(results, part, keyword, 'bracket_separated');
+                console.log(`   ✅ 괄호 패턴 발견: "${part}" → "${keyword}"`);
+            }
+        });
+    }
+    
+    // 패턴 8: 공백으로 구분된 간단한 패턴 (예: "본체 HDPE")
+    const spacePattern = /([가-힣a-zA-Z]+)\s+([A-Z]+)/g;
+    let spaceMatch;
+    
+    while ((spaceMatch = spacePattern.exec(text)) !== null) {
+        const part = spaceMatch[1].trim();
+        const material = spaceMatch[2].trim();
+        
+        [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
+            if (material.toLowerCase() === keyword.toLowerCase()) {
+                addUniqueResult(results, part, keyword, 'space_separated');
+                console.log(`   ✅ 공백 패턴 발견: "${part}" → "${keyword}"`);
+            }
+        });
+    }
+    
     console.log(`   🎯 최종 복합 분석 결과: ${results.length}개 항목`);
     return results;
 }
@@ -369,29 +530,67 @@ function analyzeComplexText(text) {
  * @returns {boolean} 건너뛸지 여부
  */
 function shouldSkipText(text) {
-    // 너무 긴 텍스트 (50자 이상)
-    if (text.length > 50) {
+    // 너무 긴 텍스트 (100자 이상으로 완화)
+    if (text.length > 100) {
+        console.log(`   📏 너무 긴 텍스트 건너뜀: ${text.length}자`);
         return true;
     }
     
-    // 영어 문장 패턴 (대문자로 시작하고 마침표로 끝나는 경우)
+    // 영어 문장 패턴 (대문자로 시작하고 마침표로 끝나는 경우) - 완화
+    // 단, 재활용 관련 키워드가 포함된 경우는 예외
     if (/^[A-Z][^.!?]*[.!?]$/.test(text)) {
-        return true;
+        const hasRecyclingKeyword = RECYCLING_MARK_KEYWORDS.some(keyword => 
+            text.toLowerCase().includes(keyword.toLowerCase())
+        );
+        if (!hasRecyclingKeyword) {
+            console.log(`   📝 영어 문장 패턴 건너뜀: "${text}"`);
+            return true;
+        }
     }
     
-    // 영어 단어만 있는 경우 (한글이 하나도 없는 경우)
+    // 영어 단어만 있는 경우 (한글이 하나도 없는 경우) - 재활용 마크는 예외
     if (!/[가-힣]/.test(text) && /^[a-zA-Z\s]+$/.test(text)) {
+        // 재활용 마크 키워드가 포함된 경우는 건너뛰지 않음
+        const hasRecyclingMark = RECYCLING_MARK_KEYWORDS.some(keyword => 
+            text.toLowerCase().includes(keyword.toLowerCase())
+        );
+        if (!hasRecyclingMark) {
+            console.log(`   🔤 영어 단어만 있는 경우 건너뜀: "${text}"`);
+            return true;
+        }
+    }
+    
+    // 숫자만 있는 경우 (길이가 1-2자리인 경우만)
+    if (/^\d{1,2}$/.test(text)) {
+        console.log(`   🔢 짧은 숫자만 있는 경우 건너뜀: "${text}"`);
         return true;
     }
     
-    // 숫자만 있는 경우
-    if (/^\d+$/.test(text)) {
+    // 특수문자만 있는 경우 (길이가 1-2자리인 경우만)
+    if (/^[^\w가-힣]{1,2}$/.test(text)) {
+        console.log(`   ⚠️ 짧은 특수문자만 있는 경우 건너뜀: "${text}"`);
         return true;
     }
     
-    // 특수문자만 있는 경우
-    if (/^[^\w가-힣]+$/.test(text)) {
-        return true;
+    // 재활용 관련 키워드가 포함된 경우는 무조건 포함
+    const hasRecyclingKeyword = RECYCLING_MARK_KEYWORDS.some(keyword => 
+        text.toLowerCase().includes(keyword.toLowerCase())
+    );
+    if (hasRecyclingKeyword) {
+        console.log(`   ♻️ 재활용 키워드 포함으로 분석 대상: "${text}"`);
+        return false;
+    }
+    
+    // 파츠:재질 패턴이 포함된 경우는 무조건 포함
+    if (text.includes(':') || text.includes('：')) {
+        console.log(`   📋 파츠:재질 패턴 포함으로 분석 대상: "${text}"`);
+        return false;
+    }
+    
+    // 줄바꿈이 포함된 경우 (파츠\n재질 패턴)는 무조건 포함
+    if (text.includes('\n')) {
+        console.log(`   📄 줄바꿈 포함으로 분석 대상: "${text}"`);
+        return false;
     }
     
     return false;
@@ -462,15 +661,21 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
             visionAnalysis.text.detections.forEach(detection => {
                 const text = detection.description;
                 
+                console.log(`🔍 텍스트 분석 중: "${text}"`);
+                
                 if (shouldSkipText(text)) {
+                    console.log(`   ⏭️ 건너뜀: "${text}"`);
                     return;
                 }
                 
-                // 단순 키워드 매칭
+                // 개선된 단순 키워드 매칭 - 정확한 단어 매칭
                 RECYCLING_MARK_KEYWORDS.forEach(keyword => {
-                    if (text.toLowerCase().includes(keyword.toLowerCase())) {
+                    // 정확한 단어 매칭 (대소문자 구분 없이)
+                    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+                    if (regex.test(text)) {
                         analysisResults.keywords.push(keyword);
                         analysisResults.matchedTexts.push(text);
+                        console.log(`   ✅ 키워드 매칭: "${keyword}" in "${text}"`);
                     }
                 });
                 
@@ -483,7 +688,7 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
                 }
             });
             
-            // 결과 정리 (중복 제거 및 정리)
+            // 결과 정리 (중복 제거 및 우선순위 정리)
             if (analysisResults.parts.length > 0 || analysisResults.keywords.length > 0) {
                 const uniqueKeywords = [...new Set(analysisResults.keywords)];
                 const uniqueParts = analysisResults.parts.filter((part, index, self) => 
@@ -492,14 +697,28 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
                     )
                 );
                 
+                // 우선순위에 따라 정렬 (구체적인 마크가 우선)
+                const sortedKeywords = uniqueKeywords.sort((a, b) => {
+                    const priorityA = RECYCLING_MARK_PRIORITY[a] || 3;
+                    const priorityB = RECYCLING_MARK_PRIORITY[b] || 3;
+                    return priorityA - priorityB;
+                });
+                
+                const sortedParts = uniqueParts.map(part => part.wasteType).sort((a, b) => {
+                    const priorityA = RECYCLING_MARK_PRIORITY[a] || 3;
+                    const priorityB = RECYCLING_MARK_PRIORITY[b] || 3;
+                    return priorityA - priorityB;
+                });
+                
                 analysis.recyclingTexts = [
-                    ...uniqueKeywords,
-                    ...uniqueParts.map(part => part.wasteType)
+                    ...sortedKeywords,
+                    ...sortedParts
                 ];
                 analysis.complexAnalysis = uniqueParts;
                 
                 console.log('♻️ 발견된 분리수거 정보:', analysis.recyclingTexts);
                 console.log('📝 정리된 복합 분석 결과:', uniqueParts);
+                console.log('🎯 우선순위 정렬된 마크:', analysis.recyclingTexts);
             } else {
                 console.log('❌ 분리수거 관련 키워드를 찾을 수 없습니다.');
             }
@@ -653,15 +872,21 @@ async function analyzeRecyclingMarks(imagePath) {
             textDetections.forEach(detection => {
                 const text = detection.description;
                 
+                console.log(`🔍 텍스트 분석 중: "${text}"`);
+                
                 if (shouldSkipText(text)) {
+                    console.log(`   ⏭️ 건너뜀: "${text}"`);
                     return;
                 }
                 
-                // 단순 키워드 매칭
+                // 개선된 단순 키워드 매칭 - 정확한 단어 매칭
                 RECYCLING_MARK_KEYWORDS.forEach(keyword => {
-                    if (text.toLowerCase().includes(keyword.toLowerCase())) {
+                    // 정확한 단어 매칭 (대소문자 구분 없이)
+                    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+                    if (regex.test(text)) {
                         analysisResults.keywords.push(keyword);
                         analysisResults.matchedTexts.push(text);
+                        console.log(`   ✅ 키워드 매칭: "${keyword}" in "${text}"`);
                     }
                 });
                 
@@ -674,7 +899,7 @@ async function analyzeRecyclingMarks(imagePath) {
                 }
             });
             
-            // 결과 정리 (중복 제거 및 정리)
+            // 결과 정리 (중복 제거 및 우선순위 정리)
             if (analysisResults.parts.length > 0 || analysisResults.keywords.length > 0) {
                 const uniqueKeywords = [...new Set(analysisResults.keywords)];
                 const uniqueParts = analysisResults.parts.filter((part, index, self) => 
@@ -683,14 +908,28 @@ async function analyzeRecyclingMarks(imagePath) {
                     )
                 );
                 
+                // 우선순위에 따라 정렬 (구체적인 마크가 우선)
+                const sortedKeywords = uniqueKeywords.sort((a, b) => {
+                    const priorityA = RECYCLING_MARK_PRIORITY[a] || 3;
+                    const priorityB = RECYCLING_MARK_PRIORITY[b] || 3;
+                    return priorityA - priorityB;
+                });
+                
+                const sortedParts = uniqueParts.map(part => part.wasteType).sort((a, b) => {
+                    const priorityA = RECYCLING_MARK_PRIORITY[a] || 3;
+                    const priorityB = RECYCLING_MARK_PRIORITY[b] || 3;
+                    return priorityA - priorityB;
+                });
+                
                 analysis.recyclingTexts = [
-                    ...uniqueKeywords,
-                    ...uniqueParts.map(part => part.wasteType)
+                    ...sortedKeywords,
+                    ...sortedParts
                 ];
                 analysis.complexAnalysis = uniqueParts;
                 
                 console.log('♻️ 발견된 분리수거 정보:', analysis.recyclingTexts);
                 console.log('📝 정리된 복합 분석 결과:', uniqueParts);
+                console.log('🎯 우선순위 정렬된 마크:', analysis.recyclingTexts);
             } else {
                 console.log('❌ 분리수거 관련 키워드를 찾을 수 없습니다.');
             }
