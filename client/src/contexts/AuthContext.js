@@ -46,6 +46,7 @@ export const AuthProvider = ({ children }) => {
           // 토큰이 있으면 사용자 정보 가져오기
           const userInfo = await getUserInfo();
           if (userInfo) {
+            const token = getToken() || localStorage.getItem("authToken");
             console.log('AuthContext: 서버에서 사용자 정보 가져옴', userInfo);
             setUser(userInfo);
           } else {
@@ -78,12 +79,18 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
+  // 로그인 함수
   const login = (userData) => {
     console.log('AuthContext: 로그인 성공', userData);
+
+    if (userData.authToken) {
+      localStorage.setItem('authToken', userData.authToken);
+    }
     setUser(userData);
     setError(null);
   };
 
+  // 로그아웃 함수
   const logout = () => {
     console.log('AuthContext: 로그아웃');
     clearAuthData();

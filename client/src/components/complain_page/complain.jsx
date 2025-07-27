@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import "./complain.css";
 import apiClient from '../../utils/apiClient';
-
+import { useAuth } from '../../contexts/AuthContext';
+import { motion } from "framer-motion";
 
 const rewardAmountMap = {
     a: "20,000원 상당",
@@ -22,6 +24,8 @@ const rewardAmountMap = {
   };
 
 export default function Complain() {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [reports, setReports] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(null);
@@ -42,9 +46,21 @@ export default function Complain() {
   const isBackendConnected = true;// 이 부분은 실제 백엔드 연결 상태에 따라 변경해야 합니다.
 
   useEffect(() => {
+    // AuthContext가 로딩 중이면 대기
+    if (authLoading) {
+      return;
+    }
+
+    // 로그인 상태 확인
+    if (!isAuthenticated) {
+      console.log('민원 게시판: 인증되지 않은 사용자');
+      navigate('/login');
+      return;
+    }
+
     document.title = "분리배출 신고 게시판";
     fetchReports();
-  }, [sortBy, sortOrder, page]);
+  }, [isAuthenticated, authLoading, sortBy, sortOrder, page, navigate]);
 
   const fetchReports = async () => {
     if (!isBackendConnected) {
@@ -132,25 +148,33 @@ export default function Complain() {
       return;
     }
     
+    if (!confirm('정말로 이 민원을 삭제하시겠습니까?')) {
+      return;
+    }
+    
     try {
       setDeletingIds(prev => new Set(prev).add(id));
       
-      // 삭제 요청 (재시도 없이 한 번만)
-      const response = await fetch(`/api/reports/${id}`, { 
+      // apiClient를 사용하여 삭제 요청 (재시도 로직 포함)
+      const result = await apiClient.requestWithRetry(`/api/reports/${id}`, {
         method: "DELETE",
         headers: {
           'Content-Type': 'application/json',
         }
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      console.log('삭제 성공:', id, result);
       
-      fetchReports();
+      // UI에서 즉시 제거 (서버 응답 대기 없이)
+      setReports(prev => prev.filter(report => (report._id || report.report_id) !== id));
+      
+      // 백그라운드에서 목록 새로고침
+      setTimeout(() => {
+        fetchReports();
+      }, 1000);
     } catch (error) {
       console.error('삭제 중 오류:', error);
-      alert('삭제 중 오류가 발생했습니다.');
+      alert(`삭제 중 오류가 발생했습니다: ${error.message}`);
     } finally {
       setDeletingIds(prev => {
         const newSet = new Set(prev);
@@ -203,8 +227,30 @@ export default function Complain() {
     setImage(null);
   };
 
+  // AuthContext가 로딩 중이거나 인증되지 않은 경우
+  if (authLoading) {
+    return (
+      <div className="report-wrapper">
+        <div className="loading-container">
+          <div className="loading-spinner">🔄</div>
+          <p>인증 상태를 확인하는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 인증되지 않은 경우 (리다이렉트 처리됨)
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
-    <div className="report-wrapper">
+    <motion.div
+        className="report-wrapper"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.75 }}
+    >
       <h1 className="report-title">📢 분리배출 신고 게시판</h1>
 
       <div className="report-controls">
@@ -320,10 +366,9 @@ export default function Complain() {
 
       {loading && (
         <div className='loading-container'>
-          <div className='loading-message'>데이터를 불러오는 중...</div>
-          <div className='loading-spinner'>
-            서버 응답이 느릴 수 있습니다. 잠시만 기다려주세요.
-          </div>
+          <div className="spinner"></div> {/* 🔄 로딩 원 추가 */}
+          <div className="loading-message">데이터를 불러오는 중...</div>
+          <div className="loading-spinner">서버 응답이 느릴 수 있습니다. 잠시만 기다려주세요.</div>
         </div>
       )}
 
@@ -390,6 +435,6 @@ export default function Complain() {
           <p className='report-popup-link'><a className='report-popup-link' href="https://www.sejong.go.kr/citizen/sub03_0307.do" target="_blank" rel="noreferrer">세종시 안전신문고 신고 바로가기</a></p>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

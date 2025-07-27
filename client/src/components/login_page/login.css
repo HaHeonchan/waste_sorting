@@ -14,6 +14,8 @@
     background-color: white;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
     text-align: center;
+    margin-top: 3rem;   /* 요소 위쪽에 3rem 공간 */
+    margin-bottom: 3rem;/* 요소 아래쪽에 3rem 공간 */
   }
   
   .login-icon {
@@ -183,4 +185,62 @@
   background-color: #ccc;
   cursor: not-allowed;
 }
-  
+
+/* 다크모드: 전체 배경 및 텍스트 */
+.dark .login-wrapper {
+  background-color: #121212;
+}
+
+.dark .login-container {
+  background-color: #1f1f1f;
+  color: #f0f0f0;
+  box-shadow: 0 5px 20px rgba(255, 255, 255, 0.05);
+}
+
+.dark .login-sub {
+  color: #aaa;
+}
+
+.dark .login-input-group label {
+  color: #ccc;
+}
+
+.dark .login-input-group input {
+  background-color: #2c2c2c;
+  border: 1px solid #555;
+  color: #eee;
+}
+
+.dark .password-eye {
+  color: #bbb;
+}
+
+.dark .login-options {
+  color: #ccc;
+}
+
+.dark .find-password {
+  color: #66bb6a;
+}
+
+.dark .signup-guide {
+  color: #ccc;
+}
+
+.dark .signup-guide a {
+  color: #66bb6a;
+}
+
+/* 버튼 유지 or 살짝 어둡게 조정 가능 */
+.dark .login-btn,
+.dark .login-btn-naver,
+.dark .login-btn-google {
+  filter: brightness(0.95);
+}
+
+/* 에러 메시지 다크 대응 */
+.dark .error-message {
+  background-color: #3b1c1c;
+  color: #ffaaaa;
+  border: 1px solid #663333;
+}

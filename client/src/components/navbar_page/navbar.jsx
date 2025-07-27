@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./navbar.css";
 import { useAuth } from "../../contexts/AuthContext";
 import { logout as logoutUser } from "../../utils/auth";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const navigate = useNavigate();
   const { user, isAuthenticated, logout, error: authError } = useAuth();
+  const [isDark, setIsDark] = useState(false);
+
+  // 다크 모드 토글
+  const toggleDarkMode = () => {
+    const newMode = !isDark;
+    setIsDark(newMode);
+    document.body.classList.toggle("dark", newMode);
+    localStorage.setItem("darkMode", newMode);
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem("darkMode") === "true";
+    setIsDark(saved);
+    document.body.classList.toggle("dark", saved);
+  }, []);
 
   // 인증 에러가 있으면 알림
   useEffect(() => {
@@ -18,7 +36,7 @@ const Navbar = () => {
   }, [authError]);
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
-
+  const closeMenu = () => setMenuOpen(false); // 메뉴 닫기용 함수
   const handleLogout = () => {
     try {
       logoutUser();
@@ -56,23 +74,47 @@ const Navbar = () => {
     <header className="navbar">
       {/* 좌측 텍스트 + 햄버거 버튼 */}
       <div className="navbar-header">
-        <Link to="/" className="title">🌲 스마트 분리배출 도우미</Link>
-        <button className="hamburger" onClick={toggleMenu}>☰</button>
+        <div className="navbar-left">
+          <span className="navbar-title">🌲 스마트 분리배출 도우미</span>
+          <div className={`theme-toggle-switch ${isDark ? "dark" : ""}`} onClick={toggleDarkMode}>
+            <div className="toggle-circle" />
+          </div>
+        </div>
+        <button className="hamburger" onClick={toggleMenu} style={{ position: 'relative' }}>
+          <span className="hamburger-icon" style={{
+            opacity: menuOpen ? 0 : 1,
+            transform: menuOpen ? 'scale(0.8)' : 'scale(1)',
+            transition: 'opacity 0.3s, transform 0.3s',
+            position: 'absolute',
+          }}>
+            ☰
+          </span>
+          <span className="hamburger-icon" style={{
+            opacity: menuOpen ? 1 : 0,
+            transform: menuOpen ? 'scale(1)' : 'scale(0.8)',
+            transition: 'opacity 0.3s, transform 0.3s',
+            position: 'absolute',
+          }}>
+            ☷
+          </span>
+</button>
+
       </div>
 
       {/* 중앙 메뉴 */}
       <nav className={`navbar-center ${menuOpen ? "active" : ""}`}>
-        <Link to="/" className="nav-link">🏠 홈</Link>
-        <Link to="/sortguide" className="nav-link">🔍 분리배출 안내</Link>
-        <Link to="/incentive" className="nav-link">🛍️ 인센티브 관리</Link>
-        <Link to="/complain" className="nav-link">⚠️ 민원 제보</Link>
-        <Link to="/mypage" className="nav-link">👤 마이페이지</Link>
+        <Link to="/" className="nav-link" onClick={closeMenu}>🏠 홈</Link>
+        <Link to="/sortguide" className="nav-link" onClick={closeMenu}>🔍 분리배출 안내</Link>
+        <Link to="/incentive" className="nav-link" onClick={closeMenu}>🛍️ 인센티브 관리</Link>
+        <Link to="/complain" className="nav-link" onClick={closeMenu}>⚠️ 민원 제보</Link>
+        <Link to="/mypage" className="nav-link" onClick={closeMenu}>👤 마이페이지</Link>
+        
         {isAuthenticated ? (
           <button onClick={handleLogout} className="logout-btn mobile-logout">
             🚪 로그아웃
           </button>
         ) : (
-          <Link to="/login" className="login-btn mobile-login">➡ 로그인</Link>
+          <Link to="/login" className="login-btn mobile-login" onClick={closeMenu}>➡ 로그인</Link>
         )}
       </nav>
 

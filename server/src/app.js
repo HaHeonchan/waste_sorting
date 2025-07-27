@@ -26,6 +26,7 @@ const authRouter = require('./auth/routes/auth');
 const rewardRouter = require('./auth/routes/reward');
 const complainRoutes = require('./complain/routes/complain');
 const incentiveRoutes = require('./incentive/routes/incentive');
+const analysisResultRouter = require('./analyze/routes/analysis-result');
 
 const app = express();
 
@@ -48,13 +49,28 @@ const upload = multer({ storage });
 
 // CORS 설정
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.CLIENT_URL || 'https://your-client-name.onrender.com']
-    : [
-        'http://localhost:3000', 
-        'http://127.0.0.1:3000',
-        process.env.CLIENT_URL || 'http://localhost:3000'
-      ].filter(Boolean), // undefined 값 제거
+  origin: function (origin, callback) {
+    // 개발 환경에서는 모든 origin 허용
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // 프로덕션 환경에서 허용할 origin들
+    const allowedOrigins = [
+      process.env.CLIENT_URL,
+      'https://your-client-name.onrender.com',
+      'https://your-client-name.vercel.app',
+      'https://your-client-name.netlify.app'
+    ].filter(Boolean);
+    
+    // origin이 없거나 허용된 origin에 포함되면 허용
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS 차단된 origin:', origin);
+      callback(new Error('CORS 정책에 의해 차단되었습니다.'));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -82,9 +98,12 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production' && process.env.HTTPS === 'true',
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24시간
-    }
+    },
+    proxy: process.env.NODE_ENV === 'production'
 }));
 
 // Passport 초기화
@@ -100,6 +119,7 @@ app.use('/complain', express.static(path.join(__dirname, '../../client/public'))
 // API 라우팅 (upload 미들웨어 추가해서 req.upload 사용 가능하게)
 app.use('/api', (req, res, next) => {
     req.upload = upload;
+    console.log('API 요청:', { method: req.method, url: req.url, path: req.path });
     next();
 }, complainRoutes);
 
@@ -109,9 +129,10 @@ app.use('/api/waste', wasteRouter);
 app.use('/auth', authRouter);
 app.use('/api/auth', rewardRouter);
 app.use('/api/incentive', incentiveRoutes);
+app.use('/api/analysis-result', analysisResultRouter);
 
-// 메인 페이지 - 새로운 경로로 수정
-app.get('/', (req, res) => {
+// React 앱 라우팅 - 모든 페이지를 index.html로 처리
+app.get(['/', '/login', '/signup', '/mypage', '/incentive', '/complain', '/sortguide'], (req, res) => {
     res.sendFile(path.join(__dirname, '../../client/public/index.html'));
 });
 
@@ -120,23 +141,24 @@ app.get('/waste-sorting', (req, res) => {
     res.sendFile(path.join(__dirname, 'analyze/views/analyze/waste-sorting.html'));
 });
 
-// 로그인 페이지
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/public/login.html'));
-});
-
 // 환경변수 확인 엔드포인트 (디버깅용)
 app.get('/api/debug/env', (req, res) => {
     const envInfo = {
         NODE_ENV: process.env.NODE_ENV,
         PORT: process.env.PORT,
+        REACT_APP_API_URL: process.env.REACT_APP_API_URL,
         CLIENT_URL: process.env.CLIENT_URL,
+        GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? '설정됨' : '설정되지 않음',
+        GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? '설정됨' : '설정되지 않음',
         OPENAI_API_KEY: process.env.OPENAI_API_KEY ? '설정됨' : '설정되지 않음',
         CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
         CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY ? '설정됨' : '설정되지 않음',
         CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ? '설정됨' : '설정되지 않음',
         MONGODB_URI: process.env.MONGODB_URI ? '설정됨' : '설정되지 않음',
         SESSION_SECRET: process.env.SESSION_SECRET ? '설정됨' : '설정되지 않음',
+        // 실제 값들도 확인 (보안을 위해 일부만)
+        GOOGLE_CLIENT_ID_VALUE: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 10) + '...' : '없음',
+        REACT_APP_API_URL_VALUE: process.env.REACT_APP_API_URL || '없음',
         timestamp: new Date().toISOString()
     };
     

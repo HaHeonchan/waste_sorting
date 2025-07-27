@@ -1,14 +1,18 @@
 // API 클라이언트 유틸리티 - 타임아웃과 재시도 로직 포함
 import { API_ENDPOINTS } from '../config/api';
+import { authHeaders } from './auth';
 
 class ApiClient {
   constructor() {
-    this.timeout = 60000; // 60초 타임아웃 (더 긴 응답 시간 허용)
-    this.maxRetries = 3; // 최대 3번 재시도
-    this.retryDelay = 3000; // 재시도 간격 3초 (더 긴 간격)
+    this.timeout = 60000; // 60초 타임아웃
     
     // 기본 API URL 추출 (REPORTS 엔드포인트에서 /api 부분 제거)
     this.baseUrl = API_ENDPOINTS.REPORTS.replace('/api/reports', '');
+  }
+
+  // 인증 토큰 설정
+  setAuthToken(token) {
+    this.token = token;
   }
 
   // 타임아웃을 포함한 fetch 래퍼
@@ -29,43 +33,55 @@ class ApiClient {
     }
   }
 
-  // 재시도 로직이 포함된 API 호출
-  async requestWithRetry(url, options = {}, retries = this.maxRetries) {
-    let lastError;
-
+  // 단순 API 호출 (재시도 로직 제거)
+  async requestWithRetry(url, options = {}) {
     // URL이 상대 경로인 경우 기본 API URL과 결합
     const fullUrl = url.startsWith('http') ? url : `${this.baseUrl}${url}`;
 
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        console.log(`API 요청 시도 ${attempt}/${retries}: ${fullUrl}`);
-        
-        const response = await this.fetchWithTimeout(fullUrl, options);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        lastError = error;
-        console.warn(`API 요청 실패 (시도 ${attempt}/${retries}):`, error.message);
-        
-        // 마지막 시도가 아니면 재시도
-        if (attempt < retries) {
-          console.log(`${this.retryDelay}ms 후 재시도합니다...`);
-          await this.delay(this.retryDelay);
-        }
+    // 인증 헤더 자동 추가
+    const headers = {
+      ...authHeaders(),
+      ...options.headers
+    };
+
+    try {
+      console.log(`API 요청: ${fullUrl}`);
+      
+      const response = await this.fetchWithTimeout(fullUrl, {
+        ...options,
+        headers
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`API 요청 실패:`, error.message);
+      throw error;
     }
-    
-    throw new Error(`API 요청 실패 (${retries}번 시도 후): ${lastError.message}`);
   }
 
-  // 지연 함수
-  delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
+
+async saveAnalysisResult(result, imageFile) {
+  const formData = new FormData();
+  formData.append('analysisResult', JSON.stringify(result));
+  if (imageFile) formData.append('image', imageFile);
+
+  const token = localStorage.getItem('authToken'); // 로그인 인증 토큰 사용
+
+  const res = await fetch('/api/analysis-result', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}` // 토큰이 필요하다면
+    },
+    body: formData
+  });
+
+  if (!res.ok) throw new Error('저장 실패');
+  return res.json();
+}
 
   // 이미지 분석 API 호출
   async analyzeImage(formData, onProgress = null) {
@@ -89,6 +105,100 @@ class ApiClient {
       return result;
     } catch (error) {
       console.error('이미지 분석 실패:', error);
+      throw error;
+    }
+  }
+
+  // 개선된 이미지 분석 API 호출 (객체/라벨 포함)
+  async analyzeImageComprehensive(formData, onProgress = null) {
+    const url = API_ENDPOINTS.ANALYZE_COMPREHENSIVE;
+    
+    try {
+      // 진행 상황 콜백이 있으면 호출
+      if (onProgress) {
+        onProgress('서버에 이미지를 전송하고 있습니다... (개선된 분석)');
+      }
+
+      const result = await this.requestWithRetry(url, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (onProgress) {
+        onProgress('개선된 분석이 완료되었습니다!');
+      }
+
+      return result;
+    } catch (error) {
+      console.error('개선된 이미지 분석 실패:', error);
+      throw error;
+    }
+  }
+
+  // 분석 결과 저장
+  async saveAnalysisResult(analysisResult, imageFile = null) {
+    const url = '/api/analysis-result/save';
+    
+    try {
+      const formData = new FormData();
+      
+      // 분석 결과 데이터 추가
+      formData.append('analysisResult', JSON.stringify(analysisResult));
+      
+      // 이미지 파일이 있으면 추가
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+
+      const result = await this.requestWithRetry(url, {
+        method: 'POST',
+        body: formData,
+      });
+
+      return result;
+    } catch (error) {
+      console.error('분석 결과 저장 실패:', error);
+      throw error;
+    }
+  }
+
+  // 사용자의 분석 결과 목록 조회
+  async getUserAnalysisResults(page = 1, limit = 10) {
+    const url = `/api/analysis-result/user?page=${page}&limit=${limit}`;
+    
+    try {
+      const result = await this.requestWithRetry(url);
+      return result;
+    } catch (error) {
+      console.error('분석 결과 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 특정 분석 결과 조회
+  async getAnalysisResult(id) {
+    const url = `/api/analysis-result/${id}`;
+    
+    try {
+      const result = await this.requestWithRetry(url);
+      return result;
+    } catch (error) {
+      console.error('분석 결과 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 분석 결과 삭제
+  async deleteAnalysisResult(id) {
+    const url = `/api/analysis-result/${id}`;
+    
+    try {
+      const result = await this.requestWithRetry(url, {
+        method: 'DELETE',
+      });
+      return result;
+    } catch (error) {
+      console.error('분석 결과 삭제 실패:', error);
       throw error;
     }
   }
@@ -125,16 +235,6 @@ class ApiClient {
   // 타임아웃 설정 변경
   setTimeout(timeout) {
     this.timeout = timeout;
-  }
-
-  // 재시도 횟수 설정 변경
-  setMaxRetries(maxRetries) {
-    this.maxRetries = maxRetries;
-  }
-
-  // 재시도 간격 설정 변경
-  setRetryDelay(retryDelay) {
-    this.retryDelay = retryDelay;
   }
 }
 

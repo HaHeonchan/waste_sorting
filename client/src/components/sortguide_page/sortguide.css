@@ -164,6 +164,57 @@
   font-weight: bold;
 }
 
+/* 저장 관련 스타일 */
+.save-message {
+  margin: 20px 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.save-message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.save-message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.result-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
+  flex-wrap: wrap;
+}
+
+.save-button {
+  display: inline-block;
+  padding: 14px 28px;
+  font-size: 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.save-button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.save-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 /* 오류 메시지 */
 .error {
   color: #e74c3c;
@@ -217,11 +268,21 @@
   line-height: 1.6;
 }
 
-.arrow {
-  font-size: 0.9rem;
-  color: #666;
+/* 기본 화살표 스타일 */
+.faq-question .arrow {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #171717; /* 초록색 */
+  margin-left: auto;
+  transition: transform 0.3s ease;
+  background: none;   /* 원형 배경 제거 */
+  border: none;
 }
 
+/* 열려 있을 때 위쪽으로 회전 */
+.faq-item.open .arrow {
+  transform: rotate(180deg);
+}
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -254,4 +315,169 @@
   margin: 0;
   text-align: center;
   font-weight: 500;
+}
+
+/* =================================== */
+/* 🌙 다크 모드 전용 스타일 - sortguide */
+/* =================================== */
+/* 🌙 다크모드 전체 배경 적용 */
+body.dark {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+/* 전체 앱 컨테이너가 따로 있다면 여기도 */
+body.dark .App,
+body.dark .page-wrapper {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+body.dark .sort-guide-container {
+  background-color: #121212;
+}
+
+body.dark .sort-guide-top {
+  color: #dddddd;
+}
+
+body.dark .sort-guide-box {
+  background-color: #1e1e1e;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+body.dark .sort-guide-text {
+  color: #ffffff;
+}
+
+body.dark .upload-button,
+body.dark .analyze-button {
+  background-color: #34a853;
+  color: #ffffff;
+}
+
+body.dark .upload-button:hover,
+body.dark .analyze-button:hover {
+  background-color: #2c9047;
+}
+
+body.dark .manual-upload {
+  background-color: #1e1e1e;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: #dddddd;
+}
+
+body.dark .preview-section {
+  color: #eeeeee;
+}
+
+body.dark .loading {
+  color: #cccccc;
+}
+
+body.dark .loading-dots span {
+  background-color: #aaaaaa;
+}
+
+body.dark .result-container {
+  background-color: #1e1e1e;
+  color: #eeeeee;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+body.dark .result-item {
+  background-color: #2a2a2a;
+}
+
+body.dark .result-item .label {
+  color: #cccccc;
+}
+
+body.dark .result-item .value {
+  color: #ffffff;
+}
+
+body.dark .error {
+  color: #ff6b6b;
+}
+
+body.dark .faq-section h3 {
+  color: #ffffff;
+}
+
+body.dark .faq-item {
+  background-color: #1e1e1e;
+  border-color: #444;
+}
+
+body.dark .faq-question {
+  background-color: #2a2a2a;
+  color: #dddddd;
+}
+
+/* 다크 모드일 때 화살표 색상 변경 */
+body.dark .faq-question .arrow {
+  color: #aaa; /* 회색 계열 */
+}
+
+body.dark .faq-answer {
+  background-color: #2f2f2f;
+  border-top-color: #555;
+  color: #dddddd;
+}
+
+body.dark .arrow {
+  color: #aaa;
+}
+
+body.dark .drop-zone {
+  border-color: #666;
+  background-color: #2a2a2a;
+  color: #dddddd;
+}
+
+body.dark .drop-zone:hover {
+  background-color: #3a3a3a;
+}
+
+/* ✅ 전체 FAQ, manual-upload, 드롭존을 진짜 다크모드스럽게 */
+body.dark .manual-upload {
+  background-color: #181818;
+  color: #eaeaea;
+  border: 1px solid #333;
+}
+
+body.dark .drop-zone {
+  background-color: #2b2b2b;
+  border: 2px dashed #555;
+  color: #ddd;
+}
+
+body.dark .drop-zone:hover {
+  background-color: #3a3a3a;
+}
+
+/* ✅ FAQ 박스 */
+body.dark .faq-section {
+  color: #e0e0e0;
+}
+
+body.dark .faq-section h3 {
+  color: #ff8787; /* 강조 컬러 */
+}
+
+body.dark .faq-item {
+  background-color: #222;
+  border: 1px solid #444;
+}
+
+body.dark .faq-question {
+  background-color: #2e2e2e;
+  color: #f1f1f1;
+}
+
+body.dark .faq-answer {
+  background-color: #1f1f1f;
+  color: #ddd;
+  border-top: 1px solid #555;
 }

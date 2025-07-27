@@ -3,30 +3,36 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 1.5rem;
+  padding: 0 1.5rem; /* 양쪽 여백 */
   height: 3.75rem;
   background-color: white;
   border-bottom: 1px solid #ddd;
   font-family: 'Pretendard', sans-serif;
   font-size: clamp(0.875rem, 1.2vw, 1rem);
-  flex-wrap: wrap;
   position: relative;
+  z-index: 1000;
 }
 
-/* 타이틀 + 햄버거를 감싸는 컨테이너 */
+/* ✅ 타이틀 + 햄버거 감싸는 컨테이너 */
 .navbar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex: 1;
+  height: 100%;  /* navbar와 높이 맞춤 */
+  padding-right: 0.5rem; /* 스크롤 안 가리게 약간만 */
 }
 
-/* 타이틀 */
+/* ✅ 타이틀 */
 .navbar-header .title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-weight: 700;
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   text-decoration: none;
   color: #1b1b1b;
+  height: 100%;
 }
 
 /* 가운데 메뉴 */
@@ -80,10 +86,55 @@
   transition: background-color 0.2s;
   white-space: nowrap;
   font-size: clamp(0.875rem, 1.2vw, 1rem);
+  transform: translate(-2rem,0.6rem)
 }
 
 .desktop-login:hover {
   background-color: #16a34a;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* 텍스트와 토글 사이 여백 */
+}
+
+.navbar-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+
+.theme-toggle-switch {
+  width: 3rem;     /* 60px */
+  height: 1.5rem;   /* 30px */
+  background-color: #e0e0e0;
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  transform: translateY(0.2rem); 
+}
+
+.theme-toggle-switch.dark {
+  background-color: var(--highlight, #28a745);
+}
+
+.toggle-circle {
+  width: 1.2rem;    /* 26px */
+  height: 1.2rem;
+  background-color: #ffffff;
+  border-radius: 50%;
+  position: absolute;
+  top: 0.15rem;      /* 2px */
+  left: 0.15rem;
+  transition: transform 0.3s ease;
+  box-shadow: 0 0 0.3125rem rgba(0, 0, 0, 0.2); /* 5px */
+}
+
+.theme-toggle-switch.dark .toggle-circle {
+  transform: translateX(1.5rem); /* 30px */
 }
 
 /* 모바일용 로그인 버튼 (기본 숨김) */
@@ -91,15 +142,11 @@
   display: none;
 }
 
-/* 햄버거 메뉴 버튼 (기본 숨김) */
+/* ✅ 햄버거 버튼 */
 .hamburger {
-  display: none;
-  font-size: 1.75rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  align-self: center;
+  display: none
 }
+
 
 /* ✅ 미디어 쿼리: 모바일 대응 (1200px 이하) */
 @media screen and (max-width: 1200px) {
@@ -117,9 +164,27 @@
   }
 
   .hamburger {
-    display: block;
-    align-self: center;
-    margin: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #333;
+    font-size: 1.75rem;
+    display: flex;
+    align-items: center;       /* 수직 정렬 */
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    line-height: 1;
+    padding: 0;
+    margin-right: 0;           /* ❌ 10rem 제거 */
+    transform: translateY(-0.1rem);  /* ❌ 아래로 밀리는 거 제거 */
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* ✅ 햄버거 아이콘 내부 span 전환용 (필요 시) */
+  .hamburger-icon {
+    display: inline-block;
+    transition: transform 0.3s ease, opacity 0.3s ease;
   }
 
   .navbar-center {
@@ -227,3 +292,73 @@
 .mobile-logout:hover {
   background: linear-gradient(to right, #b91c1c, #991b1b);
 }
+
+body.dark .navbar {
+  background-color: #1e1e1e;
+  border-bottom: 1px solid #444;
+}
+
+body.dark .navbar-header .title {
+  color: #ffffff
+}
+
+body.dark .navbar-title {
+  color: #ffffff !important;
+}
+
+body.dark .nav-link {
+  color: #f0f0f0;
+}
+
+body.dark .nav-link:hover {
+  color: #4ade80; /* 밝은 그린 */
+}
+
+body.dark .desktop-login,
+body.dark .mobile-login {
+  background-color: #16a34a;
+}
+
+body.dark .desktop-login:hover,
+body.dark .mobile-login:hover {
+  background-color: #15803d;
+}
+
+body.dark .logout-btn,
+body.dark .mobile-logout {
+  background-color: #b91c1c;
+}
+
+body.dark .logout-btn:hover,
+body.dark .mobile-logout:hover {
+  background-color: #991b1b;
+}
+
+body.dark .navbar-center {
+  background-color: #1e1e1e;
+  border-top: none !important;
+}
+
+body.dark .hamburger {
+  color: #f0f0f0;
+}
+
+body.dark .user-name {
+  color: #f0f0f0;
+}
+
+body.dark .theme-toggle-switch {
+  background-color: #333;
+}
+
+body.dark .theme-toggle-switch.dark {
+  background-color: #28a745;
+}
+
+body.dark .theme-toggle-switch .toggle-circle {
+  background-color: #fff;
+}
+body.dark .theme-toggle-switch.dark .toggle-circle {
+  transform: translateX(1.5rem); /* 30px */
+}
+

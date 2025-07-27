@@ -11,6 +11,7 @@ import SortGuide from './components/sortguide_page/sortguide.jsx';
 import Home from './components/home_page/home';
 import Navbar from './components/navbar_page/navbar.jsx';
 import TestPage from './components/TestPage';
+import List from './components/list_page/list.jsx';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
               <Route path="/mypage" element={<Mypage />} /> {/* 마이페이지 페이지 */}
               <Route path="/login" element={<Login />} /> {/* 로그인 페이지 */}
               <Route path="/signup" element={<Signup />} /> {/* 회원가입 페이지 */}
+              <Route path="/analysis-results" element={<List />} /> {/* 분석 결과 목록 페이지 */}
             </Routes>
           </div>
         </Router>

@@ -15,10 +15,21 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
+// Google OAuth 설정 로깅
+console.log('🔧 Google OAuth 설정:', {
+    NODE_ENV: process.env.NODE_ENV,
+    CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? '설정됨' : '설정되지 않음',
+    CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? '설정됨' : '설정되지 않음',
+    REACT_APP_API_URL: process.env.REACT_APP_API_URL,
+    callbackURL: process.env.NODE_ENV === 'production' 
+        ? `${process.env.REACT_APP_API_URL}/auth/google/callback`
+        : "http://localhost:3001/auth/google/callback"
+});
+
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "/auth/google/callback"
+    callbackURL: "/auth/google/callback" // 상대 경로 사용
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         // 기존 사용자 확인

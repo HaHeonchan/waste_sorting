@@ -66,7 +66,7 @@ export const loginWithEmail = async (email, password) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ accountId: email, password }),
+      body: JSON.stringify({ email, password }),
     });
 
     // 토큰 저장
@@ -135,8 +135,11 @@ export const getUserInfo = async () => {
 
 // 구글 로그인 팝업
 export const loginWithGoogle = () => {
-  // apiClient의 baseUrl을 사용하여 구글 로그인 URL 생성
-  const googleLoginUrl = `${apiClient.baseUrl}/auth/google/popup`;
+  // 팝업용 구글 로그인 URL 생성 (팝업 파라미터 추가)
+  const googleLoginUrl = `${apiClient.baseUrl}/auth/google/popup?isPopup=true`;
+  
+  console.log('🔍 구글 로그인 URL:', googleLoginUrl);
+  console.log('🔍 apiClient.baseUrl:', apiClient.baseUrl);
   
   const popup = window.open(
     googleLoginUrl,
@@ -145,16 +148,42 @@ export const loginWithGoogle = () => {
   );
 
   return new Promise((resolve, reject) => {
+    // postMessage 이벤트 리스너 추가
+    const messageHandler = (event) => {
+      console.log('Received message:', event.data);
+      
+      if (event.data.type === 'GOOGLE_LOGIN_SUCCESS') {
+        console.log('Google login success received');
+        window.removeEventListener('message', messageHandler);
+        clearInterval(checkClosed);
+        
+        // 사용자 정보 저장
+        const userInfo = event.data.user;
+        setUser(userInfo);
+        
+        // JWT 토큰 저장 (서버에서 받은 토큰)
+        if (event.data.token) {
+          setToken(event.data.token);
+        }
+        
+        resolve({ success: true, user: userInfo });
+      } else if (event.data.type === 'GOOGLE_LOGIN_ERROR') {
+        console.log('Google login error received');
+        window.removeEventListener('message', messageHandler);
+        clearInterval(checkClosed);
+        reject(new Error(event.data.error || '구글 로그인에 실패했습니다.'));
+      }
+    };
+    
+    window.addEventListener('message', messageHandler);
+
     const checkClosed = setInterval(() => {
       if (popup.closed) {
         clearInterval(checkClosed);
-        // 팝업이 닫혔을 때 사용자 정보 확인
-        const user = getUser();
-        if (user) {
-          resolve({ success: true, user });
-        } else {
-          reject(new Error('구글 로그인이 취소되었습니다.'));
-        }
+        window.removeEventListener('message', messageHandler);
+        
+        // 팝업이 닫혔지만 메시지를 받지 못한 경우
+        reject(new Error('구글 로그인이 취소되었습니다.'));
       }
     }, 1000);
   });

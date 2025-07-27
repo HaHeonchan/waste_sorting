@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "./incentive.css";
+import { motion } from "framer-motion";
 import axios from "axios";
 
 function Incentive() {
@@ -9,6 +10,15 @@ function Incentive() {
   const [showBotPopup, setShowBotPopup] = useState(false);
 
   const userId = localStorage.getItem("userId");
+  const earnedListRef = useRef(null); // ref 선언
+
+  const scrollLeft = () => {
+    earnedListRef.current.scrollBy({ left: -300, behavior: "smooth" });
+  };
+  const scrollRight = () => {
+    earnedListRef.current.scrollBy({ left: 300, behavior: "smooth" });
+  };
+
 
   useEffect(() => {
     setSummary({ total_point: 1800, this_month: 600 });
@@ -35,9 +45,14 @@ function Incentive() {
   const toggleBotPopup = () => setShowBotPopup(!showBotPopup);
 
   return (
-    <div className="incentive-container">
+    <motion.div
+      className="incentive-container"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
       <h1 className="incentive-title">인센티브 관리</h1>
-      <p className="incentive-subtitle">분리배출로 포인트를 모으면 자동 적립됩니다</p>
+      <p className="incentive-subtitle">스마트 분리배출 사진을 찍으면 얻게 될 포인트를 확인할 수 있습니다</p>
 
       <div className="point-box">
         <div className="point-text">
@@ -55,17 +70,38 @@ function Incentive() {
         {earnedList.length === 0 ? (
           <p className="no-history">아직 적립된 내역이 없습니다.</p>
         ) : (
-          <div className="earned-list">
-            {earnedList.map((item, i) => (
-              <div className="earned-card" key={i}>
-                <strong>{item.activity_type}</strong>
-                <span className="earned-point">+{item.earned_point}P</span>
-                <span className="earned-date">{new Date(item.created_at).toLocaleString()}</span>
-              </div>
-            ))}
+          <div className="earned-wrapper">
+            <button className="arrow left" onClick={() => {
+              document.querySelector(".earned-list").scrollBy({ left: -300, behavior: "smooth" });
+            }}>←</button>
+
+            <div className="earned-list">
+              {earnedList.map((item, i) => (
+                <div
+                  className="earned-card"
+                  data-point={
+                    item.earned_point >= 400
+                      ? "high"
+                      : item.earned_point >= 200
+                      ? "medium"
+                      : "low"
+                  }
+                  key={i}
+                >
+                  <strong>{item.activity_type}</strong>
+                  <span className="earned-point">+{item.earned_point}P</span>
+                  <span className="earned-date">{new Date(item.created_at).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+
+            <button className="arrow right" onClick={() => {
+              document.querySelector(".earned-list").scrollBy({ left: 300, behavior: "smooth" });
+            }}>→</button>
           </div>
         )}
       </div>
+
 
       <div className="link-buttons">
         <button onClick={toggleStorePopup}>자원순환 이응 가게 소개</button>
@@ -120,7 +156,7 @@ function Incentive() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
