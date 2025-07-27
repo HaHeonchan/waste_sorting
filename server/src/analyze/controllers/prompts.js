@@ -73,8 +73,8 @@ const COMPREHENSIVE_ANALYSIS_PROMPT = `Google Vision API의 통합 분석 결과
 **예시:**
 재활용 마크에 "HDPE"와 "PP"가 모두 표시되어 있다면, materialParts에 반드시 "본체: HDPE", "뚜껑: PP"로 각각 분리해서 작성하세요.
 "materialParts": [
-  { "part": "본체", "material": "HDPE", "description": "용기의 주요 부분, 단단하고 내구성이 좋음 (마크에서 확인된 재질)", "disposalMethod": "재활용 수거함에 버리세요" },
-  { "part": "뚜껑", "material": "PP", "description": "용기를 닫는 부분, 본체와 다른 재질 (마크에서 확인된 재질)", "disposalMethod": "재활용 수거함에 버리세요" }
+  { "part": "본체", "material": "HDPE", "description": "용기의 주요 부분, 단단하고 내구성이 좋음", "disposalMethod": "재활용 수거함에 버리세요" },
+  { "part": "뚜껑", "material": "PP", "description": "용기를 닫는 부분, 본체와 다른 재질", "disposalMethod": "재활용 수거함에 버리세요" }
 ]
 
 **주의: 본체와 뚜껑의 재질이 다르다면 반드시 구분하여 기록해주세요!**
@@ -131,8 +131,8 @@ const DIRECT_IMAGE_ANALYSIS_PROMPT = `이미지를 직접 분석하여 쓰레기
 **예시:**
 재활용 마크에 "HDPE"와 "PP"가 모두 표시되어 있다면, materialParts에 반드시 "본체: HDPE", "뚜껑: PP"로 각각 분리해서 작성하세요.
 "materialParts": [
-  { "part": "본체", "material": "HDPE", "description": "용기의 주요 부분, 단단하고 내구성이 좋음 (마크에서 확인된 재질)", "disposalMethod": "재활용 수거함에 버리세요" },
-  { "part": "뚜껑", "material": "PP", "description": "용기를 닫는 부분, 본체와 다른 재질 (마크에서 확인된 재질)", "disposalMethod": "재활용 수거함에 버리세요" }
+  { "part": "본체", "material": "HDPE", "description": "용기의 주요 부분, 단단하고 내구성이 좋음", "disposalMethod": "재활용 수거함에 버리세요" },
+  { "part": "뚜껑", "material": "PP", "description": "용기를 닫는 부분, 본체와 다른 재질", "disposalMethod": "재활용 수거함에 버리세요" }
 ]
 
 분석 기준:
@@ -197,8 +197,8 @@ const OBJECT_BASED_ANALYSIS_PROMPT = `객체 탐지 결과를 바탕으로 쓰�
 **예시:**
 재활용 마크에 "HDPE"와 "PP"가 모두 표시되어 있다면, materialParts에 반드시 "본체: HDPE", "뚜껑: PP"로 각각 분리해서 작성하세요.
 "materialParts": [
-  { "part": "본체", "material": "HDPE", "description": "용기의 주요 부분, 단단하고 내구성이 좋음 (마크에서 확인된 재질)", "disposalMethod": "재활용 수거함에 버리세요" },
-  { "part": "뚜껑", "material": "PP", "description": "용기를 닫는 부분, 본체와 다른 재질 (마크에서 확인된 재질)", "disposalMethod": "재활용 수거함에 버리세요" }
+  { "part": "본체", "material": "HDPE", "description": "용기의 주요 부분, 단단하고 내구성이 좋음", "disposalMethod": "재활용 수거함에 버리세요" },
+  { "part": "뚜껑", "material": "PP", "description": "용기를 닫는 부분, 본체와 다른 재질", "disposalMethod": "재활용 수거함에 버리세요" }
 ]
 
 JSON 형식으로 응답:
