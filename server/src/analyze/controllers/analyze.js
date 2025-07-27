@@ -21,6 +21,11 @@ const {
     analyzeRecyclingMarksWithObjectsAndLabels,
     performComprehensiveVisionAnalysis
 } = require('./logo-detector');
+const {
+    findMatchingDisposalMethod,
+    generateGPTFallbackPrompt,
+    convertMatchToAnalysisResult
+} = require('./waste-matcher');
 
 // OpenAI 클라이언트 초기화
 const openai = new OpenAI({
@@ -149,7 +154,7 @@ const analyzeController = {
     }
 };
 
-// 기존 분석 수행 함수
+// 기존 분석 수행 함수 (매칭 시스템 통합)
 async function performAnalysis(imagePath) {
     console.log('🔍 이미지 분석 시작...');
     
@@ -171,19 +176,25 @@ async function performAnalysis(imagePath) {
         finalAnalysis = await analyzeImageDirectly(imagePath);
     }
     
+    // 새로운 매칭 시스템 적용
+    const matchedResult = await applyMatchingSystem(finalAnalysis.analysis, textAnalysis);
+    
     return {
-        type: finalAnalysis.analysis.wasteType,
-        detail: finalAnalysis.analysis.subType,
-        mark: finalAnalysis.analysis.recyclingMark,
-        description: finalAnalysis.analysis.description,
-        method: finalAnalysis.analysis.disposalMethod,
+        type: matchedResult.wasteType,
+        detail: matchedResult.subType,
+        mark: matchedResult.recyclingMark,
+        description: matchedResult.description,
+        method: matchedResult.disposalMethod,
         model: finalAnalysis.model,
         token_usage: finalAnalysis.usage?.total_tokens || 0,
-        analysis_type: finalAnalysis.analysisType || "text_based"
+        analysis_type: matchedResult.analysisType || finalAnalysis.analysisType || "text_based",
+        confidence: matchedResult.confidence || 0.8,
+        detailed_method: matchedResult.detailedMethod || null,
+        note: matchedResult.note || null
     };
 }
 
-// 개선된 분석 수행 함수 (객체/라벨 포함)
+// 개선된 분석 수행 함수 (객체/라벨 포함, 매칭 시스템 통합)
 async function performComprehensiveAnalysis(imagePath) {
     console.log('🔍 개선된 이미지 분석 시작 (객체/라벨 포함)...');
     
@@ -204,17 +215,22 @@ async function performComprehensiveAnalysis(imagePath) {
         finalAnalysis = await analyzeImageDirectly(imagePath);
     }
     
+    // 새로운 매칭 시스템 적용
+    const matchedResult = await applyMatchingSystem(finalAnalysis.analysis, comprehensiveAnalysis);
+    
     return {
-        type: finalAnalysis.analysis.wasteType,
-        detail: finalAnalysis.analysis.subType,
-        mark: finalAnalysis.analysis.recyclingMark,
-        description: finalAnalysis.analysis.description,
-        method: finalAnalysis.analysis.disposalMethod,
+        type: matchedResult.wasteType,
+        detail: matchedResult.subType,
+        mark: matchedResult.recyclingMark,
+        description: matchedResult.description,
+        method: matchedResult.disposalMethod,
         model: finalAnalysis.model,
         token_usage: finalAnalysis.usage?.total_tokens || 0,
-        analysis_type: finalAnalysis.analysisType || "comprehensive",
-        confidence: comprehensiveAnalysis.confidence || 0,
-        analysis_details: finalAnalysis.analysis.analysisDetails || null
+        analysis_type: matchedResult.analysisType || finalAnalysis.analysisType || "comprehensive",
+        confidence: matchedResult.confidence || comprehensiveAnalysis.confidence || 0,
+        analysis_details: finalAnalysis.analysis.analysisDetails || null,
+        detailed_method: matchedResult.detailedMethod || null,
+        note: matchedResult.note || null
     };
 }
 
@@ -380,6 +396,61 @@ async function analyzeImageDirectly(imagePath) {
         usage: response.usage,
         analysisType: "direct_image"
     };
+}
+
+// 매칭 시스템 적용 함수
+async function applyMatchingSystem(gptAnalysis, visionAnalysis) {
+    console.log('🎯 매칭 시스템 적용 시작');
+    
+    const { wasteType, subType, description } = gptAnalysis;
+    
+    // 1. 사전 정의된 가이드에서 매칭 시도
+    const matchedMethod = findMatchingDisposalMethod(wasteType, subType, description);
+    
+    if (matchedMethod) {
+        console.log('✅ 매칭 성공:', matchedMethod.matchType);
+        return convertMatchToAnalysisResult(matchedMethod, gptAnalysis);
+    }
+    
+    // 2. 매칭 실패 시 GPT 완전 분석으로 폴백
+    console.log('🔄 GPT 완전 분석으로 폴백');
+    const fallbackPrompt = generateGPTFallbackPrompt(wasteType, subType, description, visionAnalysis);
+    
+    try {
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: fallbackPrompt }],
+            max_tokens: 500
+        });
+        
+        const fallbackResult = parseGPTResponse(response.choices[0].message.content);
+        
+        return {
+            wasteType: fallbackResult.wasteType,
+            subType: fallbackResult.subType,
+            recyclingMark: fallbackResult.recyclingMark,
+            description: fallbackResult.description,
+            disposalMethod: fallbackResult.disposalMethod.title || fallbackResult.disposalMethod,
+            confidence: fallbackResult.confidence || 0.9,
+            analysisType: 'gpt_fallback',
+            detailedMethod: fallbackResult.disposalMethod,
+            note: 'GPT 완전 분석으로 생성된 결과입니다.'
+        };
+        
+    } catch (error) {
+        console.error('❌ GPT 폴백 분석 실패:', error);
+        // 원본 GPT 분석 결과 반환
+        return {
+            wasteType: gptAnalysis.wasteType,
+            subType: gptAnalysis.subType,
+            recyclingMark: gptAnalysis.recyclingMark,
+            description: gptAnalysis.description,
+            disposalMethod: gptAnalysis.disposalMethod,
+            confidence: 0.7,
+            analysisType: 'original_gpt',
+            note: '매칭 실패 및 GPT 폴백 실패로 원본 결과를 사용합니다.'
+        };
+    }
 }
 
 // GPT 응답 파싱
