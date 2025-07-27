@@ -118,7 +118,8 @@ const saveAnalysisResult = async (req, res) => {
         description: analysisResult.description || '알 수 없음',
         method: analysisResult.method || '알 수 없음',
         model: analysisResult.model || '알 수 없음',
-        tokenUsage: analysisResult.token_usage || analysisResult.tokenUsage || '알 수 없음'
+        tokenUsage: analysisResult.token_usage || analysisResult.tokenUsage || '알 수 없음',
+        materialParts: analysisResult.materialParts || []
       },
       status: 'uploaded'
     });

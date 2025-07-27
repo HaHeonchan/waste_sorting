@@ -225,7 +225,8 @@ async function performAnalysis(imagePath) {
         method: finalAnalysis.analysis.disposalMethod,
         model: finalAnalysis.model,
         token_usage: finalAnalysis.usage?.total_tokens || 0,
-        analysis_type: finalAnalysis.analysisType || "text_based"
+        analysis_type: finalAnalysis.analysisType || "text_based",
+        materialParts: finalAnalysis.analysis.materialParts || []
     };
 }
 
@@ -260,7 +261,8 @@ async function performComprehensiveAnalysis(imagePath) {
         token_usage: finalAnalysis.usage?.total_tokens || 0,
         analysis_type: finalAnalysis.analysisType || "comprehensive",
         confidence: comprehensiveAnalysis.confidence || 0,
-        analysis_details: finalAnalysis.analysis.analysisDetails || null
+        analysis_details: finalAnalysis.analysis.analysisDetails || null,
+        materialParts: finalAnalysis.analysis.materialParts || []
     };
 }
 
