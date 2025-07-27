@@ -282,6 +282,32 @@ export default function SortGuide() {
                   {result.method || '정보 없음'}
                 </span>
               </div>
+              
+              {/* 부위별 재질 정보 표시 */}
+              {result.materialParts && result.materialParts.length > 0 && (
+                <div className="material-parts-section">
+                  <h4>🔍 부위별 재질 분석</h4>
+                  <div className="material-parts-grid">
+                    {result.materialParts.map((part, index) => (
+                      <div key={index} className="material-part-card">
+                        <div className="part-header">
+                          <span className="part-name">{part.part}</span>
+                          <span className="material-type">{part.material}</span>
+                        </div>
+                        <div className="part-description">
+                          {part.description}
+                        </div>
+                        {part.disposalMethod && (
+                          <div className="part-disposal">
+                            <strong>처리 방법:</strong> {part.disposalMethod}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <div className="result-item">
                 <span className="label">🧠 모델:</span>
                 <span className="value">

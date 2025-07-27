@@ -5,6 +5,7 @@
 
 const vision = require('@google-cloud/vision');
 const fs = require('fs');
+const fetch = require('node-fetch');
 
 // ============================================================================
 // Google Vision API 클라이언트 초기화
@@ -68,8 +69,8 @@ const RECYCLING_MARK_KEYWORDS = [
 // ============================================================================
 
 /**
- * 로고 탐지 함수
- * @param {string} imagePath - 이미지 경로
+ * 로고 탐지 함수 (Cloudinary URL 및 로컬 파일 지원)
+ * @param {string} imagePath - 이미지 경로 또는 Cloudinary URL
  * @returns {Array} 탐지된 로고 배열
  */
 async function detectLogos(imagePath) {
@@ -81,7 +82,16 @@ async function detectLogos(imagePath) {
         
         console.log('🔍 로고 탐지 시작:', imagePath);
         
-        const imageBuffer = fs.readFileSync(imagePath);
+        let imageBuffer;
+        if (imagePath.includes('cloudinary.com')) {
+            // Cloudinary URL인 경우
+            const response = await fetch(imagePath);
+            imageBuffer = Buffer.from(await response.arrayBuffer());
+        } else {
+            // 로컬 파일인 경우
+            imageBuffer = fs.readFileSync(imagePath);
+        }
+        
         const [result] = await client.logoDetection(imageBuffer);
         const logos = result.logoAnnotations;
         
@@ -96,8 +106,8 @@ async function detectLogos(imagePath) {
 }
 
 /**
- * 텍스트 탐지 함수
- * @param {string} imagePath - 이미지 경로
+ * 텍스트 탐지 함수 (Cloudinary URL 및 로컬 파일 지원)
+ * @param {string} imagePath - 이미지 경로 또는 Cloudinary URL
  * @returns {Object} 텍스트 탐지 결과 및 사용량 정보
  */
 async function detectText(imagePath) {
@@ -109,7 +119,16 @@ async function detectText(imagePath) {
         
         console.log('📝 텍스트 탐지 시작:', imagePath);
         
-        const imageBuffer = fs.readFileSync(imagePath);
+        let imageBuffer;
+        if (imagePath.includes('cloudinary.com')) {
+            // Cloudinary URL인 경우
+            const response = await fetch(imagePath);
+            imageBuffer = Buffer.from(await response.arrayBuffer());
+        } else {
+            // 로컬 파일인 경우
+            imageBuffer = fs.readFileSync(imagePath);
+        }
+        
         const [result] = await client.textDetection(imageBuffer);
         const detections = result.textAnnotations;
         
@@ -143,8 +162,8 @@ async function detectText(imagePath) {
 }
 
 /**
- * 객체 탐지 함수 (재활용 관련 물체 탐지)
- * @param {string} imagePath - 이미지 경로
+ * 객체 탐지 함수 (재활용 관련 물체 탐지, Cloudinary URL 및 로컬 파일 지원)
+ * @param {string} imagePath - 이미지 경로 또는 Cloudinary URL
  * @returns {Array} 탐지된 객체 배열
  */
 async function detectObjects(imagePath) {
@@ -156,7 +175,15 @@ async function detectObjects(imagePath) {
         
         console.log('🎯 객체 탐지 시작:', imagePath);
         
-        const imageBuffer = fs.readFileSync(imagePath);
+        let imageBuffer;
+        if (imagePath.includes('cloudinary.com')) {
+            // Cloudinary URL인 경우
+            const response = await fetch(imagePath);
+            imageBuffer = Buffer.from(await response.arrayBuffer());
+        } else {
+            // 로컬 파일인 경우
+            imageBuffer = fs.readFileSync(imagePath);
+        }
         const [result] = await client.objectLocalization(imageBuffer);
         const objects = result.localizedObjectAnnotations;
         
@@ -179,8 +206,8 @@ async function detectObjects(imagePath) {
 }
 
 /**
- * 라벨 탐지 함수 (이미지 전체 라벨링)
- * @param {string} imagePath - 이미지 경로
+ * 라벨 탐지 함수 (이미지 전체 라벨링, Cloudinary URL 및 로컬 파일 지원)
+ * @param {string} imagePath - 이미지 경로 또는 Cloudinary URL
  * @returns {Array} 탐지된 라벨 배열
  */
 async function detectLabels(imagePath) {
@@ -192,7 +219,15 @@ async function detectLabels(imagePath) {
         
         console.log('🏷️ 라벨 탐지 시작:', imagePath);
         
-        const imageBuffer = fs.readFileSync(imagePath);
+        let imageBuffer;
+        if (imagePath.includes('cloudinary.com')) {
+            // Cloudinary URL인 경우
+            const response = await fetch(imagePath);
+            imageBuffer = Buffer.from(await response.arrayBuffer());
+        } else {
+            // 로컬 파일인 경우
+            imageBuffer = fs.readFileSync(imagePath);
+        }
         const [result] = await client.labelDetection(imageBuffer);
         const labels = result.labelAnnotations;
         
@@ -218,8 +253,8 @@ async function detectLabels(imagePath) {
 }
 
 /**
- * 통합 Vision API 분석 함수 (텍스트, 객체, 라벨 모두 탐지)
- * @param {string} imagePath - 이미지 경로
+ * 통합 Vision API 분석 함수 (텍스트, 객체, 라벨 모두 탐지, Cloudinary URL 및 로컬 파일 지원)
+ * @param {string} imagePath - 이미지 경로 또는 Cloudinary URL
  * @returns {Object} 통합 분석 결과
  */
 async function performComprehensiveVisionAnalysis(imagePath) {
@@ -237,7 +272,15 @@ async function performComprehensiveVisionAnalysis(imagePath) {
         
         console.log('🔍 통합 Vision API 분석 시작:', imagePath);
         
-        const imageBuffer = fs.readFileSync(imagePath);
+        let imageBuffer;
+        if (imagePath.includes('cloudinary.com')) {
+            // Cloudinary URL인 경우
+            const response = await fetch(imagePath);
+            imageBuffer = Buffer.from(await response.arrayBuffer());
+        } else {
+            // 로컬 파일인 경우
+            imageBuffer = fs.readFileSync(imagePath);
+        }
         
         // 모든 분석을 병렬로 실행
         const [textResult, objectResult, labelResult, logoResult] = await Promise.allSettled([
