@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './mypage.css';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../utils/apiClient';
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 
 export default function MyPage() {
   const navigate = useNavigate();
@@ -18,7 +17,127 @@ export default function MyPage() {
   const [rewards, setRewards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedItem, setSelectedItem] = useState(null);
 
+  // 예시 분석 결과 데이터
+ const [analysisSummary, setAnalysisSummary] = useState([
+  {
+    id: 1,
+    category: "플라스틱",
+    subcategory: "페트병",
+    method: "뚜껑과 라벨 제거 후 배출",
+    recycleMark: "♻️",
+    description: "투명 페트병은 고품질 플라스틱으로 재활용됩니다.",
+    model: "gpt-4-vision",
+    tokensUsed: 128,
+  },
+  {
+    id: 2,
+    category: "종이",
+    subcategory: "신문지",
+    method: "이물질 제거 후 묶어서 배출",
+    recycleMark: "♻️",
+    description: "신문지는 백색지와 함께 재활용됩니다.",
+    model: "gpt-4-vision",
+    tokensUsed: 102,
+  },
+  {
+    id: 3,
+    category: "금속",
+    subcategory: "알루미늄 캔",
+    method: "내용물 비우고 씻어서 배출",
+    recycleMark: "♻️",
+    description: "알루미늄은 에너지 효율이 높은 재활용 금속입니다.",
+    model: "gpt-4-vision",
+    tokensUsed: 119,
+  },
+  {
+    id: 4,
+    category: "유리",
+    subcategory: "음료수 병",
+    method: "내용물 비우고 물로 헹군 후 배출",
+    recycleMark: "♻️",
+    description: "색상별로 분리하면 재활용 효율이 높아집니다.",
+    model: "gpt-4-vision",
+    tokensUsed: 110,
+  },
+  {
+    id: 5,
+    category: "플라스틱",
+    subcategory: "비닐봉투",
+    method: "이물질 제거 후 배출",
+    recycleMark: "♻️",
+    description: "깨끗한 비닐만 재활용 가능합니다.",
+    model: "gpt-4-vision",
+    tokensUsed: 87,
+  },
+  {
+    id: 6,
+    category: "종이",
+    subcategory: "종이팩 (우유팩)",
+    method: "물로 헹구고 펼쳐서 건조 후 배출",
+    recycleMark: "♻️",
+    description: "종이팩은 일반 종이와 분리하여 배출해야 합니다.",
+    model: "gpt-4-vision",
+    tokensUsed: 104,
+  },
+  {
+    id: 7,
+    category: "플라스틱",
+    subcategory: "세제 용기",
+    method: "뚜껑 분리 후 깨끗이 헹궈 배출",
+    recycleMark: "♻️",
+    description: "PP, PE 재질로 분리 배출 시 효과적입니다.",
+    model: "gpt-4-vision",
+    tokensUsed: 126,
+  },
+  {
+    id: 8,
+    category: "스티로폼",
+    subcategory: "음식 포장용기",
+    method: "내용물 제거 및 깨끗이 씻어서 배출",
+    recycleMark: "♻️",
+    description: "오염된 스티로폼은 일반쓰레기로 분류됩니다.",
+    model: "gpt-4-vision",
+    tokensUsed: 91,
+  },
+  {
+    id: 9,
+    category: "금속",
+    subcategory: "철캔",
+    method: "내용물 비우고 압착 후 배출",
+    recycleMark: "♻️",
+    description: "자석을 이용한 분리 수거가 가능해요.",
+    model: "gpt-4-vision",
+    tokensUsed: 113,
+  },
+  {
+    id: 10,
+    category: "의류",
+    subcategory: "면 티셔츠",
+    method: "깨끗한 상태로 의류 수거함에 배출",
+    recycleMark: "♻️",
+    description: "의류는 재사용 또는 섬유 재활용됩니다.",
+    model: "gpt-4-vision",
+    tokensUsed: 98,
+  },
+]);
+
+  // 캐러셀 스크롤 기능
+  const carouselRef = useRef(null);
+
+  // 좌우 스크롤 함수
+  const scrollLeft = () => {
+    if (carouselRef.current) {
+      carouselRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+    }
+  };
+  // 우측 스크롤 함수
+  const scrollRight = () => {
+    if (carouselRef.current) {
+      carouselRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    }
+  };
   useEffect(() => {
     // AuthContext가 로딩 중이면 대기
     if (authLoading) {
@@ -38,36 +157,56 @@ export default function MyPage() {
     }
   }, [isAuthenticated, authLoading, user, navigate]);
 
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      setError('');
+const fetchUserData = async () => {
+  try {
+    setLoading(true);
+    setError('');
 
-      console.log('마이페이지: 사용자 데이터 가져오기 시작');
+    console.log('마이페이지: 사용자 데이터 가져오기 시작');
 
-      // 사용자 상세 정보 가져오기
-      const userInfo = await apiClient.requestWithRetry('/api/auth/user/info');
-      
-      // 리워드 목록 가져오기
-      const rewardsData = await apiClient.requestWithRetry('/api/auth/reward/list');
+    const token = user?.token || localStorage.getItem("authToken");
 
-      setUserStats({
-        points: userInfo.points || 0,
-        recycleCount: userInfo.recycleCount || 0,
-        reportCount: userInfo.reportCount || 0,
-        receivedLikes: userInfo.receivedLikes || 0
-      });
+    // ✅ 각 요청마다 headers로 토큰 직접 전달
+    const headers = { 'Authorization': `Bearer ${token}` };
 
-      setRewards(rewardsData || []);
-      
-      console.log('마이페이지: 사용자 데이터 로드 완료', userInfo);
-    } catch (error) {
-      console.error('사용자 데이터 조회 에러:', error);
-      setError('사용자 정보를 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    // 사용자 상세 정보 가져오기
+    const userInfo = await apiClient.requestWithRetry('/api/auth/user/info', { headers });
+
+    // 리워드 목록 가져오기
+    const rewardsData = await apiClient.requestWithRetry('/api/auth/reward/list', { headers });
+
+    setUserStats({
+      points: userInfo.points || 0,
+      recycleCount: userInfo.recycleCount || 0,
+      reportCount: userInfo.reportCount || 0,
+      receivedLikes: userInfo.receivedLikes || 0
+    });
+
+    setRewards(rewardsData || []);
+    console.log('마이페이지: 사용자 데이터 로드 완료', userInfo);
+  } catch (error) {
+    console.error('사용자 데이터 조회 에러:', error);
+    setError('사용자 정보를 불러오는 중 오류가 발생했습니다.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+  
+  // 예시: login 함수(혹은 로그인 버튼 클릭 후 실행되는 곳)
+const handleLogin = async (email, password) => {
+  const res = await axios.post("/api/auth/login", { email, password });
+  
+
+  if (res.data.token) {
+    console.log('로그인 성공:', res.data);
+    localStorage.setItem("authToken", res.data.token);
+    login(res.data);
+    setUser({ ...res.data, token: res.data.token });
+  } else {
+    alert("서버에서 토큰이 오지 않았습니다.");
+  }
+};
 
   const handleLogout = () => {
     if (window.confirm('로그아웃하시겠습니까?')) {
@@ -151,12 +290,7 @@ export default function MyPage() {
   const userLevel = calculateLevel(userStats.recycleCount);
 
   return (
-    <motion.div
-        className="mypage"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.5 }}
-      >
+    <div className="mypage">
       <div className="mypage-header">
         <h1>마이페이지</h1>
         <p>내 활동 기록과 통계를 확인해보세요</p>
@@ -211,7 +345,7 @@ export default function MyPage() {
                 <li key={index}>
                   🎁 <strong>{reward.item}</strong><br />
                   {reward.date} <br />
-                  {reward.point} 포인트 사용
+                  {reward.points} 포인트 사용
                 </li>
               ))}
             </ul>
@@ -243,26 +377,47 @@ export default function MyPage() {
         </div>
       </div>
 
-      <div className="mypage-badges">
-        <h3>획득 배지</h3>
-        <div className="badges">
-          {userStats.recycleCount >= 100 && (
-            <div>🏆<br />분리배출 마스터<br /><span>100회 달성</span></div>
-          )}
-          {userStats.reportCount >= 10 && (
-            <div>🌱<br />환경 지킴이<br /><span>10회 신고</span></div>
-          )}
-          {userStats.recycleCount >= 1 && (
-            <div>🪴<br />신입 환경지킴이<br /><span>첫 인증</span></div>
-          )}
-          {userStats.recycleCount >= 500 && (
-            <div>👑<br />플래티넘 멤버<br /><span>500회 달성</span></div>
-          )}
-          {userStats.recycleCount < 1 && userStats.reportCount < 10 && (
-            <div className="no-badges">아직 획득한 배지가 없습니다.<br /><span>활동을 시작해보세요!</span></div>
-          )}
+      <div className="analysis-summary-section">
+        <h3>📸 분석 결과 요약</h3>
+
+        <div className="analysis-carousel-wrapper">
+          <button className="slide-button left" onClick={scrollLeft}>←</button>
+
+          <div className="analysis-card-container" ref={carouselRef}>
+            {analysisSummary.map((item) => (
+              <div 
+                key={item.id} 
+                className="analysis-card" 
+                onClick={() => setSelectedItem(item)}
+              >
+                <div className="card-badge">{item.category}</div>
+                <div className="card-detail">
+                  <strong>{item.subcategory}</strong>
+                  <p>{item.method}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button className="slide-button right" onClick={scrollRight}>→</button>
         </div>
       </div>
+
+      {selectedItem && (
+        <div className="popup-overlay" onClick={() => setSelectedItem(null)}>
+          <div className="popup-content" onClick={e => e.stopPropagation()}>
+            <button className="popup-close" onClick={() => setSelectedItem(null)} aria-label="닫기">✖</button>
+            <h2>📋 분석 상세 결과</h2>
+            <p><strong>종류:</strong> {selectedItem.category}</p>
+            <p><strong>세부 분류:</strong> {selectedItem.subcategory}</p>
+            <p><strong>처리 방법:</strong> {selectedItem.method}</p>
+            <p><strong>재활용 마크:</strong> {selectedItem.recycleMark}</p>
+            <p><strong>설명:</strong> {selectedItem.description}</p>
+            <p><strong>AI 모델:</strong> {selectedItem.model}</p>
+            <p><strong>토큰 사용량:</strong> {selectedItem.tokensUsed} tokens</p>
+          </div>
+        </div>
+      )}
 
       <div className="mypage-footer-buttons">
         <button 
@@ -290,6 +445,6 @@ export default function MyPage() {
           🚪 로그아웃
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

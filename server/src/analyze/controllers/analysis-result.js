@@ -1,7 +1,9 @@
 const AnalysisResult = require('../models/AnalysisResult');
+const User = require('../../auth/models/User');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { type } = require('os');
 const cloudinary = require('cloudinary').v2;
 
 // 임시 이미지 업로드 설정 (Cloudinary 업로드 후 삭제됨)
@@ -36,8 +38,51 @@ const upload = multer({
 // 분석 결과 저장
 const saveAnalysisResult = async (req, res) => {
   try {
+    console.log("1. 시작", req.body);
+
     let analysisResult = req.body.analysisResult;
     const userId = req.user.id; // 인증된 사용자 ID
+    console.log("2. 사용자 ID:", userId);
+
+    if (typeof analysisResult === 'string') analysisResult = JSON.parse(analysisResult);
+    console.log("3. 분석 결과:", analysisResult);
+
+    // 오늘 날짜에 대한 분석 결과 저장 제한
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 오늘 날짜의 시작 시간  
+    const countToday = await AnalysisResult.countDocuments({
+      userId: userId,
+      uploadedAt: {
+        $gte: today
+      }
+    });
+    console.log("4. 오늘 분석 결과 개수:", countToday);
+
+    if (countToday >= 5) {
+      return res.status(429).json({
+        success: false,
+        message: '오늘은 최대 5개의 분석 결과만 저장할 수 있습니다.',
+        limit: 5
+      });
+    }
+
+    const sameTypeCount = await AnalysisResult.countDocuments({
+    userId,
+    'analysisResult.type': analysisResult.type,
+    uploadedAt: { $gte: today }
+  });
+    console.log("5. 같은 타입 분석 결과 개수:", sameTypeCount);
+
+    let points = 10 - (2 * sameTypeCount); // 같은 타입 분석 결과에 대해 포인트 차감
+    if (points < 1) points = 1; // 최소 포인트는 1점
+
+    console.log("6. 포인트 계산:", points);
+
+    await User.findByIdAndUpdate(userId, {
+      $inc: { points: points, recycleCount: 1 }
+    });
+    console.log("7. 사용자 포인트 업데이트 완료");
+
 
     if (!analysisResult) {
       return res.status(400).json({ 
@@ -134,10 +179,11 @@ const saveAnalysisResult = async (req, res) => {
       data: {
         id: newAnalysisResult._id,
         imageUrl: newAnalysisResult.imageUrl,
-        uploadedAt: newAnalysisResult.uploadedAt
-      }
-    });
-
+        uploadedAt: newAnalysisResult.uploadedAt,
+        points: points
+      } 
+    }); 
+    
   } catch (error) {
     console.error('분석 결과 저장 오류:', error);
     res.status(500).json({

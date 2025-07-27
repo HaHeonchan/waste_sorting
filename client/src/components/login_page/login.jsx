@@ -52,6 +52,9 @@ const Login = () => {
         console.log('로그인 성공:', result.user);
         login(result.user);
         alert('로그인 성공!');
+        if (result.user.token) {
+          localStorage.setItem('authToken', result.user.token);
+        }
         navigate('/');
       } else {
         console.log('로그인 실패:', result.error);
@@ -74,6 +77,9 @@ const Login = () => {
       const result = await loginWithGoogle();
       if (result.success) {
         console.log('구글 로그인 성공:', result.user);
+        if (result.user.token) {
+          localStorage.setItem('authToken', result.user.token);
+        }
         login(result.user);
         alert('구글 로그인 성공!');
         navigate('/');
