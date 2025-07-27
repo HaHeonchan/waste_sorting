@@ -430,6 +430,8 @@ async function analyzeImageDirectly(imagePath) {
         imageUrl = `data:image/jpeg;base64,${base64Image}`;
     }
     
+    console.log('🖼️ 재활용 마크가 없는 이미지 직접 분석 시작');
+    
     const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
@@ -444,11 +446,31 @@ async function analyzeImageDirectly(imagePath) {
                 ]
             }
         ],
-        max_tokens: 300
+        max_tokens: 500  // 토큰 수 증가
+    });
+
+    const analysis = parseGPTResponse(response.choices[0].message.content);
+    
+    // materialParts가 없거나 비어있는 경우 기본값 설정
+    if (!analysis.materialParts || analysis.materialParts.length === 0) {
+        console.log('⚠️ materialParts가 없어서 기본값 설정');
+        analysis.materialParts = [
+            {
+                part: "본체",
+                material: analysis.wasteType || "기타",
+                description: "이미지에서 확인된 주요 재질",
+                disposalMethod: analysis.disposalMethod || "일반쓰레기"
+            }
+        ];
+    }
+    
+    console.log('✅ 직접 분석 완료:', {
+        wasteType: analysis.wasteType,
+        materialPartsCount: analysis.materialParts?.length || 0
     });
 
     return {
-        analysis: parseGPTResponse(response.choices[0].message.content),
+        analysis: analysis,
         model: response.model,
         usage: response.usage,
         analysisType: "direct_image"

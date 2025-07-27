@@ -88,7 +88,7 @@ export default function Home() {
         <div className="upload-inner">
           <i className="upload-icon">📤</i>
           <h2 className="upload-title">사진을 업로드해주세요</h2>
-          <p className="upload-description">분리배출할 물건의 사진을 올려주시면 AI가 분석해드립니다</p>
+          <p className="upload-description">분리배출할 물건이나 분리배출 아이콘이 있는 사진을 올려주시면 AI가 분석해드립니다</p>
           <input
             className="upload-input"
             type="file"

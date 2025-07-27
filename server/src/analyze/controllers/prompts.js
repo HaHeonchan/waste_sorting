@@ -149,7 +149,31 @@ const DIRECT_IMAGE_ANALYSIS_PROMPT = `이미지를 직접 분석하여 쓰레기
 - 라벨: 제품 정보가 인쇄된 부분
 - 손잡이: 잡기 위한 부분
 - 스프레이 노즐: 분사하는 부분
-- 펌프: 압출하는 부분`;
+- 펌프: 압출하는 부분
+
+JSON 형식으로 응답:
+{
+  "wasteType": "무색페트|비닐류|캔류|종이|일반팩|유리|플라스틱|폴리에틸렌|복합",
+  "subType": "바이오|PET|HDPE|LDPE|PP|PS|OTHER|바이오PET|바이오HDPE|바이오LDPE|바이오PP|바이오PS|철|알미늄",
+  "recyclingMark": "재활용 마크 또는 '해당없음'",
+  "description": "이미지 분석을 바탕으로 한 쓰레기의 분리배출 방법",
+  "disposalMethod": "재활용 수거함에 버리세요",
+  "confidence": 0.85,
+  "materialParts": [
+    {
+      "part": "본체",
+      "material": "플라스틱",
+      "description": "용기의 주요 부분, 투명하고 단단한 재질",
+      "disposalMethod": "재활용 수거함에 버리세요"
+    },
+    {
+      "part": "뚜껑",
+      "material": "플라스틱",
+      "description": "용기를 닫는 부분, 유연하고 밀폐성 좋음",
+      "disposalMethod": "재활용 수거함에 버리세요"
+    }
+  ]
+}`;
 
 // 객체 기반 분석 프롬프트
 const OBJECT_BASED_ANALYSIS_PROMPT = `객체 탐지 결과를 바탕으로 쓰레기 분류:
