@@ -5,7 +5,19 @@
 
 const vision = require('@google-cloud/vision');
 const fs = require('fs');
-const fetch = require('node-fetch');
+
+// Node.js 18+ 내장 fetch 사용, 없으면 node-fetch 사용
+let fetch;
+if (typeof globalThis.fetch === 'function') {
+    fetch = globalThis.fetch;
+} else {
+    try {
+        fetch = require('node-fetch');
+    } catch (error) {
+        console.error('❌ fetch 함수를 사용할 수 없습니다. node-fetch를 설치하거나 Node.js 18+를 사용하세요.');
+        fetch = null;
+    }
+}
 
 // ============================================================================
 // Google Vision API 클라이언트 초기화
@@ -85,6 +97,10 @@ async function detectLogos(imagePath) {
         let imageBuffer;
         if (imagePath.includes('cloudinary.com')) {
             // Cloudinary URL인 경우
+            if (!fetch) {
+                console.error('❌ fetch 함수를 사용할 수 없어 Cloudinary URL을 처리할 수 없습니다.');
+                return [];
+            }
             const response = await fetch(imagePath);
             imageBuffer = Buffer.from(await response.arrayBuffer());
         } else {
@@ -122,6 +138,10 @@ async function detectText(imagePath) {
         let imageBuffer;
         if (imagePath.includes('cloudinary.com')) {
             // Cloudinary URL인 경우
+            if (!fetch) {
+                console.error('❌ fetch 함수를 사용할 수 없어 Cloudinary URL을 처리할 수 없습니다.');
+                return { detections: [], usage: null };
+            }
             const response = await fetch(imagePath);
             imageBuffer = Buffer.from(await response.arrayBuffer());
         } else {
