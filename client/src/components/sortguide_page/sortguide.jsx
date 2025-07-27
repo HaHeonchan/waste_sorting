@@ -274,6 +274,7 @@ export default function SortGuide() {
                   {result.detail || '정보 없음'}
                 </span>
               </div>
+              {/* 재활용 마크와 설명은 잠시 숨김
               <div className="result-item">
                 <span className="label">♻️ 재활용 마크:</span>
                 <span className="value">
@@ -286,12 +287,15 @@ export default function SortGuide() {
                   {result.description || '정보 없음'}
                 </span>
               </div>
+              */}
+              {/* 처리 방법도 잠시 숨김
               <div className="result-item">
                 <span className="label">🧺 처리 방법:</span>
                 <span className="value">
                   {result.method || '정보 없음'}
                 </span>
               </div>
+              */}
               
               {/* 부위별 재질 정보 표시 */}
               {result.materialParts && result.materialParts.length > 0 && (

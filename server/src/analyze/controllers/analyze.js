@@ -461,8 +461,8 @@ async function applyMatchingSystem(gptAnalysis, visionAnalysis) {
     
     const { wasteType, subType, description } = gptAnalysis;
     
-    // 1. 사전 정의된 가이드에서 매칭 시도
-    const matchedMethod = findMatchingDisposalMethod(wasteType, subType, description);
+    // 1. 사전 정의된 가이드에서 매칭 시도 (객체/라벨 분석 결과 포함)
+    const matchedMethod = await findMatchingDisposalMethod(wasteType, subType, description, visionAnalysis);
     
     if (matchedMethod) {
         console.log('✅ 매칭 성공:', matchedMethod.matchType);
