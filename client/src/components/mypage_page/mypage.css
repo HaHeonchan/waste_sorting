@@ -164,6 +164,9 @@
 .btn.orange {
   background: linear-gradient(135deg, #ff6b35, #f7931e);
 }
+.btn.yellow {
+  background-color: #ffc107;
+}
 
 /* 로딩 컨테이너 */
 .loading-container {
@@ -602,4 +605,12 @@
   background: #444;
   border-color: #666;
   color: #eee;
+}
+
+.btn.green,
+.btn.blue,
+.btn.orange,
+.btn.yellow,
+.btn.red {
+  color: white !important;
 }

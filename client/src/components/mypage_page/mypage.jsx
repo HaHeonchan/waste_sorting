@@ -1,4 +1,4 @@
-import React, { useState, useEffect,useRef } from 'react';
+import React, { useState, useEffect,useRef, use } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './mypage.css';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,110 +18,24 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
+  const [analysisResults, setAnalysisResults] = useState([]);
+  
+  // 예시 분석 결과 데이터 (실제 API 호출로 대체 필요)
+  // 이 부분은 실제 API 호출로 대체해야 합니다.
 
-  // 예시 분석 결과 데이터
- const [analysisSummary, setAnalysisSummary] = useState([
-  {
-    id: 1,
-    category: "플라스틱",
-    subcategory: "페트병",
-    method: "뚜껑과 라벨 제거 후 배출",
-    recycleMark: "♻️",
-    description: "투명 페트병은 고품질 플라스틱으로 재활용됩니다.",
-    model: "gpt-4-vision",
-    tokensUsed: 128,
-  },
-  {
-    id: 2,
-    category: "종이",
-    subcategory: "신문지",
-    method: "이물질 제거 후 묶어서 배출",
-    recycleMark: "♻️",
-    description: "신문지는 백색지와 함께 재활용됩니다.",
-    model: "gpt-4-vision",
-    tokensUsed: 102,
-  },
-  {
-    id: 3,
-    category: "금속",
-    subcategory: "알루미늄 캔",
-    method: "내용물 비우고 씻어서 배출",
-    recycleMark: "♻️",
-    description: "알루미늄은 에너지 효율이 높은 재활용 금속입니다.",
-    model: "gpt-4-vision",
-    tokensUsed: 119,
-  },
-  {
-    id: 4,
-    category: "유리",
-    subcategory: "음료수 병",
-    method: "내용물 비우고 물로 헹군 후 배출",
-    recycleMark: "♻️",
-    description: "색상별로 분리하면 재활용 효율이 높아집니다.",
-    model: "gpt-4-vision",
-    tokensUsed: 110,
-  },
-  {
-    id: 5,
-    category: "플라스틱",
-    subcategory: "비닐봉투",
-    method: "이물질 제거 후 배출",
-    recycleMark: "♻️",
-    description: "깨끗한 비닐만 재활용 가능합니다.",
-    model: "gpt-4-vision",
-    tokensUsed: 87,
-  },
-  {
-    id: 6,
-    category: "종이",
-    subcategory: "종이팩 (우유팩)",
-    method: "물로 헹구고 펼쳐서 건조 후 배출",
-    recycleMark: "♻️",
-    description: "종이팩은 일반 종이와 분리하여 배출해야 합니다.",
-    model: "gpt-4-vision",
-    tokensUsed: 104,
-  },
-  {
-    id: 7,
-    category: "플라스틱",
-    subcategory: "세제 용기",
-    method: "뚜껑 분리 후 깨끗이 헹궈 배출",
-    recycleMark: "♻️",
-    description: "PP, PE 재질로 분리 배출 시 효과적입니다.",
-    model: "gpt-4-vision",
-    tokensUsed: 126,
-  },
-  {
-    id: 8,
-    category: "스티로폼",
-    subcategory: "음식 포장용기",
-    method: "내용물 제거 및 깨끗이 씻어서 배출",
-    recycleMark: "♻️",
-    description: "오염된 스티로폼은 일반쓰레기로 분류됩니다.",
-    model: "gpt-4-vision",
-    tokensUsed: 91,
-  },
-  {
-    id: 9,
-    category: "금속",
-    subcategory: "철캔",
-    method: "내용물 비우고 압착 후 배출",
-    recycleMark: "♻️",
-    description: "자석을 이용한 분리 수거가 가능해요.",
-    model: "gpt-4-vision",
-    tokensUsed: 113,
-  },
-  {
-    id: 10,
-    category: "의류",
-    subcategory: "면 티셔츠",
-    method: "깨끗한 상태로 의류 수거함에 배출",
-    recycleMark: "♻️",
-    description: "의류는 재사용 또는 섬유 재활용됩니다.",
-    model: "gpt-4-vision",
-    tokensUsed: 98,
-  },
-]);
+ useEffect(() => {
+    apiClient.getUserAnalysisResults(1, 10)
+      .then(res => {
+        // 응답 구조에 따라 results 또는 data.results로 접근
+        const data = res.results || res.data?.results || [];
+        setAnalysisResults(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError("분석 결과 불러오기 실패: " + err.message);
+        setLoading(false);
+      });
+  }, []);
 
   // 캐러셀 스크롤 기능
   const carouselRef = useRef(null);
@@ -384,16 +298,22 @@ const handleLogin = async (email, password) => {
           <button className="slide-button left" onClick={scrollLeft}>←</button>
 
           <div className="analysis-card-container" ref={carouselRef}>
-            {analysisSummary.map((item) => (
-              <div 
-                key={item.id} 
-                className="analysis-card" 
-                onClick={() => setSelectedItem(item)}
+            {analysisResults.map((result, idx) => (
+              <div
+                key={result.id}
+                className="analysis-card"
+                onClick={() => setSelectedItem(result)}
               >
-                <div className="card-badge">{item.category}</div>
+              <div>
+                <span><strong>분석일: {new Date(result.uploadedAt || result.createdAt).toLocaleString()}</strong></span>
+                </div>
+              <div>
+                <span>상세: {result.analysisResult?.detail || result.detail}</span>
+              </div>
+                <div className="card-badge">{result.category}</div>
                 <div className="card-detail">
-                  <strong>{item.subcategory}</strong>
-                  <p>{item.method}</p>
+                  <strong>{result.subcategory}</strong>
+                  <p>{result.method}</p>
                 </div>
               </div>
             ))}
@@ -404,20 +324,21 @@ const handleLogin = async (email, password) => {
       </div>
 
       {selectedItem && (
-        <div className="popup-overlay" onClick={() => setSelectedItem(null)}>
-          <div className="popup-content" onClick={e => e.stopPropagation()}>
-            <button className="popup-close" onClick={() => setSelectedItem(null)} aria-label="닫기">✖</button>
-            <h2>📋 분석 상세 결과</h2>
-            <p><strong>종류:</strong> {selectedItem.category}</p>
-            <p><strong>세부 분류:</strong> {selectedItem.subcategory}</p>
-            <p><strong>처리 방법:</strong> {selectedItem.method}</p>
-            <p><strong>재활용 마크:</strong> {selectedItem.recycleMark}</p>
-            <p><strong>설명:</strong> {selectedItem.description}</p>
-            <p><strong>AI 모델:</strong> {selectedItem.model}</p>
-            <p><strong>토큰 사용량:</strong> {selectedItem.tokensUsed} tokens</p>
+          <div className="popup-overlay" onClick={() => setSelectedItem(null)}>
+            <div className="popup-content" onClick={e => e.stopPropagation()}>
+              <button className="popup-close" onClick={() => setSelectedItem(null)} aria-label="닫기">✖</button>
+              <h2>📋 분석 상세 결과</h2>
+
+              {/* ✅ API에서 가져온 필드만 사용 */}
+              <p><strong>분석일:</strong> {new Date(selectedItem.uploadedAt || selectedItem.createdAt).toLocaleString()}</p>
+              <p><strong>종류:</strong> {selectedItem.analysisResult?.type}</p>
+              <p><strong>세부 분류:</strong> {selectedItem.analysisResult?.detail}</p>
+              <p><strong>처리 방법:</strong> {selectedItem.analysisResult?.method}</p>
+              <p><strong>재활용 마크:</strong> {selectedItem.analysisResult?.recycleMark}</p>
+              <p><strong>설명:</strong> {selectedItem.analysisResult?.description}</p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       <div className="mypage-footer-buttons">
         <button 
@@ -437,6 +358,12 @@ const handleLogin = async (email, password) => {
           onClick={() => handleNavigation('/sortguide')}
         >
           📸 사진 업로드
+        </button>
+        <button 
+          className="btn yellow" 
+          onClick={() => handleNavigation('/analysis-results')}
+        >
+          📋 분석 결과 목록
         </button>
         <button 
           className="btn red" 

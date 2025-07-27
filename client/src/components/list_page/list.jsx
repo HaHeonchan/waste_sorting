@@ -1,8 +1,10 @@
 
 import React, { useEffect, useState } from "react";
 import apiClient from "../../utils/apiClient";
+import { useNavigate } from "react-router-dom";
 
 export default function List() {
+  const navigate = useNavigate();
   const [analysisResults, setAnalysisResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,6 +29,24 @@ export default function List() {
   return (
     <div className="analysis-list-page">
       <h2>최근 분석 결과</h2>
+
+      {/* ✅ 마이페이지로 이동 버튼 */}
+      <button 
+        className="go-mypage-btn" 
+        onClick={() => navigate("/mypage")}
+        style={{
+          padding: "16px 24px",
+          backgroundColor: "#4CAF50",
+          color: "#fff",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
+          marginBottom: "16px"
+        }}
+      >
+        마이페이지로 이동
+      </button>
+
       {analysisResults.length === 0 ? (
         <div>아직 분석 결과가 없습니다.</div>
       ) : (
