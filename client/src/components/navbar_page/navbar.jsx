@@ -113,20 +113,20 @@ const Navbar = () => {
         <Link to="/community" className="nav-link" onClick={closeMenu}>🌱 커뮤니티</Link>
         <Link to="/mypage" className="nav-link" onClick={closeMenu}>👤 마이페이지</Link>
         {/* 우측 로그인/사용자 정보 */}
-      <div className="navbar-right">
-        {isAuthenticated ? (
-          <div className="user-info">
-            <span className="user-name" title={user?.email || ''}>
-              👤 {getUserDisplayName()}
-            </span>
-            <button onClick={handleLogout} className="logout-btn desktop-logout">
-              🚪 로그아웃2
-            </button>
-          </div>
-        ) : (
-          <Link to="/login" className="login-btn desktop-login">➡ 로그인</Link>
-        )}
-      </div>
+        <div className="navbar-right">
+          {isAuthenticated ? (
+            <div className="user-info">
+              <span className="user-name" title={user?.email || ''}>
+                👤 {getUserDisplayName()}
+              </span>
+              <button onClick={handleLogout} className="logout-btn desktop-logout">
+                🚪 로그아웃
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="login-btn desktop-login">➡ 로그인</Link>
+          )}
+        </div>
         {/* {isAuthenticated ? (
           <button onClick={handleLogout} className="logout-btn mobile-logout">
             🚪 로그아웃1
