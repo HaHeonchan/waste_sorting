@@ -328,8 +328,6 @@ const handleLogin = async (email, password) => {
             <div className="popup-content" onClick={e => e.stopPropagation()}>
               <button className="popup-close" onClick={() => setSelectedItem(null)} aria-label="닫기">✖</button>
               <h2>📋 분석 상세 결과</h2>
-
-              {/* ✅ API에서 가져온 필드만 사용 */}
               <p><strong>분석일:</strong> {new Date(selectedItem.uploadedAt || selectedItem.createdAt).toLocaleString()}</p>
               <p><strong>종류:</strong> {selectedItem.analysisResult?.type}</p>
               <p><strong>세부 분류:</strong> {selectedItem.analysisResult?.detail}</p>
