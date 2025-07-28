@@ -112,17 +112,7 @@ const Navbar = () => {
         {/* <Link to="/complain" className="nav-link" onClick={closeMenu}>⚠️ 민원 제보</Link> */}
         <Link to="/community" className="nav-link" onClick={closeMenu}>🌱 커뮤니티</Link>
         <Link to="/mypage" className="nav-link" onClick={closeMenu}>👤 마이페이지</Link>
-        
-        {isAuthenticated ? (
-          <button onClick={handleLogout} className="logout-btn mobile-logout">
-            🚪 로그아웃
-          </button>
-        ) : (
-          <Link to="/login" className="login-btn mobile-login" onClick={closeMenu}>➡ 로그인</Link>
-        )}
-      </nav>
-
-      {/* 우측 로그인/사용자 정보 */}
+        {/* 우측 로그인/사용자 정보 */}
       <div className="navbar-right">
         {isAuthenticated ? (
           <div className="user-info">
@@ -130,13 +120,23 @@ const Navbar = () => {
               👤 {getUserDisplayName()}
             </span>
             <button onClick={handleLogout} className="logout-btn desktop-logout">
-              🚪 로그아웃
+              🚪 로그아웃2
             </button>
           </div>
         ) : (
           <Link to="/login" className="login-btn desktop-login">➡ 로그인</Link>
         )}
       </div>
+        {/* {isAuthenticated ? (
+          <button onClick={handleLogout} className="logout-btn mobile-logout">
+            🚪 로그아웃1
+          </button>
+        ) : (
+          <Link to="/login" className="login-btn mobile-login" onClick={closeMenu}>➡ 로그인</Link>
+        )} */}
+      </nav>
+
+      
     </header>
   );
 };

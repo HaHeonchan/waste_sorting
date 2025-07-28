@@ -159,6 +159,9 @@
 }
 
 
+
+
+
 /* ✅ 미디어 쿼리: 모바일 대응 (1200px 이하) */
 @media screen and (max-width: 1200px) {
   .navbar {
@@ -167,6 +170,10 @@
     height: auto;
     padding: 1rem;
   }
+
+
+
+
 
   .navbar-header {
     width: 100%;
@@ -224,8 +231,15 @@
     display: none;
   }
 
+  .desktop-logout {
+    display: none;
+  }
+
+
+
+
   .mobile-login {
-    display: block;
+    display: none;
     background: linear-gradient(to right, #22c55e, #16a34a);
     color: white;
     font-weight: 600;
@@ -242,12 +256,8 @@
     background: linear-gradient(to right, #16a34a, #15803d);
   }
 
-  .desktop-logout {
-    display: none;
-  }
-
   .mobile-logout {
-    display: block;
+    display: none;
   }
 }
 
