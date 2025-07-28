@@ -13,13 +13,7 @@ export default function List() {
   const [data, setData] = useState([]);
   const sliderRef = useRef();
   const [selectedImage, setSelectedImage] = useState(null);
-  const scrollLeft = () => {
-    sliderRef.current.scrollLeft -= 240;
-  };
-
-  const scrollRight = () => {
-    sliderRef.current.scrollLeft += 240;
-  };
+  
 
   useEffect(() => {
     apiClient.getUserAnalysisResults(1, 10)
@@ -110,16 +104,16 @@ export default function List() {
         <div
           className="analysis-card"
           key={idx}
-          onClick={() => item.imageURL && setSelectedImage(item.imageURL)}
+          onClick={() => item.imageUrl && setSelectedImage(item.imageUrl)}
         >
           <div className="card-content">
-            {item.imageURL && (
-              <img src={item.imageURL} alt={item.detail} className="card-image" />
+            {item.imageUrl && (
+              <img src={item.imageUrl} alt={item.analysisResult?.detail || item.detail} className="card-image" />
             )}
-            <div className="card-title">{item.detail}</div>
-            <div className="card-subtext">{item.category}</div>
-            <div className="card-desc">💡 {item.description}</div>
-            <div className="card-date">{formatDate(item.date)}</div>
+            <div className="card-title">{item.analysisResult?.detail || item.detail}</div>
+            <div className="card-subtext">{item.analysisResult?.type || item.type}</div>
+            <div className="card-desc">💡 {item.analysisResult?.detail || item.detail}</div>
+            <div className="card-date">{formatDate(item.uploadedAt)}</div>
           </div>
         </div>
       ))}
