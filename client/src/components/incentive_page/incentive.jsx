@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./incentive.css";
 import { motion } from "framer-motion";
+import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import apiClient from "../../utils/apiClient";
 import axios from "axios";
 
 function Incentive() {
@@ -8,29 +11,40 @@ function Incentive() {
   const [earnedList, setEarnedList] = useState([]);
   const [showStorePopup, setShowStorePopup] = useState(false);
   const [showBotPopup, setShowBotPopup] = useState(false);
-
   const userId = localStorage.getItem("userId");
   const earnedListRef = useRef(null); // ref 선언
-
+  const { user } = useAuth();
+  const [userStats, setUserStats] = useState({
+      points: 0,
+      recycleCount: 0,
+      reportCount: 0,
+      receivedLikes: 0
+    });
+  const navigate = useNavigate();
   const scrollLeft = () => {
     earnedListRef.current.scrollBy({ left: -300, behavior: "smooth" });
   };
   const scrollRight = () => {
     earnedListRef.current.scrollBy({ left: 300, behavior: "smooth" });
   };
-
+  const [analysisResults, setAnalysisResults] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setSummary({ total_point: 1800, this_month: 600 });
-    setEarnedList([
-      { activity_type: "무색페트", earned_point: 300, created_at: new Date().toISOString() },
-      { activity_type: "플라스틱", earned_point: 250, created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
-      { activity_type: "알루미늄", earned_point: 600, created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString() },
-      { activity_type: "종이팩", earned_point: 200, created_at: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString() },
-      { activity_type: "캔류", earned_point: 150, created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
-      { activity_type: "유리병", earned_point: 300, created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() },
-    ]);
-  }, []);
+    if (!userId) return;
+
+    // ✅ incentives API 호출
+    axios.get(`/api/incentives/summary/${userId}`)
+      .then((res) => {
+        setSummary(res.data);
+      });
+
+    axios.get(`/api/incentives/${userId}`).then((res) => {
+      const onlyEarned = res.data.filter((item) => item.earned_point > 0);
+      setEarnedList(onlyEarned);
+});
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
@@ -40,6 +54,20 @@ function Incentive() {
       setEarnedList(onlyEarned);
     });
   }, [userId]);
+
+  useEffect(() => {
+    apiClient.getUserAnalysisResults(1, 10)
+      .then(res => {
+        // 응답 구조에 따라 results 또는 data.results로 접근
+        const data = res.results || res.data?.results || [];
+        setAnalysisResults(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError("분석 결과 불러오기 실패: " + err.message);
+        setLoading(false);
+      });
+  }, []);
 
   const toggleStorePopup = () => setShowStorePopup(!showStorePopup);
   const toggleBotPopup = () => setShowBotPopup(!showBotPopup);
@@ -57,8 +85,8 @@ function Incentive() {
       <div className="point-box">
         <div className="point-text">
           <h3>현재 보유 포인트</h3>
-          <p className="point-amount">{summary.total_point} P</p>
-          <p className="point-subtext">이번 달 적립 포인트: {summary.this_month} P</p>
+          {/* ✅ AuthContext의 user.points 우선 사용 */}
+          <p className="point-amount">{user?.points ?? 0} P</p>
         </div>
         <div className="point-icon">
           <i className="fas fa-coins"></i>
@@ -66,42 +94,36 @@ function Incentive() {
       </div>
 
       <div className="recent-earned">
-        <h2>최근 자동 적립 내역</h2>
-        {earnedList.length === 0 ? (
-          <p className="no-history">아직 적립된 내역이 없습니다.</p>
-        ) : (
-          <div className="earned-wrapper">
-            <button className="arrow left" onClick={() => {
-              document.querySelector(".earned-list").scrollBy({ left: -300, behavior: "smooth" });
-            }}>←</button>
+  <h2>최근 자동 적립 내역</h2>
 
-            <div className="earned-list">
-              {earnedList.map((item, i) => (
-                <div
-                  className="earned-card"
-                  data-point={
-                    item.earned_point >= 400
-                      ? "high"
-                      : item.earned_point >= 200
-                      ? "medium"
-                      : "low"
-                  }
-                  key={i}
-                >
-                  <strong>{item.activity_type}</strong>
-                  <span className="earned-point">+{item.earned_point}P</span>
-                  <span className="earned-date">{new Date(item.created_at).toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
+  {loading ? (
+    <p className="no-history">⏳ 데이터를 불러오는 중...</p>
+  ) : error ? (
+    <p className="no-history">{error}</p>
+  ) : analysisResults.length === 0 ? (
+    <p className="no-history">아직 적립된 내역이 없습니다.</p>
+  ) : (
+    <div className="earned-wrapper">
+      <button className="arrow left" onClick={scrollLeft}>←</button>
 
-            <button className="arrow right" onClick={() => {
-              document.querySelector(".earned-list").scrollBy({ left: 300, behavior: "smooth" });
-            }}>→</button>
+      <div className="earned-list" ref={earnedListRef}>
+        {analysisResults.map((result, i) => (
+          <div className="earned-card" key={result._id || i}>
+            <strong>{result.analysisResult?.type || "알 수 없음"}</strong>
+            <span className="earned-point">
+              +{result.analysisResult?.earned_point || 10}P
+            </span>
+            <span className="earned-date">
+              {new Date(result.uploadedAt || result.createdAt).toLocaleString()}
+            </span>
           </div>
-        )}
+        ))}
       </div>
 
+      <button className="arrow right" onClick={scrollRight}>→</button>
+    </div>
+  )}
+</div>
 
       <div className="link-buttons">
         <button onClick={toggleStorePopup}>자원순환 이응 가게 소개</button>

@@ -73,7 +73,7 @@ const saveAnalysisResult = async (req, res) => {
   });
     console.log("5. 같은 타입 분석 결과 개수:", sameTypeCount);
 
-    let points = 10 - (2 * sameTypeCount); // 같은 타입 분석 결과에 대해 포인트 차감
+    let points = 10; // 같은 타입 분석 결과에 대해 포인트 차감
     if (points < 1) points = 1; // 최소 포인트는 1점
 
     console.log("6. 포인트 계산:", points);
