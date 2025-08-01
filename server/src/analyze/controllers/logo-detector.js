@@ -121,67 +121,12 @@ async function getImageBuffer(imagePath) {
  * @returns {boolean} 건너뛸지 여부
  */
 function shouldSkipText(text) {
-    // 너무 긴 텍스트 (100자 이상으로 완화)
+    // 너무 긴 텍스트만 제외 (100자 이상)
     if (text.length > 100) {
-        console.log(`   📏 너무 긴 텍스트 건너뜀: ${text.length}자`);
         return true;
     }
     
-    // 영어 문장 패턴 (대문자로 시작하고 마침표로 끝나는 경우) - 완화
-    if (/^[A-Z][^.!?]*[.!?]$/.test(text)) {
-        const hasRecyclingKeyword = RECYCLING_MARK_KEYWORDS.some(keyword => 
-            text.toLowerCase().includes(keyword.toLowerCase())
-        );
-        if (!hasRecyclingKeyword) {
-            console.log(`   📝 영어 문장 패턴 건너뜀: "${text}"`);
-            return true;
-        }
-    }
-    
-    // 영어 단어만 있는 경우 (한글이 하나도 없는 경우) - 재활용 마크는 예외
-    if (!/[가-힣]/.test(text) && /^[a-zA-Z\s]+$/.test(text)) {
-        const hasRecyclingMark = RECYCLING_MARK_KEYWORDS.some(keyword => 
-            text.toLowerCase().includes(keyword.toLowerCase())
-        );
-        if (!hasRecyclingMark) {
-            console.log(`   🔤 영어 단어만 있는 경우 건너뜀: "${text}"`);
-            return true;
-        }
-    }
-    
-    // 숫자만 있는 경우 (길이가 1-2자리인 경우만)
-    if (/^\d{1,2}$/.test(text)) {
-        console.log(`   🔢 짧은 숫자만 있는 경우 건너뜀: "${text}"`);
-        return true;
-    }
-    
-    // 특수문자만 있는 경우 (길이가 1-2자리인 경우만)
-    if (/^[^\w가-힣]{1,2}$/.test(text)) {
-        console.log(`   ⚠️ 짧은 특수문자만 있는 경우 건너뜀: "${text}"`);
-        return true;
-    }
-    
-    // 재활용 관련 키워드가 포함된 경우는 무조건 포함
-    const hasRecyclingKeyword = RECYCLING_MARK_KEYWORDS.some(keyword => 
-        text.toLowerCase().includes(keyword.toLowerCase())
-    );
-    if (hasRecyclingKeyword) {
-        console.log(`   ♻️ 재활용 키워드 포함으로 분석 대상: "${text}"`);
-        return false;
-    }
-    
-    // 파츠:재질 패턴이 포함된 경우는 무조건 포함
-    if (text.includes(':') || text.includes('：')) {
-        console.log(`   📋 파츠:재질 패턴 포함으로 분석 대상: "${text}"`);
-        return false;
-    }
-    
-    // 줄바꿈이 포함된 경우 (파츠\n재질 패턴)는 무조건 포함
-    if (text.includes('\n')) {
-        console.log(`   📄 줄바꿈 포함으로 분석 대상: "${text}"`);
-        return false;
-    }
-    
+    // 모든 텍스트를 포함 (특수문자, 숫자, 기호 등 모두 포함)
     return false;
 }
 
@@ -778,12 +723,13 @@ async function performUnifiedVisionAnalysis(imagePath) {
             }
         } : { detections: [], usage: null };
         
-        // 텍스트에서 재활용 마크 추출
+        // 텍스트에서 재활용 마크 추출 (모든 텍스트 포함)
         const recyclingMarks = [];
         if (textAnalysis.detections && textAnalysis.detections.length > 0) {
             textAnalysis.detections.forEach(detection => {
                 const text = detection.description;
                 
+                // 모든 텍스트를 포함 (특수문자, 숫자, 기호 등 모두)
                 if (shouldSkipText(text)) {
                     return;
                 }
@@ -793,7 +739,6 @@ async function performUnifiedVisionAnalysis(imagePath) {
                     const regex = new RegExp(`\\b${keyword}\\b`, 'i');
                     if (regex.test(text)) {
                         recyclingMarks.push(keyword);
-                        console.log(`   ✅ 재활용 마크 발견: "${keyword}" in "${text}"`);
                     }
                 });
             });
@@ -804,6 +749,28 @@ async function performUnifiedVisionAnalysis(imagePath) {
         console.log(`   🏷️ 라벨: ${labels.length}개`);
         console.log(`   📝 텍스트: ${textAnalysis.detections.length}개`);
         console.log(`   ♻️ 재활용 마크: ${recyclingMarks.length}개`);
+        
+        // 상세 분석 결과 로그
+        if (objects.length > 0) {
+            console.log('   🎯 객체 분석 결과:');
+            objects.slice(0, 5).forEach((obj, index) => {
+                console.log(`      ${index + 1}. ${obj.name} (${Math.round(obj.score * 100)}%)`);
+            });
+        }
+        
+        if (labels.length > 0) {
+            console.log('   🏷️ 라벨 분석 결과:');
+            labels.slice(0, 5).forEach((label, index) => {
+                console.log(`      ${index + 1}. ${label.description} (${Math.round(label.score * 100)}%)`);
+            });
+        }
+        
+        if (textAnalysis.detections.length > 0) {
+            console.log('   📝 텍스트 분석 결과:');
+            textAnalysis.detections.slice(0, 5).forEach((text, index) => {
+                console.log(`      ${index + 1}. "${text.description}"`);
+            });
+        }
         
         return {
             objects,
@@ -1011,6 +978,7 @@ module.exports = {
     detectLogos,
     detectText,
     performComprehensiveVisionAnalysis,
+    performUnifiedVisionAnalysis,
     analyzeRecyclingMarks,
     analyzeRecyclingMarksWithObjectsAndLabels,
     analyzeImageWithLogoDetection,

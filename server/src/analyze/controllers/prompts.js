@@ -38,49 +38,50 @@ const TEXT_BASED_ANALYSIS_PROMPT = `다음은 Google Vision API로 분석된 텍
 }`;
 
 // ============================================================================
-// 통합 분석 프롬프트 (텍스트 + 객체 + 라벨)
+// 통합 분석 프롬프트 (Vision API + GPT)
 // ============================================================================
 
-const COMPREHENSIVE_ANALYSIS_PROMPT = `다음은 Google Vision API로 통합 분석된 결과입니다:
+const UNIFIED_ANALYSIS_PROMPT = `다음은 Google Vision API로 분석된 결과입니다:
 
-**텍스트 분석 결과:**
-{textAnalysisResults}
+**탐지된 객체들:**
+{objects}
 
-**객체 인식 결과:**
-{objectAnalysisResults}
+**탐지된 라벨들:**
+{labels}
 
-**라벨 인식 결과:**
-{labelAnalysisResults}
+**탐지된 텍스트들:**
+{texts}
 
-**로고 인식 결과:**
-{logoAnalysisResults}
+**재활용 마크/아이콘:**
+{recyclingMarks}
 
-위 모든 분석 결과를 종합하여 가장 정확한 쓰레기 분류를 수행해주세요.
+위 정보를 종합하여 사용자가 찍은 쓰레기가 무엇인지 분석하고, 적절한 분리수거 방법을 제시해주세요.
 
-**분석 우선순위:**
-1. 텍스트에서 발견된 재활용 마크가 가장 중요
-2. 객체 인식으로 확인된 물체의 재질 정보
-3. 라벨 인식으로 확인된 분류 정보
-4. 로고 인식으로 확인된 브랜드 정보
+**분석 기준:**
+1. 객체 인식 결과로 물체의 기본 형태와 용도 파악
+2. 라벨 인식 결과로 물체의 카테고리와 특성 파악
+3. 텍스트 분석으로 재활용 마크나 아이콘 확인
+4. 재활용 마크가 있으면 해당 마크를 우선적으로 고려
+5. 한국의 실제 분리수거 기준에 맞춰 분류
 
 **응답 형식 (JSON):**
 {
-  "wasteType": "주요 쓰레기 타입",
-  "subType": "세부 분류",
-  "recyclingMark": "재활용 마크 정보",
-  "description": "상세 설명 (모든 분석 결과를 종합한 설명)",
-  "disposalMethod": "분리수거 방법",
-  "confidence": 0.95,
+  "wasteType": "주요 쓰레기 타입 (예: 플라스틱, 종이, 유리, 캔류, 기타)",
+  "subType": "세부 분류 (예: PET, HDPE, PP, 알루미늄, 스테인리스)",
+  "recyclingMark": "재활용 마크 정보 (예: PET, HDPE, PP, 기타)",
+  "description": "상세 설명 (객체, 라벨, 텍스트 정보를 종합한 설명)",
+  "disposalMethod": "분리수거 방법 (예: 재활용품, 일반쓰레기, 특수폐기물)",
+  "confidence": 0.9,
   "analysisDetails": {
-    "textAnalysis": "텍스트 분석에서 발견된 정보",
-    "objectAnalysis": "객체 인식에서 발견된 정보",
-    "labelAnalysis": "라벨 인식에서 발견된 정보",
-    "logoAnalysis": "로고 인식에서 발견된 정보"
+    "detectedObjects": "탐지된 주요 객체들",
+    "detectedLabels": "탐지된 주요 라벨들",
+    "detectedTexts": "탐지된 주요 텍스트들",
+    "recyclingMarks": "탐지된 재활용 마크들"
   },
   "materialParts": [
     {
-      "part": "부분명",
-      "material": "재질",
+      "part": "부분명 (예: 본체, 뚜껑, 라벨)",
+      "material": "재질 (예: PET, PP, 알루미늄)",
       "description": "설명",
       "disposalMethod": "해당 부분의 분리수거 방법"
     }
@@ -201,13 +202,103 @@ const LABEL_BASED_ANALYSIS_PROMPT = `다음은 Google Vision API로 탐지된 �
 
 
 // ============================================================================
+// 2단계 분석 프롬프트들
+// ============================================================================
+
+/**
+ * 1단계: 객체/라벨 인식으로 기본 타입 결정
+ */
+const BASIC_TYPE_ANALYSIS_PROMPT = `다음은 Google Vision API로 탐지된 객체와 라벨 정보입니다:
+
+**탐지된 객체들:**
+{objects}
+
+**탐지된 라벨들:**
+{labels}
+
+위 정보를 바탕으로 쓰레기의 기본 타입과 분리수거 방법을 결정해주세요.
+
+**분석 기준:**
+1. 객체 인식 결과로 물체의 기본 형태와 용도 파악
+2. 라벨 인식 결과로 물체의 카테고리와 특성 파악
+3. 한국의 실제 분리수거 기준에 맞춰 분류
+4. 재활용 가능한 물체인지 판단
+5. **중요**: "Drink can", "Aluminum can", "Steel and tin cans" 등의 라벨이 있으면 "캔류"로 분류
+6. **중요**: "Bottle", "Container" 등의 객체가 있으면 "플라스틱" 또는 "유리"로 분류
+
+**중요: 반드시 완전한 JSON 형식으로 응답해주세요. 배열이나 객체가 중간에 끊어지지 않도록 주의하세요.**
+
+**응답 형식 (JSON):**
+\`\`\`json
+{
+  "wasteType": "주요 쓰레기 타입 (예: 플라스틱, 종이, 유리, 캔류, 기타)",
+  "subType": "객체의 구체적인 종류 (예: 음료수병, 우유팩, 종이컵, 알루미늄캔, 유리병)",
+  "description": "객체와 라벨 정보를 종합한 설명",
+  "disposalMethod": "분리수거 방법 (예: 재활용품, 일반쓰레기, 특수폐기물)",
+  "confidence": 0.9,
+  "analysisDetails": {
+    "detectedObjects": "탐지된 주요 객체들",
+    "detectedLabels": "탐지된 주요 라벨들"
+  }
+}
+\`\`\``;
+
+/**
+ * 2단계: 텍스트 분석으로 재활용 마크와 materialParts 결정
+ */
+const TEXT_BASED_MATERIAL_PROMPT = `다음은 Google Vision API로 탐지된 텍스트와 재활용 마크 정보입니다:
+
+**탐지된 텍스트들:**
+{texts}
+
+**재활용 마크/아이콘:**
+{recyclingMarks}
+
+**1단계에서 결정된 기본 타입:**
+- 타입: {basicType}
+- 세부 분류: {basicSubType}
+
+위 텍스트 정보를 바탕으로 재활용 마크를 확인하고, materialParts를 상세히 분석해주세요.
+
+**분석 기준:**
+1. 텍스트에서 재활용 마크나 아이콘 확인
+2. 재활용 마크가 있으면 해당 마크를 우선적으로 고려
+3. 텍스트에서 재질 정보를 찾아 materialParts 구성
+4. 파츠별로 재질이 다르게 표시된 경우 각각 분석
+5. 한국의 실제 분리수거 기준에 맞춰 분류
+6. **중요**: 텍스트에서 명확한 재질 정보(PET, PP, HDPE, 알루미늄 등)가 없으면, 1단계에서 결정된 객체 타입({basicSubType})을 사용
+
+**중요: 반드시 완전한 JSON 형식으로 응답해주세요. 배열이나 객체가 중간에 끊어지지 않도록 주의하세요.**
+
+**응답 형식 (JSON):**
+\`\`\`json
+{
+  "recyclingMark": "재활용 마크 정보 (예: PET, HDPE, PP, 기타)",
+  "analysisDetails": {
+    "detectedTexts": "탐지된 주요 텍스트들",
+    "recyclingMarks": "탐지된 재활용 마크들"
+  },
+  "materialParts": [
+    {
+      "part": "부분명 (예: 본체, 뚜껑, 라벨)",
+      "material": "재질 또는 객체 타입 (예: PET, PP, 알루미늄 또는 음료수병, 우유팩, 종이컵)",
+      "description": "텍스트에서 확인된 재질 정보 또는 객체 설명",
+      "disposalMethod": "해당 부분의 분리수거 방법"
+    }
+  ]
+}
+\`\`\``;
+
+// ============================================================================
 // 모듈 내보내기
 // ============================================================================
 
 module.exports = {
     TEXT_BASED_ANALYSIS_PROMPT,
-    COMPREHENSIVE_ANALYSIS_PROMPT,
+    UNIFIED_ANALYSIS_PROMPT,
     DIRECT_IMAGE_ANALYSIS_PROMPT,
     OBJECT_BASED_ANALYSIS_PROMPT,
-    LABEL_BASED_ANALYSIS_PROMPT
+    LABEL_BASED_ANALYSIS_PROMPT,
+    BASIC_TYPE_ANALYSIS_PROMPT,
+    TEXT_BASED_MATERIAL_PROMPT
 }; 
