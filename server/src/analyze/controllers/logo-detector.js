@@ -144,16 +144,14 @@ async function performUnifiedVisionAnalysis(imagePath) {
                 
         const imageBuffer = await getImageBuffer(imagePath);
         
-        // 모든 분석을 병렬로 실행
-        const [objectResult, labelResult, textResult] = await Promise.allSettled([
-            client.objectLocalization(imageBuffer),
+        // 라벨과 텍스트 분석만 실행 (오브젝트 감지 제거)
+        const [labelResult, textResult] = await Promise.allSettled([
             client.labelDetection(imageBuffer),
             client.textDetection(imageBuffer)
         ]);
         
         // 결과 처리
-        const objects = objectResult.status === 'fulfilled' ? 
-            objectResult.value[0].localizedObjectAnnotations || [] : [];
+        const objects = []; // 오브젝트 감지 제거로 빈 배열
         
         const labels = labelResult.status === 'fulfilled' ? 
             labelResult.value[0].labelAnnotations || [] : [];
@@ -210,11 +208,11 @@ async function performUnifiedVisionAnalysis(imagePath) {
 }
 
 /**
- * 개선된 분리수거 마크 분석 함수 (객체와 라벨 포함)
+ * 개선된 분리수거 마크 분석 함수 (라벨 포함)
  * @param {string} imagePath - 이미지 경로
  * @returns {Object} 분석 결과
  */
-async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
+async function analyzeRecyclingMarksWithLabels(imagePath) {
     try {
         // 통합 Vision API 분석 실행
         const visionAnalysis = await performUnifiedVisionAnalysis(imagePath);
@@ -223,7 +221,7 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
             logos: [],
             recyclingTexts: [],
             recyclingMarks: [],
-            objects: visionAnalysis.objects || [],
+            objects: [], // 오브젝트 감지 제거
             labels: visionAnalysis.labels || [],
             confidence: 0,
             summary: '',
@@ -280,25 +278,8 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
             console.log('❌ 텍스트가 발견되지 않았습니다.');
         }
         
-        // 객체 분석 (재활용 관련 객체 필터링)
-        if (visionAnalysis.objects && visionAnalysis.objects.length > 0) {
-            const recyclingObjects = visionAnalysis.objects.filter(obj => {
-                const objectName = obj.name.toLowerCase();
-                // 재활용 관련 객체 키워드
-                const recyclingObjectKeywords = [
-                    'bottle', 'can', 'container', 'package', 'box', 'bag',
-                    'plastic', 'glass', 'metal', 'paper', 'cardboard',
-                    'bottle', 'can', 'container', 'package', 'box', 'bag',
-                    'plastic', 'glass', 'metal', 'paper', 'cardboard'
-                ];
-                
-                return recyclingObjectKeywords.some(keyword => 
-                    objectName.includes(keyword)
-                ) && obj.score > 0.7; // 신뢰도 70% 이상
-            });
-            
-            analysis.recyclingObjects = recyclingObjects;
-        }
+        // 객체 분석 제거 (오브젝트 감지 기능 제거)
+        analysis.recyclingObjects = [];
         
         // 라벨 분석 (재활용 관련 라벨 필터링)
         if (visionAnalysis.labels && visionAnalysis.labels.length > 0) {
@@ -319,17 +300,15 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
             analysis.recyclingLabels = recyclingLabels;
         }
         
-        // 분리수거 마크 판단
+        // 분리수거 마크 판단 (오브젝트 감지 제거)
         const hasRecyclingText = analysis.recyclingTexts.length > 0;
-        const hasRecyclingObjects = analysis.recyclingObjects && analysis.recyclingObjects.length > 0;
         const hasRecyclingLabels = analysis.recyclingLabels && analysis.recyclingLabels.length > 0;
         
-        if (hasRecyclingText || hasRecyclingObjects || hasRecyclingLabels) {
+        if (hasRecyclingText || hasRecyclingLabels) {
             analysis.recyclingMarks = [...analysis.recyclingTexts];
             
-            // 신뢰도 계산 (더 많은 정보가 있으면 더 높은 신뢰도)
+            // 신뢰도 계산 (라벨 정보가 있으면 더 높은 신뢰도)
             let confidence = 0.8; // 기본 신뢰도
-            if (hasRecyclingObjects) confidence += 0.05;
             if (hasRecyclingLabels) confidence += 0.05;
             
             analysis.confidence = Math.min(confidence, 0.98); // 최대 98%
@@ -338,10 +317,6 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
             const summaryParts = [];
             if (hasRecyclingText) {
                 summaryParts.push(`텍스트: ${analysis.recyclingTexts.join(', ')}`);
-            }
-            if (hasRecyclingObjects) {
-                const objectSummary = analysis.recyclingObjects.map(obj => obj.name).join(', ');
-                summaryParts.push(`객체: ${objectSummary}`);
             }
             if (hasRecyclingLabels) {
                 const labelSummary = analysis.recyclingLabels.map(label => label.description).join(', ');
@@ -375,7 +350,7 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
 
 module.exports = {
     performUnifiedVisionAnalysis,
-    analyzeRecyclingMarksWithObjectsAndLabels,
+    analyzeRecyclingMarksWithLabels,
     // 새로운 키워드 추가
     WASTE_TYPE_KEYWORDS,
     SUB_TYPE_KEYWORDS,
