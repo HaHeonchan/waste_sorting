@@ -124,7 +124,7 @@ const Navbar = () => {
             </button>
           </div>
         ) : (
-          <Link to="/login" className="login-btn mobile-login">➡ 로그인</Link>
+          <Link to="/login" className="login-btn mobile-login" onClick={closeMenu}>➡ 로그인</Link>
         )}
         
       </nav>
