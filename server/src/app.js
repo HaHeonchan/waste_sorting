@@ -78,9 +78,30 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
+// 커스텀 로깅 미들웨어 (모든 요청에 대해)
+app.use((req, res, next) => {
+    const start = Date.now();
+    
+    // 응답이 완료되면 로깅
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const status = res.statusCode;
+        const method = req.method;
+        const url = req.originalUrl || req.url;
+        
+        // 상태 코드에 따른 색상
+        let color = '\x1b[32m'; // 초록색 (성공)
+        if (status >= 400) color = '\x1b[31m'; // 빨간색 (에러)
+        else if (status >= 300) color = '\x1b[33m'; // 노란색 (리다이렉트)
+        
+        console.log(`${color}${method} ${url} ${status} ${duration} ms\x1b[0m`);
+    });
+    
+    next();
+});
+
 // 미들웨어 설정
 app.use(cors(corsOptions));
-app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
