@@ -438,40 +438,10 @@ async function performUnifiedAnalysis(imagePath) {
     }
     
     // GPT Vision API를 사용한 통합 분석
-    const visionPrompt = `다음은 Google Vision API로 분석된 결과입니다:
-
-**탐지된 라벨들:**
-${JSON.stringify(labels, null, 2)}
-
-**탐지된 텍스트들:**
-${JSON.stringify(texts, null, 2)}
-
-**재활용 마크/아이콘:**
-${JSON.stringify(recyclingMarks, null, 2)}
-
-위 정보와 이미지를 종합하여 쓰레기 분류를 수행해주세요.
-
-**중요: 반드시 완전한 JSON 형식으로 응답해주세요.**
-**중요: 재활용 마크에 쉼표(,)가 있으면 반드시 각 재질을 별도의 materialParts 항목으로 만들어주세요.**
-**중요: 재활용 마크가 하나의 재질만 있는 경우에는 본체만 분류하고 중복 분류하지 마세요.**
-**중요: wasteType과 subType이 재질적으로 많이 다르면 subType을 우선적으로 따르세요.**
-**응답 형식:**
-{
-  "wasteType": "주요 쓰레기 타입",
-  "subType": "세부 분류", 
-  "recyclingMark": "재활용 마크 정보",
-  "description": "상세 설명",
-  "disposalMethod": "분리수거 방법",
-  "confidence": 0.9,
-  "materialParts": [
-    {
-      "part": "부분명",
-      "material": "재질",
-      "description": "설명",
-      "disposalMethod": "분리수거 방법"
-    }
-  ]
-}`;
+    const visionPrompt = UNIFIED_SINGLE_STAGE_PROMPT
+        .replace('{labels}', JSON.stringify(labels, null, 2))
+        .replace('{texts}', JSON.stringify(texts, null, 2))
+        .replace('{recyclingMarks}', JSON.stringify(recyclingMarks, null, 2));
 
     // GPT 입력 프롬프트 로그 출력
     console.log('🔍 GPT Vision 입력 프롬프트 전문:');
@@ -484,7 +454,7 @@ ${JSON.stringify(recyclingMarks, null, 2)}
         messages: [
             { 
                 role: "system", 
-                content: "당신은 한국의 개쩌는 분리수거 전문가입니다. 이미지와 Vision API 분석 결과를 바탕으로 정확한 쓰레기 분류를 수행합니다. 재활용 마크가 있으면 반드시 라벨보다 재활용 마크를 우선적으로 고려하여 wasteType을 결정해야 합니다. wasteType과 subType이 재질적으로 많이 다르면 subType을 우선적으로 따릅니다. 재활용 마크에 여러 재질이 있으면 반드시 각각을 다른 부위(본체, 뚜껑, 라벨 등)로 분류해야 합니다. 단일 재질인 경우에는 본체만 분류하고 중복 분류하지 마세요." 
+                content: "당신은 한국의 분리수거 전문가입니다. 이미지와 Vision API 분석 결과를 바탕으로 정확한 쓰레기 분류를 수행합니다. 재활용 마크가 있으면 반드시 라벨보다 재활용 마크를 우선적으로 고려하여 wasteType을 결정해야 합니다. PET 재질의 경우 이미지에서 색상을 확인하여 투명/유색을 구분하고, material과 subType에 색상을 표시해야 합니다. 재활용 마크에 여러 재질이 있으면 반드시 각각을 다른 부위(본체, 뚜껑, 라벨 등)로 분류해야 합니다. 단일 재질인 경우에는 본체만 분류하고 중복 분류하지 마세요." 
             },
             { 
                 role: "user", 
