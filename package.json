@@ -2,11 +2,10 @@
   "name": "waste-sorting",
   "version": "1.0.0",
   "scripts": {
-    "start": "node check-env.js && npx concurrently \"npm start --prefix client\" \"npm start --prefix server\"",
-    "dev": "node check-env.js && npx concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "start": "npx concurrently \"npm start --prefix client\" \"npm start --prefix server\"",
+    "dev": "npx concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
     "install:all": "npm install && npm install --prefix client && npm install --prefix server",
-    "check-env": "node check-env.js",
-    "server-only": "node check-env.js && npm start --prefix server",
+    "server-only": "npm start --prefix server",
     "client-only": "npm start --prefix client"
   },
   "dependencies": {
