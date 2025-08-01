@@ -28,7 +28,7 @@ let client = null;
 
 // 재활용 마크 키워드 정의
 const WASTE_TYPE_KEYWORDS = [
-    "무색페트", "비닐류", "캔류", "종이", "일반팩", "유리", "플라스틱", "폴리에틸렌"
+    "비닐류", "캔류", "종이", "일반팩", "유리", "플라스틱", "폴리에틸렌"
 ];
 
 const SUB_TYPE_KEYWORDS = [
@@ -63,7 +63,6 @@ function initializeVisionClient() {
             client = new vision.ImageAnnotatorClient({
                 keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
             });
-            console.log('✅ Google Vision API 클라이언트 초기화 성공 (서비스 계정 키 파일 사용)');
         } else if (process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_PRIVATE_KEY && process.env.GOOGLE_CLOUD_CLIENT_EMAIL) {
             // 방법 2: 환경 변수로 직접 설정
             client = new vision.ImageAnnotatorClient({
@@ -73,18 +72,11 @@ function initializeVisionClient() {
                     client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL
                 }
             });
-            console.log('✅ Google Vision API 클라이언트 초기화 성공 (환경 변수 사용)');
         } else {
-            console.log('⚠️ Google Cloud 인증 정보가 설정되지 않았습니다.');
-            console.log('📝 다음 중 하나의 방법으로 설정하세요:');
-            console.log('   1. GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account-key.json');
-            console.log('   2. GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_PRIVATE_KEY, GOOGLE_CLOUD_CLIENT_EMAIL');
             return false;
         }
         return true;
     } catch (error) {
-        console.log('⚠️ Google Vision API 클라이언트 초기화 실패:', error.message);
-        console.log('📝 인증 정보를 확인하고 다시 시도하세요.');
         return false;
     }
 }
@@ -168,22 +160,15 @@ function addUniqueResult(results, part, wasteType, type) {
 async function detectLogos(imagePath) {
     try {
         if (!client) {
-            console.log('⚠️ Google Vision API 클라이언트가 초기화되지 않았습니다.');
             return [];
         }
-        
-        console.log('🔍 로고 탐지 시작:', imagePath);
-        
         const imageBuffer = await getImageBuffer(imagePath);
         const [result] = await client.logoDetection(imageBuffer);
         const logos = result.logoAnnotations;
-        
-        console.log(`✅ 로고 탐지 완료: ${logos.length}개의 로고 발견`);
-        
+                
         return logos;
         
     } catch (error) {
-        console.error('❌ 로고 탐지 오류:', error);
         return [];
     }
 }
@@ -196,25 +181,15 @@ async function detectLogos(imagePath) {
 async function detectText(imagePath) {
     try {
         if (!client) {
-            console.log('⚠️ Google Vision API 클라이언트가 초기화되지 않았습니다.');
+            // console.log('⚠️ Google Vision API 클라이언트가 초기화되지 않았습니다.');
             return { detections: [], usage: null };
         }
         
-        console.log('📝 텍스트 탐지 시작:', imagePath);
+        // console.log('📝 텍스트 탐지 시작:', imagePath);
         
         const imageBuffer = await getImageBuffer(imagePath);
         const [result] = await client.textDetection(imageBuffer);
         const detections = result.textAnnotations;
-        
-        console.log(`✅ 텍스트 탐지 완료: ${detections.length}개의 텍스트 영역 발견`);
-        
-        // 디버깅: 발견된 텍스트 출력
-        if (detections && detections.length > 0) {
-            console.log('📋 발견된 텍스트들:');
-            detections.slice(0, 10).forEach((detection, index) => {
-                console.log(`   ${index + 1}. "${detection.description}"`);
-            });
-        }
         
         // Google Vision API 사용량 정보 (추정)
         const imageSize = imageBuffer.length;
@@ -230,7 +205,7 @@ async function detectText(imagePath) {
         return { detections, usage };
         
     } catch (error) {
-        console.error('❌ 텍스트 탐지 오류:', error);
+        // console.error('❌ 텍스트 탐지 오류:', error);
         return { detections: [], usage: null };
     }
 }
@@ -245,7 +220,6 @@ async function detectText(imagePath) {
 async function performComprehensiveVisionAnalysis(imagePath) {
     try {
         if (!client) {
-            console.log('⚠️ Google Vision API 클라이언트가 초기화되지 않았습니다.');
             return {
                 text: { detections: [], usage: null },
                 objects: [],
@@ -255,7 +229,6 @@ async function performComprehensiveVisionAnalysis(imagePath) {
             };
         }
         
-        console.log('🔍 통합 Vision API 분석 시작:', imagePath);
         
         const imageBuffer = await getImageBuffer(imagePath);
         
@@ -287,12 +260,6 @@ async function performComprehensiveVisionAnalysis(imagePath) {
         const logos = logoResult.status === 'fulfilled' ? 
             logoResult.value[0].logoAnnotations || [] : [];
         
-        console.log('✅ 통합 Vision API 분석 완료');
-        console.log(`   📝 텍스트: ${textAnalysis.detections.length}개`);
-        console.log(`   🎯 객체: ${objects.length}개`);
-        console.log(`   🏷️ 라벨: ${labels.length}개`);
-        console.log(`   🔍 로고: ${logos.length}개`);
-        
         return {
             text: textAnalysis,
             objects,
@@ -302,7 +269,6 @@ async function performComprehensiveVisionAnalysis(imagePath) {
         };
         
     } catch (error) {
-        console.error('❌ 통합 Vision API 분석 오류:', error);
         return {
             text: { detections: [], usage: null },
             objects: [],
@@ -323,10 +289,7 @@ async function performComprehensiveVisionAnalysis(imagePath) {
  * @returns {Array} 분석 결과 배열
  */
 function analyzeComplexText(text) {
-    const results = [];
-    
-    console.log(`🔍 복합 텍스트 분석: "${text}"`);
-    
+    const results = [];    
     // 패턴 1: "부분 : 분류" 형태 (예: "뚜껑+라벨 : 플라스틱")
     const pattern1 = /([^:]+)\s*:\s*([^,\n]+)/g;
     let match;
@@ -334,9 +297,7 @@ function analyzeComplexText(text) {
     while ((match = pattern1.exec(text)) !== null) {
         const part = match[1].trim();
         const wasteType = match[2].trim();
-        
-        console.log(`   📋 파싱된 부분: "${part}" → "${wasteType}"`);
-        
+                
         if (isValidWasteType(wasteType)) {
             addUniqueResult(results, part, wasteType, 'labeled_part');
         }
@@ -389,7 +350,6 @@ function analyzeComplexText(text) {
         [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
             if (cleanWord.toLowerCase() === keyword.toLowerCase()) {
                 addUniqueResult(results, cleanWord, keyword, 'single_mark');
-                console.log(`   ✅ 단독 마크 발견: "${cleanWord}" → "${keyword}"`);
             }
         });
     });
@@ -405,7 +365,6 @@ function analyzeComplexText(text) {
             [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
                 if (material.toLowerCase().includes(keyword.toLowerCase())) {
                     addUniqueResult(results, part, keyword, 'line_separated');
-                    console.log(`   ✅ 줄바꿈 패턴 발견: "${part}" → "${keyword}"`);
                 }
             });
         }
@@ -422,7 +381,6 @@ function analyzeComplexText(text) {
         [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
             if (material.toLowerCase().includes(keyword.toLowerCase())) {
                 addUniqueResult(results, part, keyword, 'slash_separated');
-                console.log(`   ✅ 슬래시 패턴 발견: "${part}" → "${keyword}"`);
             }
         });
     }
@@ -438,7 +396,6 @@ function analyzeComplexText(text) {
         [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
             if (material.toLowerCase().includes(keyword.toLowerCase())) {
                 addUniqueResult(results, part, keyword, 'bracket_separated');
-                console.log(`   ✅ 괄호 패턴 발견: "${part}" → "${keyword}"`);
             }
         });
     }
@@ -454,12 +411,10 @@ function analyzeComplexText(text) {
         [...WASTE_TYPE_KEYWORDS, ...SUB_TYPE_KEYWORDS].forEach(keyword => {
             if (material.toLowerCase() === keyword.toLowerCase()) {
                 addUniqueResult(results, part, keyword, 'space_separated');
-                console.log(`   ✅ 공백 패턴 발견: "${part}" → "${keyword}"`);
             }
         });
     }
     
-    console.log(`   🎯 최종 복합 분석 결과: ${results.length}개 항목`);
     return results;
 }
 
@@ -474,7 +429,7 @@ function analyzeComplexText(text) {
  */
 async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
     try {
-        console.log('🔍 개선된 분리수거 마크 분석 시작 (객체/라벨 포함)');
+        // console.log('🔍 개선된 분리수거 마크 분석 시작 (객체/라벨 포함)');
         
         // 통합 Vision API 분석 실행
         const visionAnalysis = await performComprehensiveVisionAnalysis(imagePath);
@@ -502,10 +457,8 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
             visionAnalysis.text.detections.forEach(detection => {
                 const text = detection.description;
                 
-                console.log(`🔍 텍스트 분석 중: "${text}"`);
                 
                 if (shouldSkipText(text)) {
-                    console.log(`   ⏭️ 건너뜀: "${text}"`);
                     return;
                 }
                 
@@ -585,9 +538,6 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
             });
             
             analysis.recyclingObjects = recyclingObjects;
-            console.log('🎯 재활용 관련 객체:', recyclingObjects.map(obj => 
-                `${obj.name} (${Math.round(obj.score * 100)}%)`
-            ));
         }
         
         // 라벨 분석 (재활용 관련 라벨 필터링)
@@ -607,9 +557,6 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
             });
             
             analysis.recyclingLabels = recyclingLabels;
-            console.log('🏷️ 재활용 관련 라벨:', recyclingLabels.map(label => 
-                `${label.description} (${Math.round(label.score * 100)}%)`
-            ));
         }
         
         // 분리수거 마크 판단 (복합 분석 포함)
@@ -654,13 +601,9 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
             analysis.summary = '분리수거 마크가 발견되지 않음';
         }
         
-        console.log('📊 개선된 분리수거 마크 분석 결과:', analysis.summary);
-        console.log('🎯 신뢰도:', analysis.confidence);
-        
         return analysis;
         
     } catch (error) {
-        console.error('❌ 개선된 분리수거 마크 분석 오류:', error);
         return {
             logos: [],
             recyclingTexts: [],
@@ -686,7 +629,6 @@ async function analyzeRecyclingMarksWithObjectsAndLabels(imagePath) {
 async function performUnifiedVisionAnalysis(imagePath) {
     try {
         if (!client) {
-            console.log('⚠️ Google Vision API 클라이언트가 초기화되지 않았습니다.');
             return {
                 objects: [],
                 labels: [],
@@ -694,9 +636,7 @@ async function performUnifiedVisionAnalysis(imagePath) {
                 error: 'Google Vision API 클라이언트가 초기화되지 않았습니다.'
             };
         }
-        
-        console.log('🔍 통합 Vision API 분석 시작:', imagePath);
-        
+                
         const imageBuffer = await getImageBuffer(imagePath);
         
         // 모든 분석을 병렬로 실행
@@ -744,33 +684,7 @@ async function performUnifiedVisionAnalysis(imagePath) {
             });
         }
         
-        console.log('✅ 통합 Vision API 분석 완료');
-        console.log(`   🎯 객체: ${objects.length}개`);
-        console.log(`   🏷️ 라벨: ${labels.length}개`);
-        console.log(`   📝 텍스트: ${textAnalysis.detections.length}개`);
-        console.log(`   ♻️ 재활용 마크: ${recyclingMarks.length}개`);
-        
-        // 상세 분석 결과 로그
-        if (objects.length > 0) {
-            console.log('   🎯 객체 분석 결과:');
-            objects.slice(0, 5).forEach((obj, index) => {
-                console.log(`      ${index + 1}. ${obj.name} (${Math.round(obj.score * 100)}%)`);
-            });
-        }
-        
-        if (labels.length > 0) {
-            console.log('   🏷️ 라벨 분석 결과:');
-            labels.slice(0, 5).forEach((label, index) => {
-                console.log(`      ${index + 1}. ${label.description} (${Math.round(label.score * 100)}%)`);
-            });
-        }
-        
-        if (textAnalysis.detections.length > 0) {
-            console.log('   📝 텍스트 분석 결과:');
-            textAnalysis.detections.slice(0, 5).forEach((text, index) => {
-                console.log(`      ${index + 1}. "${text.description}"`);
-            });
-        }
+
         
         return {
             objects,
@@ -782,7 +696,6 @@ async function performUnifiedVisionAnalysis(imagePath) {
         };
         
     } catch (error) {
-        console.error('❌ 통합 Vision API 분석 오류:', error);
         return {
             objects: [],
             labels: [],
@@ -804,7 +717,6 @@ async function performUnifiedVisionAnalysis(imagePath) {
  */
 async function analyzeRecyclingMarks(imagePath) {
     try {
-        console.log('🔍 분리수거 마크 분석 시작');
         
         // 텍스트 탐지
         const { detections: textDetections, usage: visionUsage } = await detectText(imagePath);
@@ -830,12 +742,8 @@ async function analyzeRecyclingMarks(imagePath) {
             };
             
             textDetections.forEach(detection => {
-                const text = detection.description;
-                
-                console.log(`🔍 텍스트 분석 중: "${text}"`);
-                
+                const text = detection.description;                
                 if (shouldSkipText(text)) {
-                    console.log(`   ⏭️ 건너뜀: "${text}"`);
                     return;
                 }
                 
@@ -922,16 +830,12 @@ async function analyzeRecyclingMarks(imagePath) {
             analysis.summary = '분리수거 마크가 발견되지 않음';
         }
         
-        console.log('📊 분리수거 마크 분석 결과:', analysis.summary);
-        console.log('🎯 신뢰도:', analysis.confidence);
-        
         // 사용량 정보 추가
         analysis.usage = visionUsage;
         
         return analysis;
         
     } catch (error) {
-        console.error('❌ 분리수거 마크 분석 오류:', error);
         return {
             logos: [],
             recyclingTexts: [],
@@ -950,7 +854,6 @@ async function analyzeRecyclingMarks(imagePath) {
  */
 async function analyzeImageWithLogoDetection(imagePath) {
     try {
-        console.log('🔍 통합 이미지 분석 시작 (로고 탐지 포함)');
         
         // 분리수거 마크 분석
         const logoAnalysis = await analyzeRecyclingMarks(imagePath);
@@ -965,7 +868,6 @@ async function analyzeImageWithLogoDetection(imagePath) {
         };
         
     } catch (error) {
-        console.error('❌ 통합 이미지 분석 오류:', error);
         throw error;
     }
 }

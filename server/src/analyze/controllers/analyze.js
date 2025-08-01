@@ -75,7 +75,6 @@ const upload = multer({
  */
 function cleanupFile(filePath) {
     if (!filePath) {
-        console.log('⚠️ 파일 경로가 없어 정리 건너뜀');
         return;
     }
 
@@ -86,12 +85,8 @@ function cleanupFile(filePath) {
             const filename = urlParts[urlParts.length - 1];
             const folder = urlParts[urlParts.length - 2];
             const fullPublicId = `${folder}/${filename.split('.')[0]}`;
-            
-            console.log('🗑️ Cloudinary 이미지 삭제 시작:', fullPublicId);
-            
-            cloudinary.uploader.destroy(fullPublicId)
-                .then(() => console.log('🗑️ Cloudinary 이미지 삭제 완료'))
-                .catch(error => console.error('🔥 Cloudinary 이미지 삭제 실패:', error.message));
+                        
+            cloudinary.uploader.destroy(fullPublicId);
         } catch (error) {
             console.error('❌ Cloudinary 이미지 삭제 중 오류:', error.message);
         }
@@ -102,10 +97,8 @@ function cleanupFile(filePath) {
     try {
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
-            console.log('🗑️ 임시 파일 정리 완료:', path.basename(filePath));
-        } else {
-            console.log('⚠️ 파일이 이미 존재하지 않음:', path.basename(filePath));
-        }
+    } else {
+    }
     } catch (error) {
         console.error('❌ 파일 정리 실패:', error.message);
         
@@ -114,7 +107,6 @@ function cleanupFile(filePath) {
             try {
                 if (fs.existsSync(filePath)) {
                     fs.unlinkSync(filePath);
-                    console.log('🗑️ 지연 삭제 성공:', path.basename(filePath));
                 }
             } catch (retryError) {
                 console.error('❌ 지연 삭제도 실패:', retryError.message);
@@ -128,9 +120,7 @@ function cleanupFile(filePath) {
  * @param {string} filePath - 업로드할 파일 경로
  * @returns {Promise<string>} 업로드된 이미지 URL
  */
-async function uploadToCloudinary(filePath) {
-    console.log('📸 Cloudinary 업로드 시작:', path.basename(filePath));
-    
+async function uploadToCloudinary(filePath) {    
     const result = await cloudinary.uploader.upload(filePath, {
         folder: 'waste-sorting/analysis-temp',
         resource_type: 'auto',
@@ -141,9 +131,7 @@ async function uploadToCloudinary(filePath) {
             { quality: 'auto:good' }
         ]
     });
-    
-    console.log('✅ Cloudinary 업로드 완료:', result.secure_url);
-    return result.secure_url;
+        return result.secure_url;
 }
 
 /**
@@ -153,27 +141,46 @@ async function uploadToCloudinary(filePath) {
  */
 function parseGPTResponse(content) {
     try {
-        console.log('🔍 JSON 파싱 시작:', content.substring(0, 200) + '...');
+        console.log('🔍 GPT 응답 원본:', content);
         
         // JSON 블록 추출 시도
         let jsonString = content;
+        
+        // response_format이 json_object인 경우 직접 파싱 시도
+        try {
+            const directParse = JSON.parse(content);
+            console.log('✅ 직접 JSON 파싱 성공');
+            return {
+                wasteType: directParse.wasteType || "분류 실패",
+                subType: directParse.subType || "알 수 없음",
+                recyclingMark: directParse.recyclingMark || "해당없음",
+                description: directParse.description || content,
+                disposalMethod: directParse.disposalMethod || "확인 필요",
+                confidence: directParse.confidence || 0,
+                analysisDetails: directParse.analysisDetails || null,
+                materialParts: directParse.materialParts || []
+            };
+        } catch (directParseError) {
+            console.log('🔄 직접 파싱 실패, 블록 추출 시도...');
+        }
         
         // ```json ... ``` 형태 찾기
         const jsonBlockMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
         if (jsonBlockMatch) {
             jsonString = jsonBlockMatch[1];
-            console.log('✅ JSON 블록 추출 성공');
+            console.log('📦 JSON 블록 추출됨');
         } else {
             // 일반 JSON 객체 찾기 (더 정확한 매칭)
             const jsonMatch = content.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
             if (jsonMatch) {
                 jsonString = jsonMatch[0];
-                console.log('✅ JSON 객체 추출 성공');
+                console.log('📄 일반 JSON 객체 추출됨');
             }
         }
         
         // JSON 문자열 정리
         jsonString = jsonString.trim();
+        console.log('🧹 정리된 JSON:', jsonString);
         
         // 불완전한 JSON 수정 시도
         if (jsonString.includes('"detectedLabels": [')) {
@@ -184,18 +191,38 @@ function parseGPTResponse(content) {
             if (lastBracketIndex > lastBraceIndex) {
                 // 배열이 제대로 닫히지 않은 경우
                 jsonString = jsonString.substring(0, lastBracketIndex + 1) + '}';
-                console.log('🔧 불완전한 배열 수정');
+                console.log('🔧 배열 닫기 수정됨');
             }
         }
         
         // 중복된 중괄호 제거
         jsonString = jsonString.replace(/}\s*}/g, '}');
         
-        console.log('📄 파싱할 JSON:', jsonString.substring(0, 300) + '...');
+        // 불완전한 배열이나 객체 수정
+        let braceCount = 0;
+        let bracketCount = 0;
+        let lastValidIndex = -1;
+        
+        for (let i = 0; i < jsonString.length; i++) {
+            if (jsonString[i] === '{') braceCount++;
+            else if (jsonString[i] === '}') braceCount--;
+            else if (jsonString[i] === '[') bracketCount++;
+            else if (jsonString[i] === ']') bracketCount--;
+            
+            if (braceCount === 0 && bracketCount === 0) {
+                lastValidIndex = i;
+            }
+        }
+        
+        if (lastValidIndex > 0 && lastValidIndex < jsonString.length - 1) {
+            jsonString = jsonString.substring(0, lastValidIndex + 1);
+            console.log('🔧 불완전한 JSON 수정됨');
+        }
+        
+        console.log('✅ 최종 JSON:', jsonString);
         
         // JSON 파싱 시도
         const parsed = JSON.parse(jsonString);
-        console.log('✅ JSON 파싱 성공:', parsed);
         
         // 필수 필드 검증 및 기본값 설정
         return {
@@ -212,16 +239,49 @@ function parseGPTResponse(content) {
     } catch (parseError) {
         console.error('❌ JSON 파싱 오류:', parseError.message);
         console.error('📄 원본 내용:', content);
+        console.error('🔍 파싱 시도한 JSON:', jsonString);
         
         // 수동으로 JSON 구조 추출 시도
         try {
-            console.log('🔧 수동 JSON 추출 시도');
-            const wasteTypeMatch = content.match(/"wasteType":\s*"([^"]+)"/);
-            const subTypeMatch = content.match(/"subType":\s*"([^"]+)"/);
-            const descriptionMatch = content.match(/"description":\s*"([^"]+)"/);
-            const disposalMethodMatch = content.match(/"disposalMethod":\s*"([^"]+)"/);
-            const confidenceMatch = content.match(/"confidence":\s*([0-9.]+)/);
-            const recyclingMarkMatch = content.match(/"recyclingMark":\s*"([^"]+)"/);
+            console.log('🔄 수동 파싱 시도 중...');
+            
+            // 더 정교한 정규식으로 JSON 필드 추출
+            const wasteTypeMatch = content.match(/"wasteType"\s*:\s*"([^"]+)"/);
+            const subTypeMatch = content.match(/"subType"\s*:\s*"([^"]+)"/);
+            const descriptionMatch = content.match(/"description"\s*:\s*"([^"]+)"/);
+            const disposalMethodMatch = content.match(/"disposalMethod"\s*:\s*"([^"]+)"/);
+            const confidenceMatch = content.match(/"confidence"\s*:\s*([0-9.]+)/);
+            const recyclingMarkMatch = content.match(/"recyclingMark"\s*:\s*"([^"]+)"/);
+            
+            // materialParts 배열 추출 시도
+            const materialPartsMatch = content.match(/"materialParts"\s*:\s*\[([\s\S]*?)\]/);
+            let materialParts = [];
+            
+            if (materialPartsMatch) {
+                try {
+                    // materialParts 배열을 개별 객체로 분리
+                    const partsString = materialPartsMatch[1];
+                    const partMatches = partsString.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+                    
+                    if (partMatches) {
+                        materialParts = partMatches.map(partStr => {
+                            const partMatch = partStr.match(/"part"\s*:\s*"([^"]+)"/);
+                            const materialMatch = partStr.match(/"material"\s*:\s*"([^"]+)"/);
+                            const descMatch = partStr.match(/"description"\s*:\s*"([^"]+)"/);
+                            const disposalMatch = partStr.match(/"disposalMethod"\s*:\s*"([^"]+)"/);
+                            
+                            return {
+                                part: partMatch ? partMatch[1] : "본체",
+                                material: materialMatch ? materialMatch[1] : "기타",
+                                description: descMatch ? descMatch[1] : "수동 파싱",
+                                disposalMethod: disposalMatch ? disposalMatch[1] : "일반쓰레기"
+                            };
+                        });
+                    }
+                } catch (partsError) {
+                    console.error('❌ materialParts 파싱 실패:', partsError.message);
+                }
+            }
             
             if (wasteTypeMatch || subTypeMatch) {
                 const result = {
@@ -232,8 +292,9 @@ function parseGPTResponse(content) {
                     disposalMethod: disposalMethodMatch ? disposalMethodMatch[1] : "확인 필요",
                     confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) : 0,
                     analysisDetails: null,
-                    materialParts: []
+                    materialParts: materialParts.length > 0 ? materialParts : []
                 };
+                
                 console.log('✅ 수동 파싱 성공:', result);
                 return result;
             }
@@ -242,7 +303,6 @@ function parseGPTResponse(content) {
         }
         
         // 마지막 시도: 키워드 기반 분류
-        console.log('🔍 키워드 기반 분류 시도');
         const lowerContent = content.toLowerCase();
         
         let wasteType = "분류 실패";
@@ -314,20 +374,15 @@ async function performUnifiedAnalysis(imagePath) {
     // 1단계: 객체/라벨 인식으로 기본 타입 결정
     const basicTypePrompt = BASIC_TYPE_ANALYSIS_PROMPT
         .replace('{objects}', JSON.stringify(objects, null, 2))
-        .replace('{labels}', JSON.stringify(labels, null, 2));
-    
-    console.log('🔍 1단계 GPT 분석 시작...');
-    console.log('📝 프롬프트:', basicTypePrompt.substring(0, 200) + '...');
-    
+        .replace('{labels}', JSON.stringify(labels, null, 2));    
     const basicTypeResponse = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: basicTypePrompt }],
-        max_tokens: 500,
-        temperature: 0.3
+        max_tokens: 800,
+        temperature: 0.1,
+        response_format: { type: "json_object" }
     });
-    
-    console.log('📄 GPT 응답:', basicTypeResponse.choices[0].message.content);
-    
+        
     const basicAnalysis = parseGPTResponse(basicTypeResponse.choices[0].message.content);
     
     // 2단계: 텍스트 분석으로 재활용 마크와 materialParts 결정
@@ -337,17 +392,15 @@ async function performUnifiedAnalysis(imagePath) {
         .replace('{basicType}', basicAnalysis.wasteType || '기타')
         .replace('{basicSubType}', basicAnalysis.subType || '기타');
     
-    console.log('🔍 2단계 GPT 분석 시작...');
-    console.log('📝 프롬프트:', textAnalysisPrompt.substring(0, 200) + '...');
     
     const textAnalysisResponse = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: textAnalysisPrompt }],
-        max_tokens: 600,
-        temperature: 0.3
+        max_tokens: 1000,
+        temperature: 0.1,
+        response_format: { type: "json_object" }
     });
     
-    console.log('📄 GPT 응답:', textAnalysisResponse.choices[0].message.content);
     
     const textAnalysis = parseGPTResponse(textAnalysisResponse.choices[0].message.content);
     
@@ -377,12 +430,6 @@ async function performUnifiedAnalysis(imagePath) {
             return part;
         });
     }
-    
-    console.log('✅ 분석 완료:', {
-        type: basicAnalysis.wasteType,
-        detail: basicAnalysis.subType,
-        materialParts: textAnalysis.materialParts?.length || 0
-    });
     
     return {
         type: basicAnalysis.wasteType,
@@ -482,12 +529,9 @@ const analyzeController = {
                 }
 
                 uploadedFile = req.file.path;
-                console.log(`📁 임시 파일 저장됨 [ID: ${requestId}]:`, path.basename(uploadedFile));
-
                 try {
                     // Cloudinary에 업로드
                     cloudinaryUrl = await uploadToCloudinary(uploadedFile);
-                    console.log(`☁️ Cloudinary 업로드 완료 [ID: ${requestId}]:`, cloudinaryUrl);
 
                     // 통합 분석 실행 (Vision API + GPT)
                     const analysisResult = await performUnifiedAnalysis(cloudinaryUrl);
@@ -495,12 +539,6 @@ const analyzeController = {
                     // 분석 결과에 이미지 URL 추가
                     analysisResult.imageUrl = cloudinaryUrl;
                     analysisResult.requestId = requestId; // 요청 ID 추가
-                    
-                    console.log(`✅ 분석 완료 [ID: ${requestId}]:`, {
-                        type: analysisResult.type,
-                        method: analysisResult.method,
-                        confidence: analysisResult.confidence
-                    });
                     
                     res.json(analysisResult);
                     

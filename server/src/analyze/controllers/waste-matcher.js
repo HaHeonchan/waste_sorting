@@ -81,7 +81,6 @@ function iterateGuides(callback) {
  * @returns {Object|null} 매칭 결과
  */
 function findDescriptionBasedMatch(description) {
-    console.log('📝 설명 기반 매칭 시작:', description);
     
     const descLower = description.toLowerCase();
     
@@ -97,7 +96,6 @@ function findDescriptionBasedMatch(description) {
     
     for (const pattern of patterns) {
         if (descLower.includes(pattern.keyword.toLowerCase())) {
-            console.log(`✅ 설명 패턴 매칭: "${pattern.keyword}"`);
             
             const guides = wasteDisposalGuides.disposalGuides;
             for (const category in guides) {
@@ -133,7 +131,6 @@ function findExactMatch(wasteType, subType) {
     const result = iterateGuides((item, itemKey, category) => {
         // wasteType이 일치하고 subType 중 하나라도 일치하는지 확인
         if (item.category === wasteType && subTypeOptions.includes(item.subType)) {
-            console.log(`🎯 정확한 매칭 발견: ${wasteType} - ${item.subType} (옵션: ${subTypeOptions.join(', ')})`);
             return createMatchResult(item, 'exact', 0.95);
         }
         return null;
@@ -313,7 +310,6 @@ ${JSON.stringify(guidesData, null, 2)}
  * @returns {Promise<Object|null>} 매칭 결과
  */
 async function findObjectLabelMatch(analysisResults) {
-    console.log('🔍 객체/라벨 기반 매칭 시작');
     
     const guides = wasteDisposalGuides.disposalGuides;
     let bestMatch = null;
@@ -321,18 +317,15 @@ async function findObjectLabelMatch(analysisResults) {
     
     // 객체 인식 결과에서 매칭
     if (analysisResults.recyclingObjects && analysisResults.recyclingObjects.length > 0) {
-        console.log('🎯 객체 인식 결과 분석:', analysisResults.recyclingObjects);
         
         for (const obj of analysisResults.recyclingObjects) {
             const objName = obj.name.toLowerCase();
-            console.log(`🔍 객체 "${objName}" 매칭 시도`);
             
             // GPT 기반 유사성 분석 시도
             const gptMatch = await findGPTBasedMatch(objName, guides, 'object');
             if (gptMatch && gptMatch.score > bestScore) {
                 bestScore = gptMatch.score;
                 bestMatch = gptMatch.match;
-                console.log(`✅ GPT 객체 매칭 성공: ${gptMatch.match.title} (점수: ${gptMatch.score})`);
             }
             
             // 기존 키워드 매칭도 시도
@@ -340,18 +333,16 @@ async function findObjectLabelMatch(analysisResults) {
             if (objectMatch && objectMatch.score > bestScore) {
                 bestScore = objectMatch.score;
                 bestMatch = objectMatch.match;
-                console.log(`✅ 객체 키워드 매칭 성공: ${objectMatch.match.title} (점수: ${objectMatch.score})`);
             }
         }
     }
     
     // 라벨 인식 결과에서 매칭
     if (analysisResults.recyclingLabels && analysisResults.recyclingLabels.length > 0) {
-        console.log('🏷️ 라벨 인식 결과 분석:', analysisResults.recyclingLabels);
         
         for (const label of analysisResults.recyclingLabels) {
             const labelName = label.name.toLowerCase();
-            console.log(`🔍 라벨 "${labelName}" 매칭 시도`);
+            // console.log(`🔍 라벨 "${labelName}" 매칭 시도`);
             
             // GPT 기반 유사성 분석 시도
             const gptMatch = await findGPTBasedMatch(labelName, guides, 'label');
