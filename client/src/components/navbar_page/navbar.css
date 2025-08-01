@@ -3,7 +3,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 1.5rem; /* 양쪽 여백 */
+  padding: 0 1.5rem;
   height: 3.75rem;
   background-color: white;
   border-bottom: 1px solid #ddd;
@@ -27,8 +27,16 @@
   justify-content: space-between;
   align-items: center;
   flex: 1;
-  height: 100%;  /* navbar와 높이 맞춤 */
-  padding-right: 0.5rem; /* 스크롤 안 가리게 약간만 */
+  height: 100%;
+  padding-right: 0.5rem;
+}
+
+/* ✅ 로고 이미지 크기 */
+.navbar-logo {
+  height: 2rem;            /* 높이 기준 고정 */
+  width: auto;             /* 비율 유지 */
+  object-fit: contain;
+  margin-right: 0.4rem;
 }
 
 /* ✅ 타이틀 */
@@ -81,10 +89,10 @@
 
 /* 데스크탑용 로그인 버튼 */
 .desktop-login {
-  display: flex;                /* ✅ flex 설정 */
-  align-items: center;          /* ✅ 세로 중앙 정렬 */
-  justify-content: center;      /* 가로 정렬도 필요 시 */
-  height: 100%;                 /* ✅ navbar 높이만큼 차지 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
   background-color: #22c55e;
   color: white;
   font-weight: 600;
@@ -94,7 +102,7 @@
   transition: background-color 0.2s;
   white-space: nowrap;
   font-size: clamp(0.875rem, 1.2vw, 1rem);
-  transform: translate(-2rem,0.6rem)
+  transform: translate(-2rem, 0.6rem);
 }
 
 .desktop-login:hover {
@@ -104,48 +112,56 @@
 .navbar-left {
   display: flex;
   align-items: center;
-  gap: 1rem; /* 텍스트와 토글 사이 여백 */
+  gap: 1rem;
 }
 
+/* 로고 + 텍스트 전체 감싸는 링크 */
 .navbar-title-link {
-  color: black;             /* 기본 색상 */
-  text-decoration: none;    /* 밑줄 제거 (원하면 유지) */
+  text-decoration: none !important;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.2s ease;
+}
+
+/* 내부 텍스트 스타일 */
+.navbar-title {
+  font-weight: 700;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: #1b1b1b;
+  line-height: 1; /* ✅ 텍스트 세로 공간 축소 */
+}
+
+/* 호버 시 색상 변화 */
+.navbar-title-link:hover .navbar-title {
+  color: #22c55e;
+}
+
+/* 로고 이미지 스타일 */
+.navbar-logo {
+  height: auto;
+  width: clamp(1.5rem, 4vw, 2rem);
+  height: 1.75rem; /* 적당한 높이 조정 */
+  width: auto;
 }
 
 .navbar-title-container {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: center; /* ✅ 세로 정렬 중심 맞춤 */
+  gap: 0.4rem;
 }
 
-.navbar-logo {
-  width: 2rem;
-  height: 2rem;
-  object-fit: contain;
-}
-
-.navbar-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  /* color: var(--text-color); */
-  color: black;             /* 기본 색상 */
-  text-decoration: none;    /* 밑줄 제거 (원하면 유지) */
-  transition: color 0.2s ease; /* 부드럽게 전환 */
-}
-
-.navbar-title:hover {
-  color: green;             /* 마우스 오버 시 초록색 */
-}
 
 .theme-toggle-switch {
-  width: 3rem;     /* 60px */
-  height: 1.5rem;   /* 30px */
+  width: 3rem;
+  height: 1.5rem;
   background-color: #e0e0e0;
   border-radius: 999px;
   position: relative;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  transform: translateY(0.2rem); 
+  transform: translateY(0.2rem);
 }
 
 .theme-toggle-switch.dark {
@@ -153,36 +169,33 @@
 }
 
 .toggle-circle {
-  width: 1.2rem;    /* 26px */
+  width: 1.2rem;
   height: 1.2rem;
   background-color: #ffffff;
   border-radius: 50%;
   position: absolute;
-  top: 0.15rem;      /* 2px */
+  top: 0.15rem;
   left: 0.15rem;
   transition: transform 0.3s ease;
-  box-shadow: 0 0 0.3125rem rgba(0, 0, 0, 0.2); /* 5px */
+  box-shadow: 0 0 0.3125rem rgba(0, 0, 0, 0.2);
 }
 
 .theme-toggle-switch.dark .toggle-circle {
-  transform: translateX(1.5rem); /* 30px */
+  transform: translateX(1.5rem);
 }
 
-/* 모바일용 로그인 버튼 (기본 숨김) */
 .mobile-login {
   display: none;
 }
 
-/* ✅ 햄버거 버튼 */
 .hamburger {
-  display: none
+  display: none;
 }
 
+.user-info-mobile {
+  display: none;
+}
 
-
-
-
-/* ✅ 미디어 쿼리: 모바일 대응 (1200px 이하) */
 @media screen and (max-width: 1200px) {
   .navbar {
     flex-direction: column;
@@ -198,31 +211,32 @@
   .navbar-header {
     width: 100%;
     justify-content: space-between;
-    align-items: center;
   }
 
   .hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.75rem;
     background: none;
     border: none;
     cursor: pointer;
     color: #333;
-    font-size: 1.75rem;
-    display: flex;
-    align-items: center;       /* 수직 정렬 */
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
     line-height: 1;
     padding: 0;
-    margin-right: 0;           /* ❌ 10rem 제거 */
-    transform: translateY(-0.1rem);  /* ❌ 아래로 밀리는 거 제거 */
+    transform: translateY(-0.1rem);
     transition: transform 0.3s ease, opacity 0.3s ease;
   }
 
-  /* ✅ 햄버거 아이콘 내부 span 전환용 (필요 시) */
   .hamburger-icon {
     display: inline-block;
     transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .navbar-right {
+    display: none;
   }
 
   .navbar-center {
@@ -259,29 +273,61 @@
 
 
   .mobile-login {
-    display: block;
-    background: linear-gradient(to right, #22c55e, #16a34a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: fit-content;
+    max-width: 200px;
+    background-color: #22c55e;
     color: white;
-    font-weight: 600;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    transition: background-color 0.2s;
     margin-top: 1rem;
-    transition: background 0.3s;
-    text-align: center;
-    width: 90%;
+    margin-left: 0.5rem;
+    white-space: nowrap;
+    font-size: clamp(0.875rem, 1.2vw, 1rem);
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
   }
 
   .mobile-login:hover {
-    background: linear-gradient(to right, #16a34a, #15803d);
+    background-color: #16a34a;
   }
 
-  .mobile-logout {
-    display: block;
+  .user-info-mobile {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .user-name-mobile {
+    color: #333;
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  .logout-btn-mobile {
+    background-color: #dc2626;
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    font-size: clamp(0.875rem, 1.2vw, 1rem);
+  }
+
+  .logout-btn-mobile:hover {
+    background-color: #b91c1c;
   }
 }
 
-/* 사용자 정보 스타일 */
 .user-info {
   display: flex;
   align-items: center;
@@ -334,25 +380,21 @@
   background: linear-gradient(to right, #b91c1c, #991b1b);
 }
 
+/* 다크 모드 */
 body.dark .navbar {
   background-color: #1e1e1e;
   border-bottom: 1px solid #444;
 }
 
-body.dark .navbar-header .title {
-  color: #ffffff
-}
-
-body.dark .navbar-title {
-  color: #ffffff !important;
-}
-
-body.dark .nav-link {
-  color: #f0f0f0;
+body.dark .navbar-header .title,
+body.dark .navbar-title,
+body.dark .nav-link,
+body.dark .user-name {
+  color: #f0f0f0 !important;
 }
 
 body.dark .nav-link:hover {
-  color: #4ade80; /* 밝은 그린 */
+  color: #4ade80;
 }
 
 body.dark .desktop-login,
@@ -384,10 +426,6 @@ body.dark .hamburger {
   color: #f0f0f0;
 }
 
-body.dark .user-name {
-  color: #f0f0f0;
-}
-
 body.dark .theme-toggle-switch {
   background-color: #333;
 }
@@ -399,7 +437,3 @@ body.dark .theme-toggle-switch.dark {
 body.dark .theme-toggle-switch .toggle-circle {
   background-color: #fff;
 }
-body.dark .theme-toggle-switch.dark .toggle-circle {
-  transform: translateX(1.5rem); /* 30px */
-}
-
