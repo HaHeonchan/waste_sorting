@@ -6,7 +6,4 @@ const analyzeController = require('../controllers/analyze');
 router.get('/', analyzeController.renderAnalyzePage);
 router.post('/upload-analyze', analyzeController.uploadAndAnalyzeImage);
 
-// 개선된 분석 라우트 (객체/라벨 포함)
-router.post('/upload-analyze-comprehensive', analyzeController.uploadAndAnalyzeImageComprehensive);
-
 module.exports = router; 

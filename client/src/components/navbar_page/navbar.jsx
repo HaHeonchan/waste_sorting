@@ -75,7 +75,12 @@ const Navbar = () => {
       {/* 좌측 텍스트 + 햄버거 버튼 */}
       <div className="navbar-header">
         <div className="navbar-left">
-          <span className="navbar-title">🌲 스마트 분리배출 도우미</span>
+          <Link to="/" className="navbar-title-link" onClick={() => setMenuOpen(false)}>
+            <div className="navbar-title-container">
+              <img src={require("./logo.png")} alt="로고" className="navbar-logo" />
+              <span className="navbar-title">스마트 분리배출 도우미</span>
+            </div>
+          </Link>
           <div className={`theme-toggle-switch ${isDark ? "dark" : ""}`} onClick={toggleDarkMode}>
             <div className="toggle-circle" />
           </div>

@@ -99,12 +99,35 @@
   gap: 1rem; /* 텍스트와 토글 사이 여백 */
 }
 
+.navbar-title-link {
+  color: black;             /* 기본 색상 */
+  text-decoration: none;    /* 밑줄 제거 (원하면 유지) */
+}
+
+.navbar-title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-logo {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
 .navbar-title {
   font-size: 1.25rem;
   font-weight: bold;
-  color: var(--text-color);
+  /* color: var(--text-color); */
+  color: black;             /* 기본 색상 */
+  text-decoration: none;    /* 밑줄 제거 (원하면 유지) */
+  transition: color 0.2s ease; /* 부드럽게 전환 */
 }
 
+.navbar-title:hover {
+  color: green;             /* 마우스 오버 시 초록색 */
+}
 
 .theme-toggle-switch {
   width: 3rem;     /* 60px */
