@@ -112,6 +112,18 @@
   text-decoration: none;    /* 밑줄 제거 (원하면 유지) */
 }
 
+.navbar-title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-logo {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
 .navbar-title {
   font-size: 1.25rem;
   font-weight: bold;

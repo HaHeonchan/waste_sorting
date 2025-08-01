@@ -87,6 +87,9 @@ async saveAnalysisResult(result, imageFile) {
   async analyzeImage(formData, onProgress = null) {
     const url = API_ENDPOINTS.ANALYZE;
     
+    // 요청 취소를 위한 AbortController 생성
+    const controller = new AbortController();
+    
     try {
       // 진행 상황 콜백이 있으면 호출
       if (onProgress) {
@@ -96,6 +99,7 @@ async saveAnalysisResult(result, imageFile) {
       const result = await this.requestWithRetry(url, {
         method: 'POST',
         body: formData,
+        signal: controller.signal, // 취소 신호 추가
       });
 
       if (onProgress) {
@@ -104,6 +108,12 @@ async saveAnalysisResult(result, imageFile) {
 
       return result;
     } catch (error) {
+      // 요청이 취소된 경우
+      if (error.name === 'AbortError') {
+        console.log('이미지 분석 요청이 취소되었습니다.');
+        throw new Error('분석 요청이 취소되었습니다.');
+      }
+      
       console.error('이미지 분석 실패:', error);
       throw error;
     }

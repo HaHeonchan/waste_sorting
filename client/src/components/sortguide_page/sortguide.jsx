@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./sortguide.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import apiClient from "../../utils/apiClient";
@@ -19,6 +19,10 @@ export default function SortGuide() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [abortController, setAbortController] = useState(null); // 요청 취소를 위한 컨트롤러
+  const [isAnalyzing, setIsAnalyzing] = useState(false); // 추가 중복 방지 플래그
+  const analyzeTimeoutRef = useRef(null); // 디바운싱을 위한 timeout ref
+  const hasInitialized = useRef(false); // 초기화 완료 플래그
   
   
   
@@ -30,16 +34,35 @@ export default function SortGuide() {
 
     // 로그인 상태 확인
     if (!isAuthenticated) {
-      console.log('SortGuide: 인증되지 않은 사용자');
       navigate('/login');
       return;
     }
 
-    // selectedFile이 있고 아직 분석하지 않은 경우에만 분석 실행
-    if (selectedFile && !hasAnalyzed && !loading) {
-      handleAnalyze(); // 페이지 로드 시 자동 분석
+    // 이미 초기화가 완료되었으면 중복 실행 방지
+    if (hasInitialized.current) {
+      return;
     }
-  }, [isAuthenticated, authLoading, selectedFile, navigate, hasAnalyzed, loading]);
+
+    // selectedFile이 있고 아직 분석하지 않은 경우에만 분석 실행
+    if (selectedFile && !hasAnalyzed && !loading && !isAnalyzing) {
+      // 디바운싱 적용 (1초 지연으로 증가)
+      if (analyzeTimeoutRef.current) {
+        clearTimeout(analyzeTimeoutRef.current);
+      }
+      
+      analyzeTimeoutRef.current = setTimeout(() => {
+        hasInitialized.current = true; // 초기화 완료 표시
+        handleAnalyze(); // 페이지 로드 시 자동 분석
+      }, 1000);
+    }
+    
+    // cleanup 함수
+    return () => {
+      if (analyzeTimeoutRef.current) {
+        clearTimeout(analyzeTimeoutRef.current);
+      }
+    };
+  }, [isAuthenticated, authLoading, selectedFile, navigate]); // 의존성 배열에서 hasAnalyzed, loading, isAnalyzing 제거
 
   const handleAnalyze = useCallback(async () => {
     if (!selectedFile) {
@@ -48,10 +71,23 @@ export default function SortGuide() {
     }
 
     // 이미 분석 중이거나 분석 완료된 경우 중복 실행 방지
-    if (loading || hasAnalyzed) {
+    if (loading || hasAnalyzed || isAnalyzing) {
+      console.log('🚫 중복 분석 요청 차단:', { loading, hasAnalyzed, isAnalyzing });
       return;
     }
 
+    // 즉시 분석 중 플래그 설정 (동기적으로)
+    setIsAnalyzing(true);
+
+    // 이전 요청이 있다면 취소
+    if (abortController) {
+      abortController.abort();
+    }
+
+    // 새로운 AbortController 생성
+    const newAbortController = new AbortController();
+    setAbortController(newAbortController);
+    
     setLoading(true);
     setResult(null);
     setProgressMessage("");
@@ -64,10 +100,20 @@ export default function SortGuide() {
       const data = await apiClient.analyzeImage(formData, (message) => {
         setProgressMessage(message);
       });
-      console.log('분석 완료 결과:', data);
       setResult(data);
     } catch (err) {
-      console.error("분석 오류:", err);
+      // 요청이 취소된 경우는 에러로 처리하지 않음
+      if (err.message === '분석 요청이 취소되었습니다.') {
+        return;
+      }
+      
+      // 서버에서 중복 요청 차단 응답인 경우
+      if (err.message.includes('이미 처리 중인 요청입니다')) {
+        setHasAnalyzed(false); // 플래그 리셋하여 재시도 가능하게 함
+        return;
+      }
+      
+      console.error("분석 오류:", err.message);
       setResult({ 
         error: err.message || "분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." 
       });
@@ -75,8 +121,10 @@ export default function SortGuide() {
     } finally {
       setLoading(false);
       setProgressMessage("");
+      setAbortController(null); // 컨트롤러 정리
+      setIsAnalyzing(false); // 분석 중 플래그 해제
     }
-  }, [selectedFile, loading, hasAnalyzed]);
+  }, [selectedFile, abortController]); // 의존성 배열에서 loading, hasAnalyzed, isAnalyzing 제거
 
   const handleSaveResult = async () => {
     if (!result || result.error) {
@@ -84,7 +132,7 @@ export default function SortGuide() {
       return;
     }
 
-    console.log('저장할 분석 결과:', result);
+
 
     setSaving(true);
     setSaveMessage("분석 결과를 저장하고 있습니다...");
@@ -111,7 +159,7 @@ export default function SortGuide() {
       }, 3000);
       
     } catch (error) {
-      console.error("저장 오류:", error);
+      console.error("저장 오류:", error.message);
       setSaveMessage("❌ 저장 중 오류가 발생했습니다: " + error.message);
       
       // 5초 후 메시지 제거
@@ -126,29 +174,19 @@ export default function SortGuide() {
    // FAQ 아코디언용 데이터
   const faqs = [
     {
-      question: "📷 흐릿한 사진도 분석이 되나요?",
+      question: "무엇을 찍어야 하나요?",
+      answer:
+        "쓰레기에 있는 분리배출 아이콘, 혹은 버릴 쓰레기의 전체적인 모습을 촬영해주세요.",
+    },
+    {
+      question: "흐릿한 사진도 분석이 되나요?",
       answer:
         "가능은 하지만 결과 정확도가 낮아질 수 있습니다. 배경이 깔끔하고 초점이 맞은 사진을 권장합니다.",
     },
     {
-      question: "🎯 분석 정확도는 얼마나 되나요?",
+      question: "하루에 몇번까지 가능한가요?",
       answer:
-        "정확도는 약 90% 수준이지만, 종류에 따라 오차가 있을 수 있습니다. 재분석도 가능합니다.",
-    },
-    {
-      question: "📂 쓰레기 종류는 몇 가지로 구분되나요?",
-      answer:
-        "현재는 플라스틱, 종이, 유리, 금속, 음식물, 일반쓰레기 등 6종으로 분류하고 있습니다.",
-    },
-    {
-      question: "🚫 분석이 안되는 경우는 어떻게 하나요?",
-      answer:
-        "에러 메시지를 확인 후 이미지를 다시 촬영하거나, 다른 각도에서 시도해보세요.",
-    },
-    {
-      question: "🔄 분석 후에도 다시 업로드할 수 있나요?",
-      answer:
-        "네, 다시 업로드하여 재분석할 수 있습니다. 이전 결과와 비교도 가능합니다.",
+        "분석 횟수에는 제한이 없지만, 결과를 저장하는것은 하루 최대 5번까지 가능합니다.",
     },
   ];
 
@@ -195,7 +233,7 @@ export default function SortGuide() {
         {!previewUrlState && (
           <div className="manual-upload">
             <h2>🧠 AI 분리배출 가이드</h2>
-            <p>사진을 업로드하면 AI가 쓰레기 종류와 처리 방법을 분석해 드려요!</p>
+            <p>AI가 쓰레기 종류와 처리 방법을 분석해 드려요! <br></br> 분리배출 아이콘을 찾아 촬영하거나 <br></br> 없다면 쓰레기의 전체적인 형태를 촬영해주세요!</p>
 
             <div
               className="drop-zone"
