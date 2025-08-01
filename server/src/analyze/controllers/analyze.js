@@ -344,12 +344,8 @@ async function performUnifiedAnalysis(imagePath) {
     // Vision API로 통합 분석
     const visionAnalysis = await performUnifiedVisionAnalysis(imagePath);
     
-    // Vision API 결과를 텍스트로 정리
-    const objects = visionAnalysis.objects?.map(obj => ({
-        name: obj.name,
-        confidence: obj.score,
-        description: `${obj.name} (신뢰도: ${Math.round(obj.score * 100)}%)`
-    })) || [];
+    // Vision API 결과를 텍스트로 정리 (오브젝트 감지 제거)
+    const objects = []; // 오브젝트 감지 제거
     
     const labels = visionAnalysis.labels?.map(label => ({
         name: label.description,
@@ -436,7 +432,7 @@ async function performUnifiedAnalysis(imagePath) {
         },
         materialParts: textAnalysis.materialParts || [],
         vision_analysis: {
-            objects: objects.length,
+            objects: 0, // 오브젝트 감지 제거
             labels: labels.length,
             texts: texts.length,
             recyclingMarks: recyclingMarks.length
