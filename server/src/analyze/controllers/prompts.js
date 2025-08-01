@@ -21,7 +21,8 @@ const UNIFIED_SINGLE_STAGE_PROMPT = `이미지와 Vision API 분석 결과를 �
 - 재활용 마크가 "HDPE, PP"인 경우: 본체(HDPE), 뚜껑(PP)
 - 재활용 마크가 "PET" 하나만인 경우: 본체(PET(투명/유색))
 - 재활용 마크가 "알루미늄, 스테인리스"인 경우: 본체(알루미늄), 뚜껑(스테인리스)
-- PET 재질의 페트병일 경우 subType와 material에 색상 표시 (예: PET(투명), PET(유색))
+- PET혹은 "페트"로 분류될 경우 subType와 material에 색상 표시 (예: PET(투명), PET(유색))
+- "무색페트"일 경우 subType과 material에 색상 표시 (PET(투명))
 
 **응답 형식 (JSON):**
 {
@@ -29,7 +30,7 @@ const UNIFIED_SINGLE_STAGE_PROMPT = `이미지와 Vision API 분석 결과를 �
   "subType": "세부 분류", 
   "recyclingMark": "재활용 마크 정보",
   "description": "상세 설명",
-  "disposalMethod": "분리수거 방법(투명페트병, 일반플라스틱, 일반플라스틱(유색 페트병) 캔류, 유리, 종이, 비닐류)",
+  "disposalMethod": "분리수거 방법(투명페트병, 일반플라스틱, 일반플라스틱(유색 페트병) 캔류, 유리, 종이, 비닐류 등등)으로 처리",
   "confidence": 0.9,
   "materialParts": [
     {
