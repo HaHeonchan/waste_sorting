@@ -345,12 +345,12 @@ const handleLogin = async (email, password) => {
         >
           🎁 인센티브 관리
         </button>
-        <button 
+        {/* <button 
           className="btn blue" 
           onClick={() => handleNavigation('/complain')}
         >
           ⚠️ 민원 제보
-        </button>
+        </button> */}
         <button 
           className="btn orange" 
           onClick={() => handleNavigation('/sortguide')}
@@ -363,12 +363,12 @@ const handleLogin = async (email, password) => {
         >
           📋 분석 결과 목록
         </button>
-        <button 
+        {/* <button 
           className="btn red" 
           onClick={handleLogout}
         >
           🚪 로그아웃
-        </button>
+        </button> */}
       </div>
     </div>
   );

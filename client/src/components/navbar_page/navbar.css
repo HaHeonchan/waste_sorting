@@ -13,6 +13,14 @@
   z-index: 1000;
 }
 
+.navbar-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-grow: 1;
+  padding-right: 1.5rem;
+}
+
 /* ✅ 타이틀 + 햄버거 감싸는 컨테이너 */
 .navbar-header {
   display: flex;
@@ -188,7 +196,6 @@
   display: none;
 }
 
-/* ✅ 모바일 대응 */
 @media screen and (max-width: 1200px) {
   .navbar {
     flex-direction: column;
@@ -196,6 +203,10 @@
     height: auto;
     padding: 1rem;
   }
+
+
+
+
 
   .navbar-header {
     width: 100%;
@@ -253,6 +264,13 @@
   .desktop-login {
     display: none;
   }
+
+  .desktop-logout {
+    display: none;
+  }
+
+
+
 
   .mobile-login {
     display: flex;
