@@ -85,29 +85,6 @@ function calculatePoints(sameTypeCount) {
 }
 
 /**
- * Cloudinary 이미지 업로드
- * @param {string} filePath - 업로드할 파일 경로
- * @returns {Promise<string>} 업로드된 이미지 URL
- */
-async function uploadToCloudinary(filePath) {
-  console.log('📸 Cloudinary 업로드 시작:', path.basename(filePath));
-  
-  const result = await cloudinary.uploader.upload(filePath, {
-    folder: 'waste-sorting/analysis',
-    resource_type: 'auto',
-    quality: 'auto:good',
-    fetch_format: 'auto',
-    transformation: [
-      { width: 1200, height: 1200, crop: 'limit' },
-      { quality: 'auto:good' }
-    ]
-  });
-  
-  console.log('✅ Cloudinary 업로드 완료:', result.secure_url);
-  return result.secure_url;
-}
-
-/**
  * 임시 파일 정리
  * @param {string} filePath - 삭제할 파일 경로
  */
@@ -197,9 +174,20 @@ async function updateUserPoints(userId, points) {
 async function processImageUrl(req) {
   if (req.file) {
     try {
-      const imageUrl = await uploadToCloudinary(req.file.path);
+      // Cloudinary 업로드
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'waste-sorting/analysis',
+        resource_type: 'auto',
+        quality: 'auto:good',
+        fetch_format: 'auto',
+        transformation: [
+          { width: 1200, height: 1200, crop: 'limit' },
+          { quality: 'auto:good' }
+        ]
+      });
+      
       cleanupTempFile(req.file.path);
-      return imageUrl;
+      return result.secure_url;
     } catch (error) {
       cleanupTempFile(req.file.path);
       throw new Error(`이미지 업로드 실패: ${error.message}`);
