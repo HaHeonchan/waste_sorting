@@ -26,53 +26,41 @@ const Navbar = () => {
     document.body.classList.toggle("dark", saved);
   }, []);
 
-  // 인증 에러가 있으면 알림
   useEffect(() => {
     if (authError) {
       console.warn('인증 에러:', authError);
-      // 에러가 있으면 자동으로 로그아웃 처리
       handleLogout();
     }
   }, [authError]);
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
-  const closeMenu = () => setMenuOpen(false); // 메뉴 닫기용 함수
+  const closeMenu = () => setMenuOpen(false);
   const handleLogout = () => {
     try {
       logoutUser();
       logout();
-      // 로그아웃 후 홈페이지로 이동
       window.location.href = '/';
     } catch (error) {
       console.error('로그아웃 에러:', error);
-      // 에러가 있어도 로컬 상태는 클리어
       logout();
       window.location.href = '/';
     }
   };
 
-  // 사용자 이름 표시 함수
   const getUserDisplayName = () => {
     if (!user) return '사용자';
-    
-    // 실제 name 필드 우선 사용
     if (user.name) return user.name;
-    
-    // 구글 로그인 사용자의 displayName
     if (user.displayName) return user.displayName;
-    
-    // 이메일에서 이름 추출 (fallback)
     if (user.email) {
       const emailName = user.email.split('@')[0];
       return emailName.length > 10 ? emailName.substring(0, 10) + '...' : emailName;
     }
-    
     return '사용자';
   };
 
   return (
     <header className="navbar">
-      {/* 좌측 텍스트 + 햄버거 버튼 */}
+      {/* 좌측: 로고 + 다크 토글 + 햄버거 */}
       <div className="navbar-header">
         <div className="navbar-left">
           <Link to="/" className="navbar-title-link" onClick={() => setMenuOpen(false)}>
@@ -85,25 +73,31 @@ const Navbar = () => {
             <div className="toggle-circle" />
           </div>
         </div>
+
         <button className="hamburger" onClick={toggleMenu} style={{ position: 'relative' }}>
-          <span className="hamburger-icon" style={{
-            opacity: menuOpen ? 0 : 1,
-            transform: menuOpen ? 'scale(0.8)' : 'scale(1)',
-            transition: 'opacity 0.3s, transform 0.3s',
-            position: 'absolute',
-          }}>
+          <span
+            className="hamburger-icon"
+            style={{
+              opacity: menuOpen ? 0 : 1,
+              transform: menuOpen ? 'scale(0.8)' : 'scale(1)',
+              transition: 'opacity 0.3s, transform 0.3s',
+              position: 'absolute',
+            }}
+          >
             ☰
           </span>
-          <span className="hamburger-icon" style={{
-            opacity: menuOpen ? 1 : 0,
-            transform: menuOpen ? 'scale(1)' : 'scale(0.8)',
-            transition: 'opacity 0.3s, transform 0.3s',
-            position: 'absolute',
-          }}>
+          <span
+            className="hamburger-icon"
+            style={{
+              opacity: menuOpen ? 1 : 0,
+              transform: menuOpen ? 'scale(1)' : 'scale(0.8)',
+              transition: 'opacity 0.3s, transform 0.3s',
+              position: 'absolute',
+            }}
+          >
             ☷
           </span>
-</button>
-
+        </button>
       </div>
 
       {/* 중앙 메뉴 */}
@@ -114,32 +108,25 @@ const Navbar = () => {
         {/* <Link to="/complain" className="nav-link" onClick={closeMenu}>⚠️ 민원 제보</Link> */}
         <Link to="/community" className="nav-link" onClick={closeMenu}>🌱 커뮤니티</Link>
         <Link to="/mypage" className="nav-link" onClick={closeMenu}>👤 마이페이지</Link>
+
         {isAuthenticated ? (
           <div className="user-info-mobile">
             <span className="user-name-mobile" title={user?.email || ''}>
               👤 {getUserDisplayName()}
             </span>
-            <button onClick={handleLogout} className="logout-btn-mobile">
-              🚪 로그아웃
-            </button>
+            <button onClick={handleLogout} className="logout-btn-mobile">🚪 로그아웃</button>
           </div>
         ) : (
           <Link to="/login" className="login-btn mobile-login" onClick={closeMenu}>➡ 로그인</Link>
         )}
-        
       </nav>
 
-      {/* 우측 로그인/사용자 정보 */}
+      {/* 우측: 로그인/로그아웃 */}
       <div className="navbar-right">
-        
         {isAuthenticated ? (
           <div className="user-info">
-            <span className="user-name" title={user?.email || ''}>
-              👤 {getUserDisplayName()}
-            </span>
-            <button onClick={handleLogout} className="logout-btn desktop-logout">
-              🚪 로그아웃
-            </button>
+            <span className="user-name" title={user?.email || ''}>👤 {getUserDisplayName()}</span>
+            <button onClick={handleLogout} className="logout-btn desktop-logout">🚪 로그아웃</button>
           </div>
         ) : (
           <Link to="/login" className="login-btn desktop-login">➡ 로그인</Link>

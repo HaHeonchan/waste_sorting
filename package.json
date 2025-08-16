@@ -1,15 +1,17 @@
 {
   "name": "waste-sorting",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "start": "npx concurrently \"npm start --prefix client\" \"npm start --prefix server\"",
-    "dev": "npx concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "start": "concurrently -k -n CLIENT,SERVER -c green,blue \"dotenv -e ./.env -- cross-env PORT=3000 npm --prefix client run start\" \"dotenv -e ./.env -- cross-env npm --prefix server run start\"",
+    "dev": "concurrently -k -n CLIENT,SERVER -c green,blue \"dotenv -e ./.env -- cross-env PORT=3000 npm --prefix client run dev\" \"dotenv -e ./.env -- cross-env npm --prefix server run dev\"",
     "install:all": "npm install && npm install --prefix client && npm install --prefix server",
-    "server-only": "npm start --prefix server",
-    "client-only": "npm start --prefix client"
+    "server-only": "dotenv -e ./.env -- cross-env npm --prefix server run start",
+    "client-only": "dotenv -e ./.env -- cross-env PORT=3000 npm --prefix client run start"
   },
-  "dependencies": {
-    "concurrently": "^1.0.0",
-    "react-icons": "^5.5.0"
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "dotenv-cli": "^7.4.1"
   }
 }

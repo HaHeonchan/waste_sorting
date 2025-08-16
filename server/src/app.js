@@ -114,6 +114,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Morgan 로깅 설정 (개발 환경에서만)
+const apiBootstrap = (req, res, next) => {
+  req.upload = upload;
+  console.log('API 요청:', { method: req.method, url: req.url, path: req.path });
+  next();
+};
+app.use('/api', apiBootstrap);
+
 // 세션 설정
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -145,6 +153,10 @@ app.use('/api', (req, res, next) => {
     next();
 }, complainRoutes);
 
+// 오늘 통계 라우터
+const todayStatsRouter = require('./analyze/routes/todayStats');
+app.use('/api', todayStatsRouter);
+
 // 기존 라우터
 app.use('/analyze', analyzeRouter);
 app.use('/api/waste', wasteRouter);
@@ -158,6 +170,7 @@ app.use('/api/community', communityRouter);
 app.get(['/', '/login', '/signup', '/mypage', '/incentive', '/complain', '/community', '/sortguide'], (req, res) => {
     res.sendFile(path.join(__dirname, '../../client/public/index.html'));
 });
+
 
 // 쓰레기 분류 시스템 페이지 - 새로운 경로로 수정
 app.get('/waste-sorting', (req, res) => {
