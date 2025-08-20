@@ -219,6 +219,12 @@ async saveAnalysisResult(result, imageFile) {
     return await this.requestWithRetry(url);
   }
 
+  // 통계 데이터 가져오기
+  async getStats() {
+    const url = API_ENDPOINTS.STATS;
+    return await this.requestWithRetry(url);
+  }
+
   // 신고 좋아요
   async likeReport(id) {
     const url = API_ENDPOINTS.REPORT_LIKE(id);

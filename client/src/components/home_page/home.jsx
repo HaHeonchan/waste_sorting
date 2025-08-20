@@ -11,9 +11,25 @@ export default function Home() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState("");
+  const [stats, setStats] = useState({ totalPosts: 0, totalAnalysis: 0, totalUsers: 0 });
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
+
+  // 통계 데이터 가져오기
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await apiClient.getStats();
+        if (response.success) {
+          setStats(response.data);
+        }
+      } catch (error) {
+        console.error('통계 데이터 가져오기 실패:', error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   // 구글 로그인 콜백 처리
   useEffect(() => {
@@ -155,19 +171,19 @@ export default function Home() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 3 }}
       >
-        <h2 className="stats-title">오늘의 분리배출 현황</h2>
+        <h2 className="stats-title">분리배출 현황</h2>
         <div className="stats-grid">
           <div className="stat-item">
-            <div className="stat-number green">1,247</div>
-            <div className="stat-label">총 분석 요청</div>
+            <div className="stat-number blue">{stats.totalUsers.toLocaleString()}</div>
+            <div className="stat-label">가입자 수</div>
           </div>
           <div className="stat-item">
-            <div className="stat-number green">98.5%</div>
-            <div className="stat-label">AI 정확도</div>
+            <div className="stat-number green">{stats.totalPosts.toLocaleString()}</div>
+            <div className="stat-label">총 게시글</div>
           </div>
           <div className="stat-item">
-            <div className="stat-number orange">856</div>
-            <div className="stat-label">절약된 CO₂ (kg)</div>
+            <div className="stat-number orange">{stats.totalAnalysis.toLocaleString()}</div>
+            <div className="stat-label">분리배출 인증</div>
           </div>
         </div>
       </motion.div>
