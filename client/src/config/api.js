@@ -12,6 +12,9 @@ export const API_ENDPOINTS = {
   // 신고 관련
   REPORTS: `${API_BASE_URL}/api/reports`,
   REPORT_LIKE: (id) => `${API_BASE_URL}/api/reports/${id}/like`,
+
+  // 통계 관련
+  STATS: `${API_BASE_URL}/api/stats`,
   
   // 인증 관련
   AUTH: {
