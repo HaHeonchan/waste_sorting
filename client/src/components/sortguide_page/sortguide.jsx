@@ -372,7 +372,7 @@ export default function SortGuide() {
                 </div>
               )}
               
-              <div className="result-item">
+              {/* <div className="result-item">
                 <span className="label">🧠 모델:</span>
                 <span className="value">
                   {result.model || '정보 없음'}
@@ -383,7 +383,7 @@ export default function SortGuide() {
                 <span className="value">
                   {result.token_usage || '정보 없음'}
                 </span>
-              </div>
+              </div> */}
             </div>
             
             {/* 저장 메시지 표시 */}
