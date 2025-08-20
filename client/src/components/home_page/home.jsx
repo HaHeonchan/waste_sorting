@@ -153,10 +153,10 @@ export default function Home() {
           <div className="card-title">인센티브 관리</div>
           <div className="card-desc">포인트를 모아보세요</div>
         </div>
-        <div onClick={() => navigate('/complain')} className="card card-red">
-          <div className="card-icon">🚨</div>
-          <div className="card-title">민원 제보</div>
-          <div className="card-desc">환경 오염을 신고하세요</div>
+        <div onClick={() => navigate('/community')} className="card card-red">
+          <div className="card-icon">💭</div>
+          <div className="card-title">커뮤니티</div>
+          <div className="card-desc">정보를 나누어보세요</div>
         </div>
         <div onClick={() => navigate('/mypage')} className="card card-blue">
           <div className="card-icon">👤</div>
