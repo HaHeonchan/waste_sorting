@@ -4,6 +4,7 @@ import './login.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginWithEmail, loginWithGoogle } from '../../utils/auth';
 import { useAuth } from '../../contexts/AuthContext';
+import LoadingButton from '../loading_components/LoadingButton';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -144,25 +145,27 @@ const Login = () => {
             <a href="#" className="find-password">비밀번호 찾기</a>
           </div>
 
-          <button 
+          <LoadingButton 
             type="submit" 
             className="login-btn"
-            disabled={loading}
+            loading={loading}
+            loadingText="로그인 중..."
           >
-            {loading ? '🔄 로그인 중...' : '로그인'}
-          </button>
+            로그인
+          </LoadingButton>
         </form>
 
         <div className="login-divider">또는</div>
 
-        <button 
+        <LoadingButton 
           className="login-btn-naver"
           onClick={handleGoogleLogin}
-          disabled={loading}
+          loading={loading}
+          loadingText="로그인 중..."
           type="button"
         >
-          {loading ? '🔄 로그인 중...' : '구글로 로그인'}
-        </button>
+          구글로 로그인
+        </LoadingButton>
 
         <div className="signup-guide">
           계정이 없으신가요? <Link to="/signup">회원가입</Link>

@@ -4,6 +4,7 @@ import "./community.css";
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from "framer-motion";
+import AnimatedLoadingSpinner from "../loading_components/AnimatedLoadingSpinner";
 
 const categoryOptions = [
   { value: '질문', label: '질문' },
@@ -276,12 +277,7 @@ export default function Community() {
 
   if (authLoading) {
     return (
-      <div className="community-wrapper">
-        <div className="loading-container">
-          <div className="loading-spinner">🔄</div>
-          <p>인증 상태를 확인하는 중...</p>
-        </div>
-      </div>
+      <AnimatedLoadingSpinner message="인증 상태를 확인하는 중..." />
     );
   }
 
@@ -428,10 +424,7 @@ export default function Community() {
       <h2 className="community-subtitle">게시글 목록</h2>
 
       {loading && (
-        <div className='loading-container'>
-          <div className="spinner"></div>
-          <div className="loading-message">데이터를 불러오는 중...</div>
-        </div>
+        <AnimatedLoadingSpinner message="데이터를 불러오는 중..." />
       )}
 
       {error && (

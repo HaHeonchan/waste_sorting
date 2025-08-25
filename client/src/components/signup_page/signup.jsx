@@ -3,6 +3,7 @@ import './signup.css';
 import { FaUserPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { signup } from '../../utils/auth';
+import LoadingButton from '../loading_components/LoadingButton';
 
 function Signup() {
   const navigate = useNavigate();
@@ -171,13 +172,14 @@ function Signup() {
               마케팅 수신에 동의합니다 (선택)
             </label>
           </div>
-          <button 
+          <LoadingButton 
             type="submit" 
             className="signup-btn"
-            disabled={loading}
+            loading={loading}
+            loadingText="가입 중..."
           >
-            <FaUserPlus /> {loading ? '🔄 가입 중...' : '회원가입'}
-          </button>
+            <FaUserPlus /> 회원가입
+          </LoadingButton>
         </form>
         <p className="login-link">
           이미 계정이 있으신가요? <a href="/login">로그인</a>

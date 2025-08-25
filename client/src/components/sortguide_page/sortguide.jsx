@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import apiClient from "../../utils/apiClient";
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from "framer-motion";
+import AnimatedLoadingSpinner from "../loading_components/AnimatedLoadingSpinner";
 
 export default function SortGuide() {
   const navigate = useNavigate();
@@ -209,10 +210,7 @@ export default function SortGuide() {
   if (authLoading) {
     return (
       <div id="result">
-        <div className="loading-container">
-          <div className="loading-spinner">🔄</div>
-          <p>인증 상태를 확인하는 중...</p>
-        </div>
+        <AnimatedLoadingSpinner message="인증 상태를 확인하는 중..." />
       </div>
     );
   }

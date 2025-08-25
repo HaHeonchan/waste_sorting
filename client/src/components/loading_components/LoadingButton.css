@@ -1,0 +1,44 @@
+.loading-button {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.loading-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.button-loading-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: buttonSpin 1s linear infinite;
+}
+
+@keyframes buttonSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 다크 모드 지원 */
+body.dark .button-spinner {
+  border-top-color: #667eea;
+}
+
+/* 다크 모드에서 버튼 텍스트 색상 조정 */
+body.dark .loading-button {
+  color: #e0e0e0;
+}
+
+body.dark .loading-button:disabled {
+  color: #888;
+} 

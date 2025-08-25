@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { API_ENDPOINTS } from '../config/api';
-import serverStatus from '../utils/serverStatus';
+import { API_ENDPOINTS } from '../../config/api';
+import serverStatus from '../../utils/serverStatus';
 
 const TestPage = () => {
   const [apiStatus, setApiStatus] = useState('테스트 중...');

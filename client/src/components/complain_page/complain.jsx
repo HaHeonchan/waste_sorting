@@ -4,6 +4,7 @@ import "./complain.css";
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from "framer-motion";
+import AnimatedLoadingSpinner from "../loading_components/AnimatedLoadingSpinner";
 
 const rewardAmountMap = {
     a: "20,000원 상당",
@@ -231,10 +232,7 @@ export default function Complain() {
   if (authLoading) {
     return (
       <div className="report-wrapper">
-        <div className="loading-container">
-          <div className="loading-spinner">🔄</div>
-          <p>인증 상태를 확인하는 중...</p>
-        </div>
+        <AnimatedLoadingSpinner message="인증 상태를 확인하는 중..." />
       </div>
     );
   }
@@ -365,11 +363,7 @@ export default function Complain() {
        <h2 className="report-subtitle">전체 민원 목록</h2>
 
       {loading && (
-        <div className='loading-container'>
-          <div className="spinner"></div> {/* 🔄 로딩 원 추가 */}
-          <div className="loading-message">데이터를 불러오는 중...</div>
-          <div className="loading-spinner">서버 응답이 느릴 수 있습니다. 잠시만 기다려주세요.</div>
-        </div>
+        <AnimatedLoadingSpinner message="데이터를 불러오는 중..." />
       )}
 
       {error && (

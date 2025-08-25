@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { isAuthenticated, getUser, getUserInfo, getToken, clearAuthData } from '../utils/auth';
-import LoadingSpinner from '../components/LoadingSpinner';
+import AnimatedLoadingSpinner from '../components/loading_components/AnimatedLoadingSpinner';
 
 const AuthContext = createContext();
 
@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }) => {
 
   // 로딩 중일 때 로딩 스피너 표시
   if (loading) {
-    return <LoadingSpinner message="인증 상태를 확인하는 중..." />;
+    return <AnimatedLoadingSpinner message="인증 상태를 확인하는 중..." />;
   }
 
   return (

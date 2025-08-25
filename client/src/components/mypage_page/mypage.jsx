@@ -4,6 +4,7 @@ import './mypage.css';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../utils/apiClient';
 import { Link } from "react-router-dom";
+import AnimatedLoadingSpinner from "../loading_components/AnimatedLoadingSpinner";
 
 export default function MyPage() {
   const navigate = useNavigate();
@@ -176,10 +177,7 @@ const handleLogin = async (email, password) => {
   if (authLoading) {
     return (
       <div className="mypage">
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>인증 상태를 확인하는 중...</p>
-        </div>
+        <AnimatedLoadingSpinner message="인증 상태를 확인하는 중..." />
       </div>
     );
   }
@@ -193,10 +191,7 @@ const handleLogin = async (email, password) => {
   if (loading) {
     return (
       <div className="mypage">
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>사용자 정보를 불러오는 중...</p>
-        </div>
+        <AnimatedLoadingSpinner message="사용자 정보를 불러오는 중..." />
       </div>
     );
   }

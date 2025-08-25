@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import ErrorBoundary from './components/ErrorBoundary';
+import ErrorBoundary from './components/utils/ErrorBoundary';
 import Login from './components/login_page/login';
 import Signup from './components/signup_page/signup';
 import Mypage from './components/mypage_page/mypage';
@@ -11,7 +11,7 @@ import Community from './components/community_page/community.jsx';
 import SortGuide from './components/sortguide_page/sortguide.jsx';
 import Home from './components/home_page/home';
 import Navbar from './components/navbar_page/navbar.jsx';
-import TestPage from './components/TestPage';
+import TestPage from './components/utils/TestPage';
 import List from './components/list_page/list.jsx';
 
 function App() {
