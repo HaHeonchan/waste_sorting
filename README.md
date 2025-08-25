@@ -1,15 +1,44 @@
 # 🌿 AI 기반 분리배출 안내 서비스
 
-AI를 활용하여 사용자가 폐기물을 올바르게 분리 배출할 수 있도록 돕는 서비스입니다. 이 프로젝트는 지역 사회의 재활용률을 높이고 환경 문제를 해결하는 데 기여하는 것을 목표로 합니다.
+AI를 활용하여 사용자가 폐기물을 올바르게 분리 배출할 수 있도록 돕고자 개발하게된 프로젝트입니다.
+
+이 프로젝트는 지역 사회의 재활용률을 높이고 환경 문제를 해결하는 데 기여하는 것을 목표로 합니다.
+
+---
+
+### ❇️ 프로젝트 개발 과정
+
+**개발 기간**
+
+`2025/07/17 - 2025/08/25`
+
+
+**팀 구성 및 주요 역할**
+
+* **오준수 (팀장, Back-end)**
+
+  * 프로젝트 총괄 및 일정 관리
+  * 백엔드 `인센티브, 마이페이지` 기능 구현
+* **하헌찬 (Back-end, AI)**
+
+  * 이미지 분석 기능을 위한 프롬프팅 및 AI API 개발
+  * API 서버 아키텍처 설계 및 구축
+  * 데이터베이스 모델링 및 구현
+  * 백엔드 `이미지 분석, 게시판` 기능 구현
+* **설경민 (Front-end, Back-end)**
+
+  * UI/UX 설계 및 전반적인 프론트엔드 구현
+  * 서버-클라이언트 데이터 연동 및 상태 관리
+  * 백엔드 `기록 보관, 제보 게시판` 기능 구현
 
 ---
 
 ### ❇️ 서비스 및 소스코드
 
-- **서비스 바로가기**: [https://sejong-waste-management.onrender.com](https://sejong-waste-management.onrender.com)
+- **서비스 바로가기**: https://sejong-waste-management.onrender.com
 - **GitHub 레포지토리**:
-  - **Backend**: [https://github.com/HaHeonchan/waste\_sorting](https://github.com/HaHeonchan/waste_sorting)
-  - **Frontend**: [https://github.com/HaHeonchan/waste\_sorting\_front](https://www.google.com/search?q=https://github.com/HaHeonchan/waste_sorting_front)
+  - **Backend**: https://github.com/HaHeonchan/waste_sorting
+  - **Frontend**: https://github.com/HaHeonchan/waste_sorting
 
 ---
 
@@ -21,7 +50,7 @@ AI를 활용하여 사용자가 폐기물을 올바르게 분리 배출할 수 �
   - 부정확한 분리배출은 재활용 효율을 떨어뜨리고, 이는 소각 및 매립 비용 증가로 이어져 지역의 경제적, 환경적 부담을 가중시킵니다.
 - **명확한 타겟 설정**
 
-  - 분리배출 정보를 얻기 어려운 **1인 가구, 노년층, 사회초년생** 등을 주요 타겟으로 설정했습니다.
+  - 분리배출에 대한 지식이 부족할 수 있는 **1인 가구, 노년층, 사회초년생, 학생** 등을 주요 타겟으로 설정했습니다.
 - **문제의 연결성**
 
   - 분리배출이라는 생활 속 작은 불편함이 어떻게 지역의 환경오염, 자원 낭비, 처리 비용 증가와 같은 거시적인 문제와 직결되는지 명확히 설명하고자 했습니다.
